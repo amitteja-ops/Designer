@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import App from "./App";
 import Auth from "./Auth";
 import { signOut } from "./supabase";
@@ -33,12 +34,25 @@ export default function Root() {
   };
 
   if (checking) return (
-    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#2C1F0E,#8B6F47)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ width:40, height:40, border:"3px solid rgba(255,255,255,0.3)", borderTop:"3px solid #F5E6D3", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+    <>
+      <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#2C1F0E,#8B6F47)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ width:40, height:40, border:"3px solid rgba(255,255,255,0.3)", borderTop:"3px solid #F5E6D3", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+      <Analytics />
+    </>
   );
 
-  if (!session) return <Auth onLogin={handleLogin} />;
-  return <App token={session.token} user={session.user} onLogout={handleLogout} />;
+  if (!session) return (
+    <>
+      <Auth onLogin={handleLogin} />
+      <Analytics />
+    </>
+  );
+  return (
+    <>
+      <App token={session.token} user={session.user} onLogout={handleLogout} />
+      <Analytics />
+    </>
+  );
 }
