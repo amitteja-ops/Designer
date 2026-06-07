@@ -35,7 +35,7 @@ function Spinner() {
   return <div style={{ display:"flex",justifyContent:"center",padding:80 }}><div style={{ width:40,height:40,border:"3px solid #EDE0CE",borderTop:"3px solid #8B6F47",borderRadius:"50%",animation:"spin 0.8s linear infinite" }}/></div>;
 }
 
-export default function App({ token, user, onLogout }) {
+export default function App({ token, user, onLogout, onSessionExpired }) {
   const [customers,    setCustomers]    = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [saving,       setSaving]       = useState(false);
@@ -78,7 +78,7 @@ export default function App({ token, user, onLogout }) {
         showToast("✓ New client saved to Supabase");
       }
       await fetchCustomers(); setView("list");
-    } catch(e) { showToast("Save failed: "+e.message,"error"); }
+    } catch(e) { if(e.code==="SESSION_EXPIRED"){ onSessionExpired(); return; } showToast("Save failed: "+e.message,"error"); }
     finally { setSaving(false); }
   };
 
@@ -88,7 +88,7 @@ export default function App({ token, user, onLogout }) {
       await sb(`${TABLE}?id=eq.${id}`,"DELETE",null,token);
       showToast("Client deleted","info");
       await fetchCustomers(); setView("list");
-    } catch(e) { showToast("Delete failed: "+e.message,"error"); }
+    } catch(e) { if(e.code==="SESSION_EXPIRED"){ onSessionExpired(); return; } showToast("Delete failed: "+e.message,"error"); }
   };
 
   const exportCSV = () => {

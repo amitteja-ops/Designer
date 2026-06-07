@@ -22,7 +22,25 @@ export const signIn = async (email, password) => {
   });
   const data = await res.json();
   if (data.error || data.error_description) throw new Error(data.error_description || data.error);
-  return data; // { access_token, user, ... }
+  return data; // { access_token, refresh_token, expires_in, user }
+};
+
+export const refreshSession = async (refreshToken) => {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    const data = await res.json();
+    if (data.error || !data.access_token) return null;
+    return {
+      token: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+      user: data.user,
+    };
+  } catch { return null; }
 };
 
 export const signOut = async (token) => {
@@ -48,7 +66,11 @@ export const sb = async (path, method = "GET", body = null, token = null) => {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    if (res.status === 401) throw new Error("Session expired — please log in again");
+    if (res.status === 401) {
+      const e = new Error("Session expired — please log in again");
+      e.code = "SESSION_EXPIRED";
+      throw e;
+    }
     if (res.status === 403) throw new Error("Access denied — check RLS policy");
     if (res.status === 404) throw new Error(`Table '${TABLE}' not found`);
     throw new Error(err.message || `HTTP ${res.status}`);
@@ -80,4 +102,4 @@ export const fromRow = (r) => ({
   notes: r.notes||"",
 });
 
-export { TABLE, SUPABASE_URL, SUPABASE_KEY };
+export { TABLE };
