@@ -2,7 +2,7 @@ const SUPABASE_URL = "https://utctflrqhjzxhzyuhsnn.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY";
 const TABLE = "customers";
 
-// ── Auth ─────────────────────────────────────────────────────────────
+// ── Sign Up ───────────────────────────────────────────────────────────
 export const signUp = async (email, password) => {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
     method: "POST",
@@ -10,10 +10,11 @@ export const signUp = async (email, password) => {
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message || data.msg);
+  if (data.error) throw new Error(data.error.message || data.msg || "Signup failed");
   return data;
 };
 
+// ── Sign In ───────────────────────────────────────────────────────────
 export const signIn = async (email, password) => {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
@@ -21,10 +22,12 @@ export const signIn = async (email, password) => {
     body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
-  if (data.error || data.error_description) throw new Error(data.error_description || data.error);
+  if (data.error || data.error_description)
+    throw new Error(data.error_description || data.error || "Login failed");
   return data; // { access_token, refresh_token, expires_in, user }
 };
 
+// ── Refresh Token ─────────────────────────────────────────────────────
 export const refreshSession = async (refreshToken) => {
   try {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
@@ -33,24 +36,27 @@ export const refreshSession = async (refreshToken) => {
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
     const data = await res.json();
-    if (data.error || !data.access_token) return null;
+    if (!res.ok || data.error || !data.access_token) return null;
     return {
-      token: data.access_token,
+      token:        data.access_token,
       refreshToken: data.refresh_token,
-      expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
-      user: data.user,
+      expiresAt:    Date.now() + ((data.expires_in || 3600) * 1000),
+      user:         data.user,
     };
   } catch { return null; }
 };
 
+// ── Sign Out ──────────────────────────────────────────────────────────
 export const signOut = async (token) => {
-  await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-    method: "POST",
-    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
-  });
+  try {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` },
+    });
+  } catch(_) {}
 };
 
-// ── Data ─────────────────────────────────────────────────────────────
+// ── Database calls ────────────────────────────────────────────────────
 export const sb = async (path, method = "GET", body = null, token = null) => {
   const headers = {
     "apikey": SUPABASE_KEY,
@@ -59,26 +65,32 @@ export const sb = async (path, method = "GET", body = null, token = null) => {
   };
   if (method === "POST" || method === "PATCH") headers["Prefer"] = "return=representation";
 
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method, headers,
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
+  let res;
+  try {
+    res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      method, headers,
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+  } catch(networkErr) {
+    throw new Error("Network error — check your connection");
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     if (res.status === 401) {
-      const e = new Error("Session expired — please log in again");
+      const e = new Error("Session expired — refreshing…");
       e.code = "SESSION_EXPIRED";
       throw e;
     }
-    if (res.status === 403) throw new Error("Access denied — check RLS policy");
+    if (res.status === 403) throw new Error("Access denied — check RLS policy in Supabase");
     if (res.status === 404) throw new Error(`Table '${TABLE}' not found`);
-    throw new Error(err.message || `HTTP ${res.status}`);
+    throw new Error(err.message || err.hint || `HTTP ${res.status}`);
   }
   if (res.status === 204) return null;
   return res.json();
 };
 
+// ── Row mappers ───────────────────────────────────────────────────────
 export const toRow = (f) => ({
   name: f.name, email: f.email, phone: f.phone, address: f.address,
   status: f.status, project_type: f.projectType, budget: f.budget, timeline: f.timeline,

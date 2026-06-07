@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import App from "./App";
 import Auth from "./Auth";
 import { signOut, refreshSession } from "./supabase";
@@ -8,76 +8,85 @@ const SESSION_KEY = "crm_session";
 export default function Root() {
   const [session,  setSession]  = useState(null);
   const [checking, setChecking] = useState(true);
+  const refreshTimer = useRef(null);
 
-  // ── Load session from localStorage on startup ──
+  const clearSession = () => {
+    localStorage.removeItem(SESSION_KEY);
+    setSession(null);
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+  };
+
+  const applySession = (s) => {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    setSession(s);
+    scheduleRefresh(s);
+  };
+
+  // Schedule a silent token refresh 10 mins before expiry
+  const scheduleRefresh = (s) => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    if (!s?.refreshToken || !s?.expiresAt) return;
+
+    const delay = s.expiresAt - Date.now() - 10 * 60 * 1000; // 10 mins before expiry
+    if (delay <= 0) {
+      // Already close to expiry — refresh immediately
+      doRefresh(s.refreshToken);
+      return;
+    }
+    refreshTimer.current = setTimeout(() => doRefresh(s.refreshToken), delay);
+  };
+
+  const doRefresh = async (refreshToken) => {
+    try {
+      const newSession = await refreshSession(refreshToken);
+      if (newSession) {
+        applySession(newSession);
+      } else {
+        clearSession();
+      }
+    } catch {
+      clearSession();
+    }
+  };
+
+  // Load session on startup
   useEffect(() => {
     const stored = localStorage.getItem(SESSION_KEY);
     if (stored) {
       try {
         const s = JSON.parse(stored);
-        // Check if token is expired
-        if (s.expiresAt && Date.now() > s.expiresAt) {
-          // Try to refresh using refresh_token
-          if (s.refreshToken) {
-            refreshSession(s.refreshToken)
-              .then(newSession => {
-                if (newSession) {
-                  saveSession(newSession);
-                  setSession(newSession);
-                } else {
-                  clearSession();
-                }
-              })
-              .catch(() => clearSession())
-              .finally(() => setChecking(false));
-            return;
-          } else {
-            clearSession();
-          }
+        const isExpired = s.expiresAt && Date.now() > s.expiresAt;
+
+        if (isExpired && s.refreshToken) {
+          // Expired — try refresh before giving up
+          refreshSession(s.refreshToken)
+            .then(newSession => {
+              if (newSession) applySession(newSession);
+              else clearSession();
+            })
+            .catch(clearSession)
+            .finally(() => setChecking(false));
+          return;
+        } else if (isExpired) {
+          clearSession();
         } else {
-          setSession(s);
+          applySession(s);
         }
       } catch { clearSession(); }
     }
     setChecking(false);
+
+    return () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); };
   }, []);
-
-  // ── Auto-refresh token 5 mins before expiry ──
-  useEffect(() => {
-    if (!session?.refreshToken || !session?.expiresAt) return;
-    const msUntilRefresh = session.expiresAt - Date.now() - 5 * 60 * 1000;
-    if (msUntilRefresh <= 0) return;
-
-    const timer = setTimeout(async () => {
-      try {
-        const newSession = await refreshSession(session.refreshToken);
-        if (newSession) { saveSession(newSession); setSession(newSession); }
-        else handleLogout();
-      } catch { handleLogout(); }
-    }, msUntilRefresh);
-
-    return () => clearTimeout(timer);
-  }, [session]);
-
-  const saveSession = (s) => {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
-  };
-
-  const clearSession = () => {
-    localStorage.removeItem(SESSION_KEY);
-    setSession(null);
-    setChecking(false);
-  };
 
   const handleLogin = (token, user, refreshToken, expiresIn) => {
     const s = {
       token,
       user,
       refreshToken,
-      expiresAt: Date.now() + (expiresIn || 3600) * 1000,
+      expiresAt: Date.now() + ((expiresIn || 3600) * 1000),
     };
-    saveSession(s);
-    setSession(s);
+    applySession(s);
   };
 
   const handleLogout = async () => {
@@ -87,26 +96,26 @@ export default function Root() {
     clearSession();
   };
 
-  // Handle session expired error from App
   const handleSessionExpired = async () => {
     if (session?.refreshToken) {
       try {
         const newSession = await refreshSession(session.refreshToken);
-        if (newSession) { saveSession(newSession); setSession(newSession); return; }
+        if (newSession) { applySession(newSession); return; }
       } catch(_) {}
     }
-    handleLogout();
+    clearSession();
   };
 
   if (checking) return (
     <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#2C1F0E,#8B6F47)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
       <div style={{ width:40, height:40, border:"3px solid rgba(255,255,255,0.3)", borderTop:"3px solid #F5E6D3", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
-      <div style={{ color:"#C9A882", fontSize:12, letterSpacing:3 }}>LOADING</div>
+      <div style={{ color:"#C9A882", fontSize:12, letterSpacing:3, fontFamily:"Georgia,serif" }}>LOADING</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   if (!session) return <Auth onLogin={handleLogin} />;
+
   return (
     <App
       token={session.token}
