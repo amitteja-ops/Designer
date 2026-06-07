@@ -48,10 +48,10 @@ const emptyForm = {
   id: null, name: "", email: "", phone: "", address: "",
   projectType: "Residential", budget: "", timeline: "",
   rooms: [], dimensions: { length: "", width: "", height: "" },
-  style: "", palette: null, notes: "",
-  status: "Lead",
+  style: "", palette: null, notes: "", status: "Lead",
   quotation: "", previousQuotation: "", revisedQuotation: "",
   startDate: "", plywood: "", laminate: "", hardware: "",
+  glass: "", ceiling: "", lights: "", handles: "",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -153,7 +153,38 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   };
 
   const openNew    = () => { setForm({...emptyForm}); setActiveTab("personal"); setView("form"); };
-  const openEdit   = (c) => { setForm({...c}); setActiveTab("personal"); setView("form"); };
+  const openEdit   = (c) => {
+    // Explicitly map to form fields — never pass raw DB columns like id directly
+    setForm({
+      id:               c.id,
+      name:             c.name||"",
+      email:            c.email||"",
+      phone:            c.phone||"",
+      address:          c.address||"",
+      status:           c.status||"Lead",
+      projectType:      c.projectType||"Residential",
+      budget:           c.budget||"",
+      timeline:         c.timeline||"",
+      rooms:            c.rooms||[],
+      dimensions:       c.dimensions||{length:"",width:"",height:""},
+      style:            c.style||"",
+      palette:          c.palette||null,
+      notes:            c.notes||"",
+      quotation:        c.quotation||"",
+      previousQuotation:c.previousQuotation||"",
+      revisedQuotation: c.revisedQuotation||"",
+      startDate:        c.startDate||"",
+      plywood:          c.plywood||"",
+      laminate:         c.laminate||"",
+      hardware:         c.hardware||"",
+      glass:            c.glass||"",
+      ceiling:          c.ceiling||"",
+      lights:           c.lights||"",
+      handles:          c.handles||"",
+    });
+    setActiveTab("personal");
+    setView("form");
+  };
   const openDetail = (c) => { setSelectedId(c.id); setView("detail"); };
   const setF    = (k,v) => setForm(f=>({...f,[k]:v}));
   const setDim  = (k,v) => setForm(f=>({...f,dimensions:{...f.dimensions,[k]:v}}));

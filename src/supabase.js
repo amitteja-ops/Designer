@@ -53,17 +53,33 @@ export const sb = async (path, method="GET", body=null, token=null) => {
 };
 
 export const toRow = (f) => ({
-  name:f.name, email:f.email, phone:f.phone, address:f.address,
-  status:f.status, project_type:f.projectType, budget:f.budget, timeline:f.timeline,
-  rooms:f.rooms,
-  dim_length:f.dimensions.length?parseFloat(f.dimensions.length):null,
-  dim_width:f.dimensions.width?parseFloat(f.dimensions.width):null,
-  dim_height:f.dimensions.height?parseFloat(f.dimensions.height):null,
-  style:f.style,
-  palette:f.palette?JSON.stringify(f.palette):null,
-  notes:f.notes,
-  // New High Rise fields stored in notes as JSON suffix — or add columns in Supabase
-  // For now pack extra fields into the notes column as a structured suffix
+  name:         f.name,
+  email:        f.email,
+  phone:        f.phone,
+  address:      f.address,
+  status:       f.status,
+  project_type: f.projectType,
+  budget:       f.budget,
+  timeline:     f.timeline,
+  rooms:        f.rooms,
+  dim_length:   f.dimensions?.length ? parseFloat(f.dimensions.length) : null,
+  dim_width:    f.dimensions?.width  ? parseFloat(f.dimensions.width)  : null,
+  dim_height:   f.dimensions?.height ? parseFloat(f.dimensions.height) : null,
+  style:        f.style,
+  palette:      f.palette ? JSON.stringify(f.palette) : null,
+  notes:        f.notes,
+  // High Rise specific fields
+  quotation:          f.quotation          ? parseFloat(f.quotation)          : null,
+  previous_quotation: f.previousQuotation  ? parseFloat(f.previousQuotation)  : null,
+  revised_quotation:  f.revisedQuotation   ? parseFloat(f.revisedQuotation)   : null,
+  start_date:   f.startDate  || null,
+  plywood:      f.plywood    || null,
+  laminate:     f.laminate   || null,
+  hardware:     f.hardware   || null,
+  glass:        f.glass      || null,
+  ceiling:      f.ceiling    || null,
+  lights:       f.lights     || null,
+  handles:      f.handles    || null,
 });
 
 export const fromRow = (r) => ({
