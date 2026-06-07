@@ -285,12 +285,11 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
 
   // ── REPORT VIEW ───────────────────────────────────────────────────────
   if (view==="report" && selected) {
-    const reportDate = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
-    // Parse notes into sections
-    const noteLines = (selected.notes||"").split("\n").filter(l=>l.trim());
-    const scopeLines    = noteLines.filter(l=>/scope|drawing|living|bedroom|kitchen|ceiling|pooja|wardrobe|unit|partition/i.test(l));
-    const outOfScope    = noteLines.filter(l=>/out of scope|not included|excluded|accessories|appliances|curtain|mesh|invisible|ac copper|bathroom tile/i.test(l));
-    const discussions   = noteLines.filter(l=>!scopeLines.includes(l)&&!outOfScope.includes(l));
+    const reportDate  = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+    const noteLines   = (selected.notes||"").split("\n").filter(l=>l.trim());
+    const scopeLines  = noteLines.filter(l=>/drawing|living|bedroom|kitchen|ceiling|pooja|wardrobe|unit|partition|entrance|balcony|bathroom/i.test(l));
+    const outOfScope  = noteLines.filter(l=>/out of scope|not included|excluded|accessories|appliances|curtain|mesh|invisible|ac copper|bathroom tile/i.test(l));
+    const discussions = noteLines.filter(l=>!scopeLines.includes(l)&&!outOfScope.includes(l));
 
     const RS = {
       page:   { background:"#fff", minHeight:"100vh", fontFamily:"'Cormorant Garamond',Georgia,serif", color:"#1A0A00", padding:"0 0 60px" },
@@ -301,17 +300,17 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       row:    { display:"flex", justifyContent:"space-between", padding:"10px 0", borderBottom:"1px solid #F5EEEE", fontSize:14 },
       badge:  (bg,c)=>({ background:bg, color:c, padding:"3px 14px", borderRadius:20, fontSize:11, fontWeight:700, letterSpacing:1 }),
       payRow: { display:"flex", justifyContent:"space-between", alignItems:"center", background:"#FFF5F5", borderRadius:10, padding:"12px 18px", marginBottom:8, border:"1px solid #F0CCCC" },
-      bullet: { fontSize:14, lineHeight:2, color:"#2A1A1A", paddingLeft:16, position:"relative" },
+      bullet: { fontSize:14, lineHeight:2, color:"#2A1A1A", paddingLeft:16 },
     };
 
     return (
       <div style={RS.page}>
         <style>{`@media print { .no-print{display:none!important} body{margin:0} }`}</style>
 
-        {/* Print / Back bar */}
+        {/* Toolbar */}
         <div className="no-print" style={{ background:"#1A0A00", padding:"12px 32px", display:"flex", gap:12, alignItems:"center" }}>
-          <button onClick={()=>setView("detail")} style={{ background:"transparent", color:"#FFAAAA", border:"1px solid #FFAAAA", borderRadius:8, padding:"8px 18px", cursor:"pointer", fontFamily:"inherit", fontSize:12, letterSpacing:1 }}>← Back</button>
-          <button onClick={()=>window.print()} style={{ background:"#8B1A1A", color:"#fff", border:"none", borderRadius:8, padding:"8px 20px", cursor:"pointer", fontFamily:"inherit", fontSize:12, letterSpacing:1, fontWeight:700 }}>🖨 Print / Save PDF</button>
+          <button onClick={()=>setView("detail")} style={{ background:"transparent", color:"#FFAAAA", border:"1px solid #FFAAAA", borderRadius:8, padding:"8px 18px", cursor:"pointer", fontFamily:"inherit", fontSize:12 }}>← Back</button>
+          <button onClick={()=>window.print()} style={{ background:"#8B1A1A", color:"#fff", border:"none", borderRadius:8, padding:"8px 20px", cursor:"pointer", fontFamily:"inherit", fontSize:12, fontWeight:700 }}>🖨 Print / Save PDF</button>
           <span style={{ color:"#9A7070", fontSize:12 }}>Tip: In print dialog choose "Save as PDF"</span>
         </div>
 
@@ -331,32 +330,22 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
 
         <div style={RS.body}>
 
-          {/* Client Info */}
+          {/* 1. Client Info */}
           <div style={RS.section}>
             <div style={RS.sTitle}>Client Information</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 32px" }}>
-              {[
-                ["Client Name",   selected.name],
-                ["Phone",         selected.phone],
-                ["Email",         selected.email],
-                ["Project Type",  selected.projectType],
-                ["Address",       selected.address],
-                ["Interior Style",selected.style],
-                ["Start Date",    selected.startDate],
-                ["Duration",      selected.timeline],
+              {[["Client Name",selected.name],["Phone",selected.phone],["Email",selected.email],
+                ["Project Type",selected.projectType],["Address",selected.address],
+                ["Interior Style",selected.style],["Start Date",selected.startDate],["Duration",selected.timeline]
               ].filter(([,v])=>v).map(([l,v])=>(
-                <div key={l} style={RS.row}>
-                  <span style={{ color:"#9A7070" }}>{l}</span>
-                  <strong>{v}</strong>
-                </div>
+                <div key={l} style={RS.row}><span style={{ color:"#9A7070" }}>{l}</span><strong>{v}</strong></div>
               ))}
             </div>
           </div>
 
-          {/* Scope of Work */}
+          {/* 2. Scope of Work */}
           <div style={RS.section}>
             <div style={RS.sTitle}>Scope of Work</div>
-            {/* Rooms */}
             {(selected.rooms||[]).length>0 && (
               <div style={{ marginBottom:16 }}>
                 <div style={{ fontSize:12, letterSpacing:2, color:"#9A7070", textTransform:"uppercase", marginBottom:10 }}>Rooms Included</div>
@@ -365,37 +354,33 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 </div>
               </div>
             )}
-            {/* Dimensions */}
-            {(selected.dimensions?.length||selected.dimensions?.width) && (
+            {(selected.dimensions?.length&&selected.dimensions?.width) && (
               <div style={{ ...RS.row, marginBottom:8 }}>
                 <span style={{ color:"#9A7070" }}>Total Area</span>
                 <strong>{selected.dimensions.length} × {selected.dimensions.width} ft = {(selected.dimensions.length*selected.dimensions.width).toFixed(0)} sq ft</strong>
               </div>
             )}
-            {/* Scope notes */}
-            {scopeLines.length>0 && (
-              <div style={{ marginTop:12 }}>
-                {scopeLines.map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)}
-              </div>
-            )}
-            {scopeLines.length===0 && selected.notes && (
-              <div style={{ fontSize:14, lineHeight:1.9, color:"#2A1A1A", whiteSpace:"pre-wrap" }}>{selected.notes.split("\n").filter(l=>l.trim()).map((l,i)=><div key={i}>• {l}</div>)}</div>
-            )}
+            {scopeLines.length>0
+              ? scopeLines.map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)
+              : noteLines.length>0 && noteLines.map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)
+            }
           </div>
 
-          {/* Materials */}
+          {/* 3. Materials */}
           {(selected.plywood||selected.laminate||selected.hardware||selected.glass||selected.ceiling||selected.lights) && (
             <div style={RS.section}>
               <div style={RS.sTitle}>Material Specifications</div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 32px" }}>
-                {[["Plywood",selected.plywood],["Laminate",selected.laminate],["Hardware",selected.hardware],["Glass/Mirror",selected.glass],["Ceiling Board",selected.ceiling],["Ceiling Lights",selected.lights],["Kitchen Handles",selected.handles]].filter(([,v])=>v).map(([l,v])=>(
+                {[["Plywood",selected.plywood],["Laminate",selected.laminate],["Hardware",selected.hardware],
+                  ["Glass/Mirror",selected.glass],["Ceiling Board",selected.ceiling],["Ceiling Lights",selected.lights],["Kitchen Handles",selected.handles]
+                ].filter(([,v])=>v).map(([l,v])=>(
                   <div key={l} style={RS.row}><span style={{ color:"#9A7070" }}>{l}</span><strong>{v}</strong></div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Out of Scope */}
+          {/* 4. Out of Scope */}
           {outOfScope.length>0 && (
             <div style={RS.section}>
               <div style={RS.sTitle}>Out of Scope</div>
@@ -405,21 +390,15 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             </div>
           )}
 
-          {/* Budget */}
+          {/* 5. Budget */}
           <div style={RS.section}>
             <div style={RS.sTitle}>Budget Summary</div>
-            {selected.previousQuotation && (
-              <div style={RS.row}><span style={{ color:"#9A7070" }}>Previous Quotation</span><span style={{ textDecoration:"line-through", color:"#9A7070" }}>{fmt(selected.previousQuotation)}</span></div>
-            )}
-            {selected.revisedQuotation && (
-              <div style={RS.row}><span style={{ color:"#9A7070" }}>Revised Quotation</span><span>{fmt(selected.revisedQuotation)}</span></div>
-            )}
+            {selected.previousQuotation && <div style={RS.row}><span style={{ color:"#9A7070" }}>Previous Quotation</span><span style={{ textDecoration:"line-through", color:"#9A7070" }}>{fmt(selected.previousQuotation)}</span></div>}
+            {selected.revisedQuotation  && <div style={RS.row}><span style={{ color:"#9A7070" }}>Revised Quotation</span><span>{fmt(selected.revisedQuotation)}</span></div>}
             <div style={{ ...RS.row, borderBottom:"2px solid #8B1A1A", paddingBottom:12, marginBottom:20 }}>
               <span style={{ fontWeight:700, fontSize:16 }}>Final Quotation</span>
               <strong style={{ fontSize:22, color:"#8B1A1A" }}>{fmt(selected.quotation)||selected.budget||"TBD"}</strong>
             </div>
-
-            {/* Payment Schedule */}
             {selected.quotation && (
               <div>
                 <div style={{ fontSize:12, letterSpacing:2, color:"#9A7070", textTransform:"uppercase", marginBottom:12 }}>Payment Schedule</div>
@@ -436,7 +415,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             )}
           </div>
 
-          {/* Discussions / Other Notes */}
+          {/* 6. Discussions */}
           {discussions.length>0 && (
             <div style={RS.section}>
               <div style={RS.sTitle}>Discussions & Additional Notes</div>
