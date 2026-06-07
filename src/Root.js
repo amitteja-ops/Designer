@@ -10,11 +10,10 @@ export default function Root() {
   const [checking, setChecking] = useState(true);
   const timerRef = useRef(null);
 
-  // ── Save & schedule ───────────────────────────────────────────────
   const applySession = (s) => {
     localStorage.setItem(KEY, JSON.stringify(s));
     setSession(s);
-    scheduleRefresh(s);
+    startRefreshTimer(s);
   };
 
   const clearSession = () => {
@@ -23,16 +22,15 @@ export default function Root() {
     setSession(null);
   };
 
-  // ── Poll every 60s — refresh if within 10 mins of expiry ─────────
-  const scheduleRefresh = (s) => {
+  const startRefreshTimer = (s) => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(async () => {
-      const stored = localStorage.getItem(KEY);
-      if (!stored) return;
       try {
-        const current = JSON.parse(stored);
+        const raw = localStorage.getItem(KEY);
+        if (!raw) { clearSession(); return; }
+        const current = JSON.parse(raw);
         const minsLeft = (current.expiresAt - Date.now()) / 60000;
-        if (minsLeft < 10) {
+        if (minsLeft < 10 && current.refreshToken) {
           const refreshed = await refreshSession(current.refreshToken);
           if (refreshed) {
             localStorage.setItem(KEY, JSON.stringify(refreshed));
@@ -41,40 +39,57 @@ export default function Root() {
             clearSession();
           }
         }
-      } catch { clearSession(); }
-    }, 60 * 1000); // check every 60 seconds
+      } catch { /* silent */ }
+    }, 60000);
   };
 
-  // ── On startup ────────────────────────────────────────────────────
+  // ── On app load ───────────────────────────────────────────────────
   useEffect(() => {
-    const run = async () => {
-      const stored = localStorage.getItem(KEY);
-      if (!stored) { setChecking(false); return; }
+    const init = async () => {
+      // First check localStorage
+      const raw = localStorage.getItem(KEY);
+      if (!raw) { setChecking(false); return; }
+
       try {
-        const s = JSON.parse(stored);
+        const s = JSON.parse(raw);
+
+        // Validate session has required fields
+        if (!s.token || !s.user) {
+          clearSession();
+          setChecking(false);
+          return;
+        }
+
         const expired = s.expiresAt && Date.now() > s.expiresAt;
-        if (expired) {
+
+        if (expired && s.refreshToken) {
           // Try to silently refresh
           const refreshed = await refreshSession(s.refreshToken);
           if (refreshed) applySession(refreshed);
           else clearSession();
         } else {
+          // Valid session — restore it
           applySession(s);
         }
-      } catch { clearSession(); }
+      } catch {
+        clearSession();
+      }
+
       setChecking(false);
     };
-    run();
+
+    init();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
   const handleLogin = (token, user, refreshToken, expiresIn) => {
-    applySession({
+    const s = {
       token,
       user,
-      refreshToken,
+      refreshToken: refreshToken || null,
       expiresAt: Date.now() + ((expiresIn || 3600) * 1000),
-    });
+    };
+    applySession(s);
   };
 
   const handleLogout = async () => {
@@ -82,20 +97,22 @@ export default function Root() {
     clearSession();
   };
 
-  // Called by App when a 401 is received mid-session
   const handleSessionExpired = async () => {
-    const stored = localStorage.getItem(KEY);
-    if (stored) {
-      try {
-        const s = JSON.parse(stored);
-        const refreshed = await refreshSession(s.refreshToken);
-        if (refreshed) { applySession(refreshed); return true; }
-      } catch(_) {}
-    }
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s.refreshToken) {
+          const refreshed = await refreshSession(s.refreshToken);
+          if (refreshed) { applySession(refreshed); return true; }
+        }
+      }
+    } catch(_) {}
     clearSession();
     return false;
   };
 
+  // ── Loading screen ────────────────────────────────────────────────
   if (checking) return (
     <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#2C1F0E,#8B6F47)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
       <div style={{ width:40, height:40, border:"3px solid rgba(255,255,255,0.3)", borderTop:"3px solid #F5E6D3", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
@@ -105,5 +122,13 @@ export default function Root() {
   );
 
   if (!session) return <Auth onLogin={handleLogin} />;
-  return <App token={session.token} user={session.user} onLogout={handleLogout} onSessionExpired={handleSessionExpired} />;
+
+  return (
+    <App
+      token={session.token}
+      user={session.user}
+      onLogout={handleLogout}
+      onSessionExpired={handleSessionExpired}
+    />
+  );
 }
