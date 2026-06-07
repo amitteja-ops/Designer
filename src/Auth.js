@@ -9,38 +9,83 @@ export default function Auth({ onLogin }) {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
   const [success,  setSuccess]  = useState("");
+  const [debug,    setDebug]    = useState("");
 
   const S = {
-    page:  { minHeight:"100vh", background:"linear-gradient(135deg,#2C1F0E 0%,#5C3D1E 50%,#8B6F47 100%)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Cormorant Garamond',Georgia,serif" },
-    card:  { background:"#fff", borderRadius:24, padding:"48px 44px", width:400, boxShadow:"0 24px 60px rgba(0,0,0,0.3)" },
-    title: { fontSize:28, fontWeight:700, color:"#2C1F0E", letterSpacing:3, textTransform:"uppercase", textAlign:"center" },
-    sub:   { fontSize:11, color:"#C9A882", letterSpacing:6, marginTop:4, textAlign:"center", display:"block", marginBottom:36 },
-    label: { fontSize:11, letterSpacing:2, color:"#9A8070", textTransform:"uppercase", marginBottom:6, display:"block" },
-    input: { width:"100%", padding:"12px 16px", borderRadius:10, border:"1.5px solid #DDD0C0", fontFamily:"inherit", fontSize:14, color:"#2C1F0E", background:"#FDFAF6", outline:"none", boxSizing:"border-box", marginBottom:18 },
-    btn:   { width:"100%", padding:"14px", borderRadius:12, border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:13, letterSpacing:2, textTransform:"uppercase", fontWeight:700, background:"linear-gradient(135deg,#5C3D1E,#8B6F47)", color:"#fff", boxShadow:"0 4px 16px rgba(139,111,71,0.4)", marginTop:8 },
-    error: { background:"#FDF0F0", border:"1px solid #F5C6C6", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#721C24", marginBottom:16, lineHeight:1.5 },
-    success:{ background:"#F0FDF4", border:"1px solid #BBF7D0", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#166534", marginBottom:16, lineHeight:1.5 },
-    toggle:{ textAlign:"center", marginTop:20, fontSize:13, color:"#9A8070" },
-    link:  { color:"#8B6F47", cursor:"pointer", fontWeight:700, textDecoration:"underline" },
+    page:    { minHeight:"100vh", background:"linear-gradient(135deg,#2C1F0E 0%,#5C3D1E 50%,#8B6F47 100%)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Cormorant Garamond',Georgia,serif" },
+    card:    { background:"#fff", borderRadius:24, padding:"40px 36px", width:420, boxShadow:"0 24px 60px rgba(0,0,0,0.3)" },
+    title:   { fontSize:26, fontWeight:700, color:"#2C1F0E", letterSpacing:3, textTransform:"uppercase", textAlign:"center" },
+    sub:     { fontSize:11, color:"#C9A882", letterSpacing:6, marginTop:4, textAlign:"center", display:"block", marginBottom:32 },
+    label:   { fontSize:11, letterSpacing:2, color:"#9A8070", textTransform:"uppercase", marginBottom:6, display:"block" },
+    input:   { width:"100%", padding:"12px 16px", borderRadius:10, border:"1.5px solid #DDD0C0", fontFamily:"inherit", fontSize:14, color:"#2C1F0E", background:"#FDFAF6", outline:"none", boxSizing:"border-box", marginBottom:16 },
+    btn:     { width:"100%", padding:"14px", borderRadius:12, border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:13, letterSpacing:2, textTransform:"uppercase", fontWeight:700, background:"linear-gradient(135deg,#5C3D1E,#8B6F47)", color:"#fff", marginTop:8 },
+    error:   { background:"#FDF0F0", border:"1px solid #F5C6C6", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#721C24", marginBottom:14, lineHeight:1.6 },
+    success: { background:"#F0FDF4", border:"1px solid #BBF7D0", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#166534", marginBottom:14, lineHeight:1.6 },
+    debug:   { background:"#1E1E1E", color:"#A8D8A8", borderRadius:10, padding:"12px 14px", fontSize:11, fontFamily:"monospace", marginBottom:14, lineHeight:1.7, whiteSpace:"pre-wrap", wordBreak:"break-all" },
+    toggle:  { textAlign:"center", marginTop:18, fontSize:13, color:"#9A8070" },
+    link:    { color:"#8B6F47", cursor:"pointer", fontWeight:700, textDecoration:"underline" },
   };
 
   const handle = async () => {
-    setError(""); setSuccess("");
-    if (!email || !password) { setError("Please fill in all fields."); return; }
+    setError(""); setSuccess(""); setDebug("");
+    if (!email.trim() || !password) { setError("Please fill in all fields."); return; }
     if (mode==="signup" && password !== confirm) { setError("Passwords do not match."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+
     setLoading(true);
+    setDebug("Step 1: Calling Supabase signIn…");
+
     try {
-      if (mode==="login") {
-        const data = await signIn(email, password);
+      if (mode === "login") {
+        const data = await signIn(email.trim(), password);
+        setDebug(prev => prev + "\nStep 2: Response received\n" +
+          "access_token: " + (data.access_token ? "✓ EXISTS ("+data.access_token.substring(0,20)+"...)" : "✗ MISSING") + "\n" +
+          "refresh_token: " + (data.refresh_token ? "✓ EXISTS" : "✗ MISSING") + "\n" +
+          "user: " + (data.user?.email || "MISSING") + "\n" +
+          "expires_in: " + (data.expires_in || "MISSING")
+        );
+
+        if (!data.access_token) {
+          setDebug(prev => prev + "\nStep 3: ✗ No token — likely email not confirmed");
+          setError("Login failed: No token received. Did you confirm your email?");
+          setLoading(false);
+          return;
+        }
+
+        // Build session
+        const session = {
+          token:        data.access_token,
+          user:         data.user,
+          refreshToken: data.refresh_token || null,
+          expiresAt:    Date.now() + ((data.expires_in || 3600) * 1000),
+        };
+
+        setDebug(prev => prev + "\nStep 3: ✓ Session built\nStep 4: Saving to localStorage…");
+
+        // Save to localStorage directly
+        try {
+          localStorage.setItem("crm_session", JSON.stringify(session));
+          const verify = localStorage.getItem("crm_session");
+          setDebug(prev => prev + "\nStep 5: localStorage " + (verify ? "✓ SAVED" : "✗ FAILED"));
+        } catch(storageErr) {
+          setDebug(prev => prev + "\nStep 5: ✗ localStorage ERROR: " + storageErr.message);
+        }
+
+        setDebug(prev => prev + "\nStep 6: Calling onLogin…");
         onLogin(data.access_token, data.user, data.refresh_token, data.expires_in);
+        setDebug(prev => prev + "\nStep 7: onLogin called ✓");
+
       } else {
-        await signUp(email, password);
-        setSuccess("✓ Account created! Check your email to confirm, then log in.");
+        await signUp(email.trim(), password);
+        setSuccess("✓ Account created! Check your email to confirm it, then log in.");
         setMode("login"); setPassword(""); setConfirm("");
       }
-    } catch(e) { setError(e.message); }
-    finally { setLoading(false); }
+    } catch(e) {
+      setDebug(prev => prev + "\n✗ ERROR: " + e.message);
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,37 +94,42 @@ export default function Auth({ onLogin }) {
         <div style={S.title}>Maison Intérieur</div>
         <span style={S.sub}>Customer Registry</span>
 
-        <div style={{ fontSize:16, fontWeight:700, color:"#2C1F0E", marginBottom:24, textAlign:"center" }}>
+        <div style={{ fontSize:15, fontWeight:700, color:"#2C1F0E", marginBottom:18, textAlign:"center" }}>
           {mode==="login" ? "Sign in to your account" : "Create an account"}
         </div>
 
         {error   && <div style={S.error}>⚠️ {error}</div>}
         {success && <div style={S.success}>{success}</div>}
+        {debug   && <div style={S.debug}>{debug}</div>}
 
         <label style={S.label}>Email Address</label>
-        <input style={S.input} type="email" value={email} onChange={e=>setEmail(e.target.value)}
-          placeholder="you@example.com" onKeyDown={e=>e.key==="Enter"&&handle()} />
+        <input style={S.input} type="email" value={email}
+          onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"
+          autoComplete="email" onKeyDown={e=>e.key==="Enter"&&handle()} />
 
         <label style={S.label}>Password</label>
-        <input style={{ ...S.input, marginBottom:mode==="signup"?18:8 }} type="password" value={password}
-          onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&handle()} />
+        <input style={{ ...S.input, marginBottom:mode==="signup"?16:20 }}
+          type="password" value={password} onChange={e=>setPassword(e.target.value)}
+          placeholder="••••••••" autoComplete="current-password"
+          onKeyDown={e=>e.key==="Enter"&&handle()} />
 
         {mode==="signup" && <>
           <label style={S.label}>Confirm Password</label>
           <input style={S.input} type="password" value={confirm}
-            onChange={e=>setConfirm(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==="Enter"&&handle()} />
+            onChange={e=>setConfirm(e.target.value)} placeholder="••••••••"
+            onKeyDown={e=>e.key==="Enter"&&handle()} />
         </>}
 
         <button style={{ ...S.btn, opacity:loading?0.7:1 }} onClick={handle} disabled={loading}>
-          {loading ? "Please wait…" : mode==="login" ? "Sign In →" : "Create Account →"}
+          {loading ? "Signing in…" : mode==="login" ? "Sign In →" : "Create Account →"}
         </button>
 
         <div style={S.toggle}>
           {mode==="login"
-            ? <>Don't have an account? <span style={S.link} onClick={()=>{setMode("signup");setError("");}}>Sign up</span></>
-            : <>Already have an account? <span style={S.link} onClick={()=>{setMode("login");setError("");}}>Sign in</span></>}
+            ? <>No account? <span style={S.link} onClick={()=>{setMode("signup");setError("");setDebug("");}}>Sign up</span></>
+            : <>Have account? <span style={S.link} onClick={()=>{setMode("login");setError("");setDebug("");}}>Sign in</span></>}
         </div>
-        <div style={{ textAlign:"center", marginTop:20, fontSize:11, color:"#C9A882", letterSpacing:1 }}>🔒 Secured by Supabase Auth</div>
+        <div style={{ textAlign:"center", marginTop:16, fontSize:11, color:"#C9A882" }}>🔒 Secured by Supabase Auth</div>
       </div>
     </div>
   );
