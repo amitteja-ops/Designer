@@ -395,24 +395,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             <div style={RS.sTitle}>Budget Summary</div>
             {selected.previousQuotation && <div style={RS.row}><span style={{ color:"#9A7070" }}>Previous Quotation</span><span style={{ textDecoration:"line-through", color:"#9A7070" }}>{fmt(selected.previousQuotation)}</span></div>}
             {selected.revisedQuotation  && <div style={RS.row}><span style={{ color:"#9A7070" }}>Revised Quotation</span><span>{fmt(selected.revisedQuotation)}</span></div>}
-            <div style={{ ...RS.row, borderBottom:"2px solid #8B1A1A", paddingBottom:12, marginBottom:20 }}>
-              <span style={{ fontWeight:700, fontSize:16 }}>Final Quotation</span>
-              <strong style={{ fontSize:22, color:"#8B1A1A" }}>{fmt(selected.quotation)||selected.budget||"TBD"}</strong>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:"#8B1A1A", borderRadius:12, padding:"16px 20px", marginTop:12 }}>
+              <span style={{ fontWeight:700, fontSize:16, color:"#FFEEEE" }}>Final Quotation</span>
+              <strong style={{ fontSize:26, color:"#fff" }}>{fmt(selected.quotation)||selected.budget||"TBD"}</strong>
             </div>
-            {selected.quotation && (
-              <div>
-                <div style={{ fontSize:12, letterSpacing:2, color:"#9A7070", textTransform:"uppercase", marginBottom:12 }}>Payment Schedule</div>
-                {PAYMENT_PHASES.map((p,i)=>(
-                  <div key={i} style={RS.payRow}>
-                    <div>
-                      <div style={{ fontWeight:700, fontSize:13, color:"#8B1A1A" }}>{p.day} — {p.pct}%</div>
-                      <div style={{ fontSize:12, color:"#9A7070", marginTop:2 }}>{p.label}</div>
-                    </div>
-                    <div style={{ fontSize:18, fontWeight:700, color:"#8B1A1A" }}>{fmt(Math.round(Number(selected.quotation)*p.pct/100))}</div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* 6. Discussions */}
@@ -425,10 +411,75 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             </div>
           )}
 
+          {/* 7. Payment Terms */}
+          <div style={RS.section}>
+            <div style={RS.sTitle}>Payment Terms & Conditions</div>
+            <div style={{ display:"grid", gap:8, marginBottom:20 }}>
+              {PAYMENT_PHASES.map((p,i)=>(
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:16, background:"#FFF5F5", borderRadius:10, padding:"12px 18px", border:"1px solid #F0CCCC" }}>
+                  <div style={{ background:"#8B1A1A", color:"#fff", borderRadius:"50%", width:28, height:28, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:12, flexShrink:0 }}>{i+1}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:700, fontSize:13, color:"#8B1A1A" }}>{p.day} — {p.label}</div>
+                    <div style={{ fontSize:12, color:"#9A7070", marginTop:2 }}>Payment due: {p.pct}% of total project value{selected.quotation ? ` = ${fmt(Math.round(Number(selected.quotation)*p.pct/100))}` : ""}</div>
+                  </div>
+                  <div style={{ fontWeight:700, fontSize:16, color:"#8B1A1A" }}>{p.pct}%</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ background:"#FFFAFA", borderRadius:10, padding:"14px 18px", border:"1px solid #F0E0E0", fontSize:13, lineHeight:2, color:"#4A2A2A" }}>
+              <div>• All payments to be made via Bank Transfer / Cheque in favour of <strong>High Rise Interiors</strong></div>
+              <div>• Work will commence only after receipt of advance payment (35%)</div>
+              <div>• Each phase payment must be cleared before proceeding to the next phase</div>
+              <div>• Delay in payment may result in corresponding delay in project timeline</div>
+              <div>• GST applicable as per government norms and will be charged additionally</div>
+            </div>
+          </div>
+
+          {/* 8. Disclaimers */}
+          <div style={RS.section}>
+            <div style={RS.sTitle}>Disclaimers & Terms</div>
+            <div style={{ background:"#FFFFF8", borderRadius:12, padding:"20px 24px", border:"1.5px solid #E8E0C0", fontSize:13, lineHeight:2.1, color:"#4A4A2A" }}>
+              <div style={{ fontWeight:700, fontSize:14, color:"#5C4A00", marginBottom:10 }}>⚠️ Important Notes</div>
+              <div>1. <strong>Draft Quotation:</strong> This quotation is a draft version and may vary based on final quantity confirmation and material selection at the time of execution.</div>
+              <div>2. <strong>Material Prices:</strong> Prices are subject to change due to market fluctuations. Final pricing will be confirmed at the time of purchase order.</div>
+              <div>3. <strong>Scope Changes:</strong> Any additions or modifications to the agreed scope of work will be quoted and charged separately with prior written approval from the client.</div>
+              <div>4. <strong>Out of Scope Items:</strong> Items listed under "Out of Scope" are not included in this quotation and will be billed separately if required.</div>
+              <div>5. <strong>Project Timeline:</strong> The project duration of {selected.timeline||"agreed days"} is indicative. Delays due to civil work, client approvals, or material availability are not included in this timeline.</div>
+              <div>6. <strong>Warranty:</strong> High Rise Interiors provides a 1-year warranty on workmanship. Material warranty is subject to respective manufacturer terms.</div>
+              <div>7. <strong>Access & Site:</strong> Client to ensure uninterrupted site access during working hours. Delay in site access may affect the project timeline.</div>
+              <div>8. <strong>Dispute Resolution:</strong> Any disputes shall be subject to the jurisdiction of Hyderabad courts only.</div>
+            </div>
+          </div>
+
+          {/* 9. Signature Block */}
+          <div style={RS.section}>
+            <div style={RS.sTitle}>Agreement & Acceptance</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:32, marginTop:8 }}>
+              <div style={{ borderTop:"2px solid #1A0A00", paddingTop:12 }}>
+                <div style={{ fontSize:13, color:"#9A7070", marginBottom:4 }}>Client Signature & Date</div>
+                <div style={{ fontSize:14, fontWeight:700 }}>{selected.name}</div>
+                <div style={{ fontSize:12, color:"#9A7070" }}>{selected.address}</div>
+                <div style={{ marginTop:32, borderTop:"1px solid #9A7070", paddingTop:8, fontSize:11, color:"#9A7070" }}>Signature / Date</div>
+              </div>
+              <div style={{ borderTop:"2px solid #8B1A1A", paddingTop:12 }}>
+                <div style={{ fontSize:13, color:"#9A7070", marginBottom:4 }}>Authorised Signatory</div>
+                <div style={{ fontSize:14, fontWeight:700, color:"#8B1A1A" }}>High Rise Interiors</div>
+                <div style={{ fontSize:12, color:"#9A7070" }}>Hyderabad, Telangana</div>
+                <div style={{ marginTop:32, borderTop:"1px solid #9A7070", paddingTop:8, fontSize:11, color:"#9A7070" }}>Signature / Date / Stamp</div>
+              </div>
+            </div>
+          </div>
+
           {/* Footer */}
-          <div style={{ borderTop:"2px solid #F0E0E0", paddingTop:20, marginTop:40, display:"flex", justifyContent:"space-between", fontSize:12, color:"#9A7070" }}>
-            <span>High Rise Interiors — Confidential</span>
-            <span>Generated: {reportDate}</span>
+          <div style={{ borderTop:"2px solid #8B1A1A", paddingTop:20, marginTop:40 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#9A7070", marginBottom:8 }}>
+              <span>🏗 High Rise Interiors — Hyderabad, Telangana</span>
+              <span>Generated: {reportDate}</span>
+            </div>
+            <div style={{ fontSize:11, color:"#C0A0A0", textAlign:"center", lineHeight:1.8 }}>
+              This document is confidential and intended solely for {selected.name}. Unauthorised reproduction or distribution is prohibited.<br/>
+              The above quotation is a draft version and may vary based on quantity and material selection. All prices are in Indian Rupees (INR ₹).
+            </div>
           </div>
         </div>
       </div>
