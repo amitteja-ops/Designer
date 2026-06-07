@@ -3,107 +3,97 @@ import App from "./App";
 import Auth from "./Auth";
 import { signOut, refreshSession } from "./supabase";
 
-const SESSION_KEY = "crm_session";
+const KEY = "crm_session";
 
 export default function Root() {
   const [session,  setSession]  = useState(null);
   const [checking, setChecking] = useState(true);
-  const refreshTimer = useRef(null);
+  const timerRef = useRef(null);
 
-  const clearSession = () => {
-    localStorage.removeItem(SESSION_KEY);
-    setSession(null);
-    if (refreshTimer.current) clearTimeout(refreshTimer.current);
-  };
-
+  // ── Save & schedule ───────────────────────────────────────────────
   const applySession = (s) => {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    localStorage.setItem(KEY, JSON.stringify(s));
     setSession(s);
     scheduleRefresh(s);
   };
 
-  // Schedule a silent token refresh 10 mins before expiry
+  const clearSession = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    localStorage.removeItem(KEY);
+    setSession(null);
+  };
+
+  // ── Poll every 60s — refresh if within 10 mins of expiry ─────────
   const scheduleRefresh = (s) => {
-    if (refreshTimer.current) clearTimeout(refreshTimer.current);
-    if (!s?.refreshToken || !s?.expiresAt) return;
-
-    const delay = s.expiresAt - Date.now() - 10 * 60 * 1000; // 10 mins before expiry
-    if (delay <= 0) {
-      // Already close to expiry — refresh immediately
-      doRefresh(s.refreshToken);
-      return;
-    }
-    refreshTimer.current = setTimeout(() => doRefresh(s.refreshToken), delay);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(async () => {
+      const stored = localStorage.getItem(KEY);
+      if (!stored) return;
+      try {
+        const current = JSON.parse(stored);
+        const minsLeft = (current.expiresAt - Date.now()) / 60000;
+        if (minsLeft < 10) {
+          const refreshed = await refreshSession(current.refreshToken);
+          if (refreshed) {
+            localStorage.setItem(KEY, JSON.stringify(refreshed));
+            setSession(refreshed);
+          } else {
+            clearSession();
+          }
+        }
+      } catch { clearSession(); }
+    }, 60 * 1000); // check every 60 seconds
   };
 
-  const doRefresh = async (refreshToken) => {
-    try {
-      const newSession = await refreshSession(refreshToken);
-      if (newSession) {
-        applySession(newSession);
-      } else {
-        clearSession();
-      }
-    } catch {
-      clearSession();
-    }
-  };
-
-  // Load session on startup
+  // ── On startup ────────────────────────────────────────────────────
   useEffect(() => {
-    const stored = localStorage.getItem(SESSION_KEY);
-    if (stored) {
+    const run = async () => {
+      const stored = localStorage.getItem(KEY);
+      if (!stored) { setChecking(false); return; }
       try {
         const s = JSON.parse(stored);
-        const isExpired = s.expiresAt && Date.now() > s.expiresAt;
-
-        if (isExpired && s.refreshToken) {
-          // Expired — try refresh before giving up
-          refreshSession(s.refreshToken)
-            .then(newSession => {
-              if (newSession) applySession(newSession);
-              else clearSession();
-            })
-            .catch(clearSession)
-            .finally(() => setChecking(false));
-          return;
-        } else if (isExpired) {
-          clearSession();
+        const expired = s.expiresAt && Date.now() > s.expiresAt;
+        if (expired) {
+          // Try to silently refresh
+          const refreshed = await refreshSession(s.refreshToken);
+          if (refreshed) applySession(refreshed);
+          else clearSession();
         } else {
           applySession(s);
         }
       } catch { clearSession(); }
-    }
-    setChecking(false);
-
-    return () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); };
+      setChecking(false);
+    };
+    run();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
   const handleLogin = (token, user, refreshToken, expiresIn) => {
-    const s = {
+    applySession({
       token,
       user,
       refreshToken,
       expiresAt: Date.now() + ((expiresIn || 3600) * 1000),
-    };
-    applySession(s);
+    });
   };
 
   const handleLogout = async () => {
-    if (session?.token) {
-      try { await signOut(session.token); } catch(_) {}
-    }
+    if (session?.token) { try { await signOut(session.token); } catch(_) {} }
     clearSession();
   };
 
+  // Called by App when a 401 is received mid-session
   const handleSessionExpired = async () => {
-    if (session?.refreshToken) {
+    const stored = localStorage.getItem(KEY);
+    if (stored) {
       try {
-        const newSession = await refreshSession(session.refreshToken);
-        if (newSession) { applySession(newSession); return; }
+        const s = JSON.parse(stored);
+        const refreshed = await refreshSession(s.refreshToken);
+        if (refreshed) { applySession(refreshed); return true; }
       } catch(_) {}
     }
     clearSession();
+    return false;
   };
 
   if (checking) return (
@@ -115,13 +105,5 @@ export default function Root() {
   );
 
   if (!session) return <Auth onLogin={handleLogin} />;
-
-  return (
-    <App
-      token={session.token}
-      user={session.user}
-      onLogout={handleLogout}
-      onSessionExpired={handleSessionExpired}
-    />
-  );
+  return <App token={session.token} user={session.user} onLogout={handleLogout} onSessionExpired={handleSessionExpired} />;
 }
