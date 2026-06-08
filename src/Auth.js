@@ -91,7 +91,7 @@ export default function Auth({ onLogin }) {
   return (
     <div style={S.page}>
       <div style={S.card}>
-        <div style={S.title}>Maison Intérieur</div>
+        <div style={S.title}>High Rise Interiors</div>
         <span style={S.sub}>Customer Registry</span>
 
         <div style={{ fontSize:15, fontWeight:700, color:"#2C1F0E", marginBottom:18, textAlign:"center" }}>
