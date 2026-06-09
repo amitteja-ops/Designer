@@ -141,99 +141,40 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
   // ── Open edit — explicitly map every field ────────────────────────
-const openEdit = (c = {}) => {
-  const toStr = (v) =>
-    v === undefined || v === null ? "" : String(v);
-
-  setForm({
-    id: c.id ?? null,
-
-    name: c.name ?? "",
-    email: c.email ?? "",
-    phone: c.phone ?? "",
-    address: c.address ?? "",
-    status: c.status ?? "Lead",
-
-    projectType: c.project_type ?? "Residential",
-
-    budget: c.budget ?? "",
-    timeline: c.timeline ?? "",
-
-    startDate: toStr(c.start_date),
-
-    rooms: c.rooms ?? [],
-
-    dimensions: {
-      length: toStr(c.dim_length),
-      width: toStr(c.dim_width),
-      height: toStr(c.dim_height),
-    },
-
-    style: c.style ?? "",
-    notes: c.notes ?? "",
-
-    quotation: toStr(c.quotation),
-    previousQuotation: toStr(c.previous_quotation),
-    revisedQuotation: toStr(c.revised_quotation),
-
-    plywood: c.plywood ?? "",
-    laminate: c.laminate ?? "",
-    hardware: c.hardware ?? "",
-    glass: c.glass ?? "",
-    ceiling: c.ceiling ?? "",
-    lights: c.lights ?? "",
-    handles: c.handles ?? "",
-  });
-
-  setActiveTab("personal");
-  setView("form");
-};
-  
- const toRow = (f) => {
-  const toNum = (v) =>
-    v === undefined || v === null || v === "" ? null : Number(v);
-
-  return {
-    id: toNum(f.id),
-
-    name: f.name?.trim() ?? "",
-    email: f.email ?? "",
-
-    // FIXED: phone is numeric in your DB
-    phone: toNum(f.phone),
-
-    address: f.address ?? "",
-    status: f.status ?? "Lead",
-
-    project_type: f.projectType ?? "Residential",
-
-    budget: toNum(f.budget),
-    timeline: toNum(f.timeline),
-
-    start_date: f.startDate ?? "",
-    rooms: f.rooms ?? [],
-
-    dim_length: toNum(f.dimensions?.length),
-    dim_width: toNum(f.dimensions?.width),
-    dim_height: toNum(f.dimensions?.height),
-
-    style: f.style ?? "",
-    notes: f.notes ?? "",
-
-    previous_quotation: f.previousQuotation ?? "",
-    revised_quotation: f.revisedQuotation ?? "",
-    quotation: f.quotation ?? "",
-
-    plywood: f.plywood ?? "",
-    laminate: f.laminate ?? "",
-    hardware: f.hardware ?? "",
-    glass: f.glass ?? "",
-    ceiling: f.ceiling ?? "",
-    lights: f.lights ?? "",
-    handles: f.handles ?? "",
+  const openEdit = (c) => {
+    setForm({
+      id:                c.id                || null,
+      name:              c.name              || "",
+      email:             c.email             || "",
+      phone:             c.phone             || "",
+      address:           c.address           || "",
+      status:            c.status            || "Lead",
+      projectType:       c.projectType       || "Residential",
+      budget:            c.budget            || "",
+      timeline:          c.timeline          || "",
+      startDate:         c.startDate         || "",
+      rooms:             c.rooms             || [],
+      dimensions: {
+        length:          c.dimensions?.length || "",
+        width:           c.dimensions?.width  || "",
+        height:          c.dimensions?.height || "",
+      },
+      style:             c.style             || "",
+      notes:             c.notes             || "",
+      quotation:         c.quotation         || "",
+      previousQuotation: c.previousQuotation || "",
+      revisedQuotation:  c.revisedQuotation  || "",
+      plywood:           c.plywood           || "",
+      laminate:          c.laminate          || "",
+      hardware:          c.hardware          || "",
+      glass:             c.glass             || "",
+      ceiling:           c.ceiling           || "",
+      lights:            c.lights            || "",
+      handles:           c.handles           || "",
+    });
+    setActiveTab("personal");
+    setView("form");
   };
-};
-
 
   const openNew    = () => { setForm({...EMPTY}); setActiveTab("personal"); setView("form"); };
   const openDetail = (c) => { setSelectedId(c.id); setView("detail"); };
@@ -242,39 +183,22 @@ const openEdit = (c = {}) => {
   const toggleRoom = (r)    => setForm(f => ({...f, rooms: f.rooms.includes(r) ? f.rooms.filter(x=>x!==r) : [...f.rooms, r]}));
 
   const saveCustomer = async () => {
-  if (!form.name.trim()) {
-    showToast("Client name is required", "error");
-    return;
-  }
-
-  setSaving(true);
-
-  try {
-    const row = toRow(form);
-
-    if (form.id != null) {
-      await safeCall(t =>
-        sb(`${TABLE}?id=eq.${Number(form.id)}`, "PATCH", row, t)
-      );
-      showToast("✓ Client updated");
-    } else {
-      await safeCall(t =>
-        sb(TABLE, "POST", row, t)
-      );
-      showToast("✓ Client saved");
-    }
-
-    await fetchCustomers();
-    setView("list");
-
-  } catch (e) {
-    showToast("Save failed: " + e.message, "error");
-  } finally {
-    setSaving(false);
-  }
-};
-
-  
+    if (!form.name.trim()) { showToast("Client name is required", "error"); return; }
+    setSaving(true);
+    try {
+      const row = toRow(form);
+      if (form.id) {
+        await safeCall(t => sb(`${TABLE}?id=eq.${form.id}`, "PATCH", row, t));
+        showToast("✓ Client updated");
+      } else {
+        await safeCall(t => sb(TABLE, "POST", row, t));
+        showToast("✓ Client saved");
+      }
+      await fetchCustomers();
+      setView("list");
+    } catch(e) { showToast("Save failed: " + e.message, "error"); }
+    finally { setSaving(false); }
+  };
 
   const deleteCustomer = async (id) => {
     if (!window.confirm("Delete this client permanently?")) return;
