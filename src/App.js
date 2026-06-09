@@ -192,7 +192,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   budget: f.budget ? Number(f.budget) : null,
   timeline: f.timeline ? Number(f.timeline) : null,
 
-  startDate: f.startDate ?? "",
+  start_date: f.startDate ?? "",
   rooms: f.rooms ?? [],
 
   // Your DB columns (NUMERIC)
