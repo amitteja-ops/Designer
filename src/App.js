@@ -178,8 +178,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   setActiveTab("personal");
   setView("form");
 };
-  const toRow = (f) => ({
-  id: f.id != null ? Number(f.id) : null,
+ 
+
+const toRow = (f) => ({
+  id: f.id != null && f.id !== "" ? Number(f.id) : null,
 
   name: f.name?.trim() ?? "",
   email: f.email ?? "",
@@ -187,27 +189,31 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   address: f.address ?? "",
   status: f.status ?? "Lead",
 
-  // corrected
   project_type: f.projectType ?? "Residential",
 
   // numeric-safe
-  budget: f.budget ? Number(f.budget) : null,
-  timeline: f.timeline ? Number(f.timeline) : null,
+  budget: f.budget && f.budget !== "" ? Number(f.budget) : null,
+  timeline: f.timeline && f.timeline !== "" ? Number(f.timeline) : null,
 
-  // corrected
   start_date: f.startDate ?? "",
-
   rooms: f.rooms ?? [],
 
   // numeric-safe + matches your DB
-  dim_length: f.dimensions?.length ? Number(f.dimensions.length) : null,
-  dim_width:  f.dimensions?.width  ? Number(f.dimensions.width)  : null,
-  dim_height: f.dimensions?.height ? Number(f.dimensions.height) : null,
+  dim_length: f.dimensions?.length && f.dimensions.length !== "" 
+    ? Number(f.dimensions.length) 
+    : null,
+
+  dim_width: f.dimensions?.width && f.dimensions.width !== "" 
+    ? Number(f.dimensions.width) 
+    : null,
+
+  dim_height: f.dimensions?.height && f.dimensions.height !== "" 
+    ? Number(f.dimensions.height) 
+    : null,
 
   style: f.style ?? "",
   notes: f.notes ?? "",
 
-  // corrected
   previous_quotation: f.previousQuotation ?? "",
   revised_quotation: f.revisedQuotation ?? "",
   quotation: f.quotation ?? "",
@@ -220,7 +226,6 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   lights: f.lights ?? "",
   handles: f.handles ?? "",
 });
-
 
 
   const openNew    = () => { setForm({...EMPTY}); setActiveTab("personal"); setView("form"); };
