@@ -141,31 +141,41 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
   // ── Open edit — explicitly map every field ────────────────────────
- const openEdit = (c = {}) => {
+const openEdit = (c = {}) => {
+  const toStr = (v) =>
+    v === undefined || v === null ? "" : String(v);
+
   setForm({
-    id: c.id != null ? Number(c.id) : null,
+    id: c.id ?? null,
+
     name: c.name ?? "",
     email: c.email ?? "",
     phone: c.phone ?? "",
     address: c.address ?? "",
     status: c.status ?? "Lead",
-    project_type: c.projectType ?? "Residential",
+
+    projectType: c.project_type ?? "Residential",
+
     budget: c.budget ?? "",
     timeline: c.timeline ?? "",
-    start_date: c.startDate ?? "",
+
+    startDate: toStr(c.start_date),
+
     rooms: c.rooms ?? [],
 
     dimensions: {
-      dim_length: c.dimensions?.length ?? "",
-      dim_width:  c.dimensions?.width  ?? "",
-      dim_height: c.dimensions?.height ?? "",
+      length: toStr(c.dim_length),
+      width: toStr(c.dim_width),
+      height: toStr(c.dim_height),
     },
 
     style: c.style ?? "",
     notes: c.notes ?? "",
-    quotation: c.quotation ?? "",
-    previous_quotation: c.previousQuotation ?? "",
-    revised_quotation: c.revisedQuotation ?? "",
+
+    quotation: toStr(c.quotation),
+    previousQuotation: toStr(c.previous_quotation),
+    revisedQuotation: toStr(c.revised_quotation),
+
     plywood: c.plywood ?? "",
     laminate: c.laminate ?? "",
     hardware: c.hardware ?? "",
@@ -178,6 +188,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   setActiveTab("personal");
   setView("form");
 };
+  
  const toRow = (f) => {
   const toNum = (v) =>
     v === undefined || v === null || v === "" ? null : Number(v);
