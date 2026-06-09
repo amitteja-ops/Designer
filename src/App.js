@@ -143,7 +143,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   // ── Open edit — explicitly map every field ────────────────────────
   const openEdit = (c) => {
     setForm({
-      id:                c.id                || null,
+      id:                c.id                ?? null,
       name:              c.name              || "",
       email:             c.email             || "",
       phone:             c.phone             || "",
