@@ -156,9 +156,9 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     rooms: c.rooms ?? [],
 
     dimensions: {
-      length: c.dimensions?.length ?? "",
-      width:  c.dimensions?.width  ?? "",
-      height: c.dimensions?.height ?? "",
+      dim_length: c.dimensions?.length ?? "",
+      dim_width:  c.dimensions?.width  ?? "",
+      dim_height: c.dimensions?.height ?? "",
     },
 
     style: c.style ?? "",
@@ -198,9 +198,9 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   rooms: f.rooms ?? [],
 
   // Dimensions (your DB has separate columns)
-  length: f.dimensions?.length ?? "",
-  width:  f.dimensions?.width  ?? "",
-  height: f.dimensions?.height ?? "",
+  dim_length: f.dimensions?.length ?? "",
+  dim_width:  f.dimensions?.width  ?? "",
+  dim_height: f.dimensions?.height ?? "",
 
   // Style & notes
   style: f.style ?? "",
