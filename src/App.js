@@ -143,7 +143,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   // ── Open edit — explicitly map every field ────────────────────────
  const openEdit = (c = {}) => {
   setForm({
-    id: c.id ?? null,
+    id: c.id != null ? Number(c.id) : null,
     name: c.name ?? "",
     email: c.email ?? "",
     phone: c.phone ?? "",
@@ -179,7 +179,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   setView("form");
 };
   const toRow = (f) => ({
-  id: f.id ?? null,
+  id: f.id != null ? Number(f.id) : null,
 
   // Basic info
   name: f.name?.trim() ?? "",
@@ -229,22 +229,39 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const toggleRoom = (r)    => setForm(f => ({...f, rooms: f.rooms.includes(r) ? f.rooms.filter(x=>x!==r) : [...f.rooms, r]}));
 
   const saveCustomer = async () => {
-    if (!form.name.trim()) { showToast("Client name is required", "error"); return; }
-    setSaving(true);
-    try {
-      const row = toRow(form);
-      if (form.id) {
-        await safeCall(t => sb(`${TABLE}?id=eq.${form.id}`, "PATCH", row, t));
-        showToast("✓ Client updated");
-      } else {
-        await safeCall(t => sb(TABLE, "POST", row, t));
-        showToast("✓ Client saved");
-      }
-      await fetchCustomers();
-      setView("list");
-    } catch(e) { showToast("Save failed: " + e.message, "error"); }
-    finally { setSaving(false); }
-  };
+  if (!form.name.trim()) {
+    showToast("Client name is required", "error");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    const row = toRow(form);
+
+    if (form.id != null) {
+      await safeCall(t =>
+        sb(`${TABLE}?id=eq.${Number(form.id)}`, "PATCH", row, t)
+      );
+      showToast("✓ Client updated");
+    } else {
+      await safeCall(t =>
+        sb(TABLE, "POST", row, t)
+      );
+      showToast("✓ Client saved");
+    }
+
+    await fetchCustomers();
+    setView("list");
+
+  } catch (e) {
+    showToast("Save failed: " + e.message, "error");
+  } finally {
+    setSaving(false);
+  }
+};
+
+  
 
   const deleteCustomer = async (id) => {
     if (!window.confirm("Delete this client permanently?")) return;
