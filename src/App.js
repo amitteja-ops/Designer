@@ -181,37 +181,32 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const toRow = (f) => ({
   id: f.id != null ? Number(f.id) : null,
 
-  // Basic info
   name: f.name?.trim() ?? "",
   email: f.email ?? "",
   phone: f.phone ?? "",
   address: f.address ?? "",
   status: f.status ?? "Lead",
-  project_type: f.projectType ?? "Residential",
+  projectType: f.projectType ?? "Residential",
 
-  // Project details
-  budget: f.budget ?? "",
-  timeline: f.timeline ?? "",
-  start_date: f.startDate ?? "",
+  // Numeric fields must be numbers or null
+  budget: f.budget ? Number(f.budget) : null,
+  timeline: f.timeline ? Number(f.timeline) : null,
 
-  // Arrays
+  startDate: f.startDate ?? "",
   rooms: f.rooms ?? [],
 
-  // Dimensions (your DB has separate columns)
-  dim_length: f.dimensions?.length ?? "",
-  dim_width:  f.dimensions?.width  ?? "",
-  dim_height: f.dimensions?.height ?? "",
+  // Your DB columns (NUMERIC)
+  dim_length: f.dimensions?.length ? Number(f.dimensions.length) : null,
+  dim_width:  f.dimensions?.width  ? Number(f.dimensions.width)  : null,
+  dim_height: f.dimensions?.height ? Number(f.dimensions.height) : null,
 
-  // Style & notes
   style: f.style ?? "",
   notes: f.notes ?? "",
 
-  // Quotation fields
   quotation: f.quotation ?? "",
-  previous_quotation: f.previousQuotation ?? "",
-  revised_quotation: f.revisedQuotation ?? "",
+  previousQuotation: f.previousQuotation ?? "",
+  revisedQuotation: f.revisedQuotation ?? "",
 
-  // Materials
   plywood: f.plywood ?? "",
   laminate: f.laminate ?? "",
   hardware: f.hardware ?? "",
