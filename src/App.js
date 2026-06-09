@@ -141,40 +141,78 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
   // ── Open edit — explicitly map every field ────────────────────────
-  const openEdit = (c) => {
-    setForm({
-      id:                c.id                ?? null,
-      name:              c.name              || "",
-      email:             c.email             || "",
-      phone:             c.phone             || "",
-      address:           c.address           || "",
-      status:            c.status            || "Lead",
-      projectType:       c.projectType       || "Residential",
-      budget:            c.budget            || "",
-      timeline:          c.timeline          || "",
-      startDate:         c.startDate         || "",
-      rooms:             c.rooms             || [],
-      dimensions: {
-        length:          c.dimensions?.length || "",
-        width:           c.dimensions?.width  || "",
-        height:          c.dimensions?.height || "",
-      },
-      style:             c.style             || "",
-      notes:             c.notes             || "",
-      quotation:         c.quotation         || "",
-      previousQuotation: c.previousQuotation || "",
-      revisedQuotation:  c.revisedQuotation  || "",
-      plywood:           c.plywood           || "",
-      laminate:          c.laminate          || "",
-      hardware:          c.hardware          || "",
-      glass:             c.glass             || "",
-      ceiling:           c.ceiling           || "",
-      lights:            c.lights            || "",
-      handles:           c.handles           || "",
-    });
-    setActiveTab("personal");
-    setView("form");
-  };
+ const openEdit = (c = {}) => {
+  setForm({
+    id: c.id ?? null,
+    name: c.name ?? "",
+    email: c.email ?? "",
+    phone: c.phone ?? "",
+    address: c.address ?? "",
+    status: c.status ?? "Lead",
+    projectType: c.projectType ?? "Residential",
+    budget: c.budget ?? "",
+    timeline: c.timeline ?? "",
+    startDate: c.startDate ?? "",
+    rooms: c.rooms ?? [],
+
+    dimensions: {
+      length: c.dimensions?.length ?? "",
+      width:  c.dimensions?.width  ?? "",
+      height: c.dimensions?.height ?? "",
+    },
+
+    style: c.style ?? "",
+    notes: c.notes ?? "",
+    quotation: c.quotation ?? "",
+    previousQuotation: c.previousQuotation ?? "",
+    revisedQuotation: c.revisedQuotation ?? "",
+    plywood: c.plywood ?? "",
+    laminate: c.laminate ?? "",
+    hardware: c.hardware ?? "",
+    glass: c.glass ?? "",
+    ceiling: c.ceiling ?? "",
+    lights: c.lights ?? "",
+    handles: c.handles ?? "",
+  });
+
+  setActiveTab("personal");
+  setView("form");
+};
+  const toRow = (f) => ({
+  id: f.id ?? null,
+
+  name: f.name?.trim() ?? "",
+  email: f.email ?? "",
+  phone: f.phone ?? "",
+  address: f.address ?? "",
+  status: f.status ?? "Lead",
+  projectType: f.projectType ?? "Residential",
+
+  budget: f.budget ?? "",
+  timeline: f.timeline ?? "",
+  startDate: f.startDate ?? "",
+
+  rooms: f.rooms ?? [],
+
+  dimensions_length: f.dimensions?.length ?? "",
+  dimensions_width:  f.dimensions?.width  ?? "",
+  dimensions_height: f.dimensions?.height ?? "",
+
+  style: f.style ?? "",
+  notes: f.notes ?? "",
+
+  quotation: f.quotation ?? "",
+  previousQuotation: f.previousQuotation ?? "",
+  revisedQuotation: f.revisedQuotation ?? "",
+
+  plywood: f.plywood ?? "",
+  laminate: f.laminate ?? "",
+  hardware: f.hardware ?? "",
+  glass: f.glass ?? "",
+  ceiling: f.ceiling ?? "",
+  lights: f.lights ?? "",
+  handles: f.handles ?? "",
+});
 
   const openNew    = () => { setForm({...EMPTY}); setActiveTab("personal"); setView("form"); };
   const openDetail = (c) => { setSelectedId(c.id); setView("detail"); };
