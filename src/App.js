@@ -186,16 +186,20 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   phone: f.phone ?? "",
   address: f.address ?? "",
   status: f.status ?? "Lead",
+
+  // corrected
   project_type: f.projectType ?? "Residential",
 
-  // Numeric fields must be numbers or null
+  // numeric-safe
   budget: f.budget ? Number(f.budget) : null,
   timeline: f.timeline ? Number(f.timeline) : null,
 
+  // corrected
   start_date: f.startDate ?? "",
+
   rooms: f.rooms ?? [],
 
-  // Your DB columns (NUMERIC)
+  // numeric-safe + matches your DB
   dim_length: f.dimensions?.length ? Number(f.dimensions.length) : null,
   dim_width:  f.dimensions?.width  ? Number(f.dimensions.width)  : null,
   dim_height: f.dimensions?.height ? Number(f.dimensions.height) : null,
@@ -203,9 +207,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   style: f.style ?? "",
   notes: f.notes ?? "",
 
-  quotation: f.quotation ?? "",
+  // corrected
   previous_quotation: f.previousQuotation ?? "",
   revised_quotation: f.revisedQuotation ?? "",
+  quotation: f.quotation ?? "",
 
   plywood: f.plywood ?? "",
   laminate: f.laminate ?? "",
@@ -215,6 +220,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   lights: f.lights ?? "",
   handles: f.handles ?? "",
 });
+
 
 
   const openNew    = () => { setForm({...EMPTY}); setActiveTab("personal"); setView("form"); };
