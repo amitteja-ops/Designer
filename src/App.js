@@ -149,10 +149,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     phone: c.phone ?? "",
     address: c.address ?? "",
     status: c.status ?? "Lead",
-    projectType: c.projectType ?? "Residential",
+    project_type: c.projectType ?? "Residential",
     budget: c.budget ?? "",
     timeline: c.timeline ?? "",
-    startDate: c.startDate ?? "",
+    start_date: c.startDate ?? "",
     rooms: c.rooms ?? [],
 
     dimensions: {
@@ -187,12 +187,12 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   phone: f.phone ?? "",
   address: f.address ?? "",
   status: f.status ?? "Lead",
-  projectType: f.projectType ?? "Residential",
+  project_type: f.projectType ?? "Residential",
 
   // Project details
   budget: f.budget ?? "",
   timeline: f.timeline ?? "",
-  startDate: f.startDate ?? "",
+  start_date: f.startDate ?? "",
 
   // Arrays
   rooms: f.rooms ?? [],
