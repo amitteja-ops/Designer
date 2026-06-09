@@ -178,54 +178,50 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   setActiveTab("personal");
   setView("form");
 };
- 
+ const toRow = (f) => {
+  const toNum = (v) =>
+    v === undefined || v === null || v === "" ? null : Number(v);
 
-const toRow = (f) => ({
-  id: f.id != null && f.id !== "" ? Number(f.id) : null,
+  return {
+    id: toNum(f.id),
 
-  name: f.name?.trim() ?? "",
-  email: f.email ?? "",
-  phone: f.phone ?? "",
-  address: f.address ?? "",
-  status: f.status ?? "Lead",
+    name: f.name?.trim() ?? "",
+    email: f.email ?? "",
 
-  project_type: f.projectType ?? "Residential",
+    // FIXED: phone is numeric in your DB
+    phone: toNum(f.phone),
 
-  // numeric-safe
-  budget: f.budget && f.budget !== "" ? Number(f.budget) : null,
-  timeline: f.timeline && f.timeline !== "" ? Number(f.timeline) : null,
+    address: f.address ?? "",
+    status: f.status ?? "Lead",
 
-  start_date: f.startDate ?? "",
-  rooms: f.rooms ?? [],
+    project_type: f.projectType ?? "Residential",
 
-  // numeric-safe + matches your DB
-  dim_length: f.dimensions?.length && f.dimensions.length !== "" 
-    ? Number(f.dimensions.length) 
-    : null,
+    budget: toNum(f.budget),
+    timeline: toNum(f.timeline),
 
-  dim_width: f.dimensions?.width && f.dimensions.width !== "" 
-    ? Number(f.dimensions.width) 
-    : null,
+    start_date: f.startDate ?? "",
+    rooms: f.rooms ?? [],
 
-  dim_height: f.dimensions?.height && f.dimensions.height !== "" 
-    ? Number(f.dimensions.height) 
-    : null,
+    dim_length: toNum(f.dimensions?.length),
+    dim_width: toNum(f.dimensions?.width),
+    dim_height: toNum(f.dimensions?.height),
 
-  style: f.style ?? "",
-  notes: f.notes ?? "",
+    style: f.style ?? "",
+    notes: f.notes ?? "",
 
-  previous_quotation: f.previousQuotation ?? "",
-  revised_quotation: f.revisedQuotation ?? "",
-  quotation: f.quotation ?? "",
+    previous_quotation: f.previousQuotation ?? "",
+    revised_quotation: f.revisedQuotation ?? "",
+    quotation: f.quotation ?? "",
 
-  plywood: f.plywood ?? "",
-  laminate: f.laminate ?? "",
-  hardware: f.hardware ?? "",
-  glass: f.glass ?? "",
-  ceiling: f.ceiling ?? "",
-  lights: f.lights ?? "",
-  handles: f.handles ?? "",
-});
+    plywood: f.plywood ?? "",
+    laminate: f.laminate ?? "",
+    hardware: f.hardware ?? "",
+    glass: f.glass ?? "",
+    ceiling: f.ceiling ?? "",
+    lights: f.lights ?? "",
+    handles: f.handles ?? "",
+  };
+};
 
 
   const openNew    = () => { setForm({...EMPTY}); setActiveTab("personal"); setView("form"); };
