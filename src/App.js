@@ -164,8 +164,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     style: c.style ?? "",
     notes: c.notes ?? "",
     quotation: c.quotation ?? "",
-    previousQuotation: c.previousQuotation ?? "",
-    revisedQuotation: c.revisedQuotation ?? "",
+    previous_quotation: c.previousQuotation ?? "",
+    revised_quotation: c.revisedQuotation ?? "",
     plywood: c.plywood ?? "",
     laminate: c.laminate ?? "",
     hardware: c.hardware ?? "",
@@ -208,8 +208,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
 
   // Quotation fields
   quotation: f.quotation ?? "",
-  previousQuotation: f.previousQuotation ?? "",
-  revisedQuotation: f.revisedQuotation ?? "",
+  previous_quotation: f.previousQuotation ?? "",
+  revised_quotation: f.revisedQuotation ?? "",
 
   // Materials
   plywood: f.plywood ?? "",
