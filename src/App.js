@@ -181,6 +181,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const toRow = (f) => ({
   id: f.id ?? null,
 
+  // Basic info
   name: f.name?.trim() ?? "",
   email: f.email ?? "",
   phone: f.phone ?? "",
@@ -188,23 +189,29 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   status: f.status ?? "Lead",
   projectType: f.projectType ?? "Residential",
 
+  // Project details
   budget: f.budget ?? "",
   timeline: f.timeline ?? "",
   startDate: f.startDate ?? "",
 
+  // Arrays
   rooms: f.rooms ?? [],
 
-  dimensions_length: f.dimensions?.length ?? "",
-  dimensions_width:  f.dimensions?.width  ?? "",
-  dimensions_height: f.dimensions?.height ?? "",
+  // Dimensions (your DB has separate columns)
+  length: f.dimensions?.length ?? "",
+  width:  f.dimensions?.width  ?? "",
+  height: f.dimensions?.height ?? "",
 
+  // Style & notes
   style: f.style ?? "",
   notes: f.notes ?? "",
 
+  // Quotation fields
   quotation: f.quotation ?? "",
   previousQuotation: f.previousQuotation ?? "",
   revisedQuotation: f.revisedQuotation ?? "",
 
+  // Materials
   plywood: f.plywood ?? "",
   laminate: f.laminate ?? "",
   hardware: f.hardware ?? "",
@@ -213,6 +220,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   lights: f.lights ?? "",
   handles: f.handles ?? "",
 });
+
 
   const openNew    = () => { setForm({...EMPTY}); setActiveTab("personal"); setView("form"); };
   const openDetail = (c) => { setSelectedId(c.id); setView("detail"); };
