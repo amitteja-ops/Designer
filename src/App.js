@@ -186,7 +186,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   phone: f.phone ?? "",
   address: f.address ?? "",
   status: f.status ?? "Lead",
-  projectType: f.projectType ?? "Residential",
+  project_type: f.projectType ?? "Residential",
 
   // Numeric fields must be numbers or null
   budget: f.budget ? Number(f.budget) : null,
@@ -204,8 +204,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   notes: f.notes ?? "",
 
   quotation: f.quotation ?? "",
-  previousQuotation: f.previousQuotation ?? "",
-  revisedQuotation: f.revisedQuotation ?? "",
+  previous_quotation: f.previousQuotation ?? "",
+  revised_quotation: f.revisedQuotation ?? "",
 
   plywood: f.plywood ?? "",
   laminate: f.laminate ?? "",
