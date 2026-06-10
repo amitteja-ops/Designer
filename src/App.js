@@ -29,6 +29,7 @@ const EMPTY = {
   style:"", notes:"",
   quotation:"", previousQuotation:"", revisedQuotation:"",
   plywood:"", laminate:"", hardware:"", glass:"", ceiling:"", lights:"", handles:"",
+  roomDetails:{},
 };
 
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
@@ -171,6 +172,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       ceiling:           c.ceiling           || "",
       lights:            c.lights            || "",
       handles:           c.handles           || "",
+      roomDetails:       c.roomDetails       || {},
     });
     setActiveTab("personal");
     setView("form");
@@ -596,9 +598,30 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           <div>
             <div style={{ ...S.card,marginBottom:16 }}>
               <div style={S.sec}>Design & Scope</div>
-              {selected.style && <div style={{ marginBottom:10 }}><span style={{ color:C.muted,fontSize:13 }}>Style: </span><strong>{selected.style}</strong></div>}
-              {(selected.dimensions?.length||selected.dimensions?.width) && <div style={{ marginBottom:10 }}><span style={{ color:C.muted,fontSize:13 }}>Area: </span><strong>{selected.dimensions.length} × {selected.dimensions.width} ft</strong></div>}
-              {(selected.rooms||[]).length>0 && <div style={{ display:"flex",flexWrap:"wrap",gap:6 }}>{selected.rooms.map(r=><span key={r} style={{ background:C.light,color:C.red,padding:"4px 12px",borderRadius:20,fontSize:12 }}>{r}</span>)}</div>}
+              {selected.style && <div style={{ marginBottom:12 }}><span style={{ color:C.muted,fontSize:13 }}>Style: </span><strong>{selected.style}</strong></div>}
+              {(selected.rooms||[]).length>0 && (
+                <div>
+                  {selected.rooms.map(r => {
+                    const rd = selected.roomDetails?.[r] || {};
+                    const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : null;
+                    return (
+                      <div key={r} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}` }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+                          <span style={{ fontWeight:700, fontSize:13, color:C.red }}>🏠 {r}</span>
+                          {area && <span style={{ fontSize:12, color:C.muted }}>{rd.length} × {rd.width} ft = <strong>{area} sq ft</strong></span>}
+                        </div>
+                        {rd.height && <div style={{ fontSize:12, color:C.muted, marginBottom:4 }}>Ceiling: {rd.height} ft</div>}
+                        {rd.notes && <div style={{ fontSize:12, color:C.dark }}>{rd.notes}</div>}
+                        {(rd.photos||[]).length>0 && (
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:8 }}>
+                            {rd.photos.map((p,i)=>(<img key={i} src={p} alt={r} style={{ width:80, height:80, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.border}` }}/>))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             {(selected.plywood||selected.laminate||selected.hardware) && (
               <div style={{ ...S.card,marginBottom:16 }}>
@@ -777,31 +800,120 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* ── DIMENSIONS ── */}
           {activeTab==="dimensions" && (
             <div>
-              <div style={S.sec}>House Dimensions</div>
-              <div style={S.row}>
-                <Field label="Length (ft)">
-                  <input style={S.input} type="number" value={form.dimensions.length} onChange={e=>setDim("length",e.target.value)} placeholder="0"/>
-                </Field>
-                <Field label="Width (ft)">
-                  <input style={S.input} type="number" value={form.dimensions.width} onChange={e=>setDim("width",e.target.value)} placeholder="0"/>
-                </Field>
-                <Field label="Ceiling Height (ft)">
-                  <input style={S.input} type="number" value={form.dimensions.height} onChange={e=>setDim("height",e.target.value)} placeholder="0"/>
-                </Field>
+              <div style={S.sec}>Select Rooms & Enter Dimensions</div>
+              <div style={{ fontSize:13, color:C.muted, marginBottom:16, lineHeight:1.7 }}>
+                Select each room, enter its dimensions and upload a photo. All measurements in feet.
               </div>
-              {form.dimensions.length && form.dimensions.width && (
-                <div style={{ background:C.light,borderRadius:12,padding:"14px 18px",marginBottom:20,border:`1px solid ${C.border}` }}>
-                  <div style={{ fontSize:11,letterSpacing:2,color:C.muted,textTransform:"uppercase",marginBottom:8 }}>Calculated</div>
-                  <div style={{ display:"flex",gap:32 }}>
-                    <div><span style={{ color:C.muted,fontSize:13 }}>Area: </span><strong>{(form.dimensions.length*form.dimensions.width).toFixed(0)} sq ft</strong></div>
-                    {form.dimensions.height && <div><span style={{ color:C.muted,fontSize:13 }}>Volume: </span><strong>{(form.dimensions.length*form.dimensions.width*form.dimensions.height).toFixed(0)} cu ft</strong></div>}
+
+              {/* Room selector */}
+              <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:24 }}>
+                {ROOMS.map(r=>(
+                  <button key={r} style={S.pill(form.rooms.includes(r))} onClick={()=>toggleRoom(r)}>{r}</button>
+                ))}
+              </div>
+
+              {/* Per-room dimension + photo cards */}
+              {form.rooms.length === 0 && (
+                <div style={{ textAlign:"center", padding:"32px", background:C.light, borderRadius:12, color:C.muted, fontSize:13 }}>
+                  ☝️ Select rooms above to enter their dimensions
+                </div>
+              )}
+
+              {form.rooms.map(room => {
+                const rd = form.roomDetails?.[room] || {};
+                const setRD = (key, val) => setForm(f => ({
+                  ...f,
+                  roomDetails: { ...(f.roomDetails||{}), [room]: { ...(f.roomDetails?.[room]||{}), [key]: val } }
+                }));
+                const area = rd.length && rd.width ? (parseFloat(rd.length) * parseFloat(rd.width)).toFixed(0) : null;
+
+                return (
+                  <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.border}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
+                    {/* Room header */}
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+                      <div style={{ fontSize:15, fontWeight:700, color:C.red }}>🏠 {room}</div>
+                      {area && <span style={{ background:C.light, color:C.red, fontSize:12, fontWeight:700, padding:"3px 12px", borderRadius:20 }}>{area} sq ft</span>}
+                    </div>
+
+                    {/* Dimensions */}
+                    <div style={{ display:"flex", gap:12, marginBottom:14, flexWrap:"wrap" }}>
+                      <div style={{ flex:1 }}>
+                        <label style={S.label}>Length (ft)</label>
+                        <input style={S.input} type="number" value={rd.length||""} onChange={e=>setRD("length",e.target.value)} placeholder="0"/>
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <label style={S.label}>Width (ft)</label>
+                        <input style={S.input} type="number" value={rd.width||""} onChange={e=>setRD("width",e.target.value)} placeholder="0"/>
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <label style={S.label}>Height (ft)</label>
+                        <input style={S.input} type="number" value={rd.height||""} onChange={e=>setRD("height",e.target.value)} placeholder="0"/>
+                      </div>
+                    </div>
+
+                    {/* Notes for this room */}
+                    <div style={{ marginBottom:14 }}>
+                      <label style={S.label}>Room Notes</label>
+                      <input style={S.input} value={rd.notes||""} onChange={e=>setRD("notes",e.target.value)} placeholder={`Special requirements for ${room}…`}/>
+                    </div>
+
+                    {/* Photo upload */}
+                    <div>
+                      <label style={S.label}>Room Photo(s)</label>
+                      <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"flex-start", marginTop:6 }}>
+                        {/* Photo previews */}
+                        {(rd.photos||[]).map((photo, idx) => (
+                          <div key={idx} style={{ position:"relative", width:100, height:100 }}>
+                            <img src={photo} alt={`${room} ${idx+1}`} style={{ width:100, height:100, objectFit:"cover", borderRadius:10, border:`1.5px solid ${C.border}` }}/>
+                            <button
+                              onClick={() => setRD("photos", (rd.photos||[]).filter((_,i)=>i!==idx))}
+                              style={{ position:"absolute", top:-6, right:-6, background:C.red, color:"#fff", border:"none", borderRadius:"50%", width:20, height:20, cursor:"pointer", fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit" }}>✕</button>
+                          </div>
+                        ))}
+                        {/* Upload button */}
+                        <label style={{ width:100, height:100, border:`2px dashed ${C.border}`, borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", color:C.muted, fontSize:11, letterSpacing:1, textAlign:"center", background:C.light }}>
+                          <span style={{ fontSize:24, marginBottom:4 }}>📷</span>
+                          <span>Add Photo</span>
+                          <input type="file" accept="image/*" multiple style={{ display:"none" }}
+                            onChange={e => {
+                              const files = Array.from(e.target.files);
+                              files.forEach(file => {
+                                const reader = new FileReader();
+                                reader.onload = ev => {
+                                  setRD("photos", [...(rd.photos||[]), ev.target.result]);
+                                };
+                                reader.readAsDataURL(file);
+                              });
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Total summary */}
+              {form.rooms.length > 0 && (
+                <div style={{ background:C.light, borderRadius:12, padding:"16px 20px", border:`1px solid ${C.border}`, marginTop:8 }}>
+                  <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Total Summary</div>
+                  <div style={{ display:"flex", gap:32, flexWrap:"wrap" }}>
+                    <div><span style={{ color:C.muted, fontSize:13 }}>Rooms: </span><strong>{form.rooms.length}</strong></div>
+                    {(() => {
+                      const totalArea = form.rooms.reduce((sum, r) => {
+                        const rd = form.roomDetails?.[r] || {};
+                        return sum + (rd.length && rd.width ? parseFloat(rd.length)*parseFloat(rd.width) : 0);
+                      }, 0);
+                      return totalArea > 0 ? <div><span style={{ color:C.muted, fontSize:13 }}>Total Area: </span><strong>{totalArea.toFixed(0)} sq ft</strong></div> : null;
+                    })()}
+                    {(() => {
+                      const photos = form.rooms.reduce((sum, r) => sum + ((form.roomDetails?.[r]?.photos)||[]).length, 0);
+                      return photos > 0 ? <div><span style={{ color:C.muted, fontSize:13 }}>Photos: </span><strong>{photos} uploaded</strong></div> : null;
+                    })()}
                   </div>
                 </div>
               )}
-              <div style={S.sec}>Rooms to Design</div>
-              <div style={{ display:"flex",flexWrap:"wrap",gap:8 }}>
-                {ROOMS.map(r=><button key={r} style={S.pill(form.rooms.includes(r))} onClick={()=>toggleRoom(r)}>{r}</button>)}
-              </div>
             </div>
           )}
 

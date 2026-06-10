@@ -107,15 +107,22 @@ export const toRow = (f) => {
     ceiling:            f.ceiling            || null,
     lights:             f.lights             || null,
     handles:            f.handles            || null,
+  room_details:       f.roomDetails && Object.keys(f.roomDetails).length > 0
+                        ? JSON.stringify(
+                            // Strip photo data before saving to DB (too large)
+                            Object.fromEntries(
+                              Object.entries(f.roomDetails).map(([k,v]) => [k, { length:v.length, width:v.width, height:v.height, notes:v.notes }])
+                            )
+                          )
+                        : null,
   };
-  console.log("toRow output:", row); // debug
   return row;
 };
 
 // ── Map Supabase row → form (ALL fields) ─────────────────────────────
 export const fromRow = (r) => {
   const form = {
-    id:               r.id,
+    id:               r.id != null ? r.id : null,  // primary key — must not be null for updates
     name:             r.name              || "",
     email:            r.email             || "",
     phone:            r.phone             || "",
@@ -144,8 +151,10 @@ export const fromRow = (r) => {
     ceiling:          r.ceiling           || "",
     lights:           r.lights            || "",
     handles:          r.handles           || "",
+    roomDetails:      r.room_details
+                        ? (typeof r.room_details === "string" ? JSON.parse(r.room_details) : r.room_details)
+                        : {},
   };
-  console.log("fromRow output:", form); // debug
   return form;
 };
 
