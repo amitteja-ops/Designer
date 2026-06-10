@@ -107,6 +107,9 @@ export const toRow = (f) => {
     ceiling:            f.ceiling            || null,
     lights:             f.lights             || null,
     handles:            f.handles            || null,
+  room_materials:     f.roomMaterials && Object.keys(f.roomMaterials).length > 0
+                        ? JSON.stringify(f.roomMaterials)
+                        : null,
   room_details:       f.roomDetails && Object.keys(f.roomDetails).length > 0
                         ? JSON.stringify(
                             // Strip photo data before saving to DB (too large)
@@ -151,6 +154,9 @@ export const fromRow = (r) => {
     ceiling:          r.ceiling           || "",
     lights:           r.lights            || "",
     handles:          r.handles           || "",
+    roomMaterials:    r.room_materials
+                        ? (typeof r.room_materials === "string" ? JSON.parse(r.room_materials) : r.room_materials)
+                        : {},
     roomDetails:      r.room_details
                         ? (typeof r.room_details === "string" ? JSON.parse(r.room_details) : r.room_details)
                         : {},

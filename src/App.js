@@ -14,6 +14,68 @@ const CEILING_OPTIONS = ["Saint Gobin Gyproc","PVC"];
 const LIGHTS_OPTIONS = ["Phillips","Wipro","Panasonic"];
 const HANDLES_OPTIONS = ["Gola Profile","Standard"];
 
+// ── Material Catalog with Prices (₹ per sq ft unless noted) ────────
+const MATERIAL_CATALOG = {
+  plywood: [
+    { name:"Century Club Prime", price:120, unit:"sq ft" },
+    { name:"Green Ply HDHMR",    price:100, unit:"sq ft" },
+    { name:"Sainik 710",         price:75,  unit:"sq ft" },
+    { name:"Block Boards",       price:90,  unit:"sq ft" },
+    { name:"WPVC",               price:110, unit:"sq ft" },
+  ],
+  laminate: [
+    { name:"Virgo",           price:35,  unit:"sq ft" },
+    { name:"Croma",           price:40,  unit:"sq ft" },
+    { name:"Acrylic Sheets",  price:85,  unit:"sq ft" },
+  ],
+  hardware: [
+    { name:"Nimmi Hinges",     price:180, unit:"piece" },
+    { name:"Nimmi Channels",   price:650, unit:"piece" },
+    { name:"Hettich Tandem",   price:2200,unit:"piece" },
+  ],
+  glass: [
+    { name:"Modi Guard 4mm Black Tinted", price:95,  unit:"sq ft" },
+    { name:"Modi Guard Mirror",           price:80,  unit:"sq ft" },
+  ],
+  ceiling: [
+    { name:"Saint Gobin Gyproc", price:55, unit:"sq ft" },
+    { name:"PVC",                price:45, unit:"sq ft" },
+  ],
+  lights: [
+    { name:"Phillips 3W",   price:350,  unit:"piece" },
+    { name:"Phillips 12W",  price:650,  unit:"piece" },
+    { name:"Phillips 15W",  price:850,  unit:"piece" },
+    { name:"Wipro 3W",      price:320,  unit:"piece" },
+    { name:"Wipro 12W",     price:600,  unit:"piece" },
+    { name:"Panasonic 12W", price:580,  unit:"piece" },
+  ],
+  handles: [
+    { name:"Gola Profile", price:280, unit:"piece" },
+    { name:"Standard",     price:120, unit:"piece" },
+  ],
+};
+
+// Materials applicable per room type
+const ROOM_MATERIALS = {
+  "Drawing Room":    ["plywood","laminate","glass","ceiling","lights"],
+  "Living Area":     ["plywood","laminate","ceiling","lights"],
+  "Dining":          ["plywood","laminate","glass","ceiling","lights"],
+  "Master Bedroom":  ["plywood","laminate","hardware","glass","ceiling","lights"],
+  "Children Bedroom":["plywood","laminate","hardware","ceiling","lights"],
+  "Guest Bedroom":   ["plywood","laminate","hardware","ceiling","lights"],
+  "Kitchen":         ["plywood","laminate","hardware","glass","ceiling","lights","handles"],
+  "Pooja":           ["plywood","laminate","glass","ceiling","lights"],
+  "Entrance":        ["plywood","laminate","ceiling","lights"],
+  "Balcony":         ["ceiling","lights"],
+  "Bathroom":        ["glass","lights"],
+  "Study Room":      ["plywood","laminate","hardware","ceiling","lights"],
+};
+
+const MATERIAL_LABELS = {
+  plywood:"Plywood", laminate:"Laminate", hardware:"Hardware",
+  glass:"Glass/Mirror", ceiling:"Ceiling Board", lights:"Ceiling Lights", handles:"Handles",
+};
+
 const PAYMENT_PHASES = [
   { day:"Day 1",  label:"Advance (before project starts)",          pct:35 },
   { day:"Day 15", label:"Phase 2 (After box frame work)",            pct:35 },
@@ -30,6 +92,7 @@ const EMPTY = {
   quotation:"", previousQuotation:"", revisedQuotation:"",
   plywood:"", laminate:"", hardware:"", glass:"", ceiling:"", lights:"", handles:"",
   roomDetails:{},
+  roomMaterials:{},
 };
 
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
@@ -173,6 +236,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       lights:            c.lights            || "",
       handles:           c.handles           || "",
       roomDetails:       c.roomDetails       || {},
+      roomMaterials:     c.roomMaterials     || {},
     });
     setActiveTab("personal");
     setView("form");
@@ -623,12 +687,45 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 </div>
               )}
             </div>
-            {(selected.plywood||selected.laminate||selected.hardware) && (
+            {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
               <div style={{ ...S.card,marginBottom:16 }}>
-                <div style={S.sec}>Materials</div>
-                {[["Plywood",selected.plywood],["Laminate",selected.laminate],["Hardware",selected.hardware],["Glass",selected.glass],["Ceiling",selected.ceiling],["Lights",selected.lights],["Handles",selected.handles]].filter(([,v])=>v).map(([l,v])=>(
-                  <div key={l} style={{ fontSize:13,marginBottom:6 }}><span style={{ color:C.muted }}>{l}: </span><strong>{v}</strong></div>
-                ))}
+                <div style={S.sec}>Room Materials & Cost</div>
+                {Object.entries(selected.roomMaterials).map(([room, mats]) => {
+                  const roomCost = Object.entries(mats).reduce((total, [matType, sel]) => {
+                    if (!sel?.name) return total;
+                    const item = MATERIAL_CATALOG[matType]?.find(m => m.name === sel.name);
+                    return total + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
+                  }, 0);
+                  return (
+                    <div key={room} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}` }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                        <span style={{ fontWeight:700, fontSize:13, color:C.red }}>🏠 {room}</span>
+                        {roomCost > 0 && <span style={{ fontWeight:700, fontSize:13, color:C.red }}>{fmt(Math.round(roomCost))}</span>}
+                      </div>
+                      {Object.entries(mats).filter(([,v])=>v?.name).map(([matType, sel]) => (
+                        <div key={matType} style={{ fontSize:12, color:C.dark, marginBottom:3 }}>
+                          <span style={{ color:C.muted }}>{MATERIAL_LABELS[matType]}: </span>
+                          <strong>{sel.name}</strong>
+                          {sel.qty && <span style={{ color:C.muted }}> × {sel.qty} {MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name)?.unit}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+                {(() => {
+                  const grand = Object.values(selected.roomMaterials).reduce((t, mats) =>
+                    t + Object.entries(mats).reduce((rt, [matType, sel]) => {
+                      if (!sel?.name) return rt;
+                      const item = MATERIAL_CATALOG[matType]?.find(m => m.name === sel.name);
+                      return rt + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
+                    }, 0), 0);
+                  return grand > 0 ? (
+                    <div style={{ display:"flex", justifyContent:"space-between", background:C.red, borderRadius:10, padding:"10px 16px" }}>
+                      <span style={{ color:"#FFEEEE", fontWeight:700, fontSize:13 }}>Total Material Cost</span>
+                      <span style={{ color:"#fff", fontWeight:700, fontSize:16 }}>{fmt(Math.round(grand))}</span>
+                    </div>
+                  ) : null;
+                })()}
               </div>
             )}
             {selected.quotation && (
@@ -920,36 +1017,119 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* ── MATERIALS ── */}
           {activeTab==="materials" && (
             <div>
-              <div style={S.sec}>Material Specifications</div>
-              <div style={S.row}>
-                <Field label="Plywood Brand">
-                  <Select value={form.plywood} onChange={v=>setF("plywood",v)} options={PLYWOOD_OPTIONS} placeholder="Select plywood"/>
-                </Field>
-                <Field label="Laminate">
-                  <Select value={form.laminate} onChange={v=>setF("laminate",v)} options={LAMINATE_OPTIONS} placeholder="Select laminate"/>
-                </Field>
-              </div>
-              <div style={S.row}>
-                <Field label="Hardware">
-                  <Select value={form.hardware} onChange={v=>setF("hardware",v)} options={HARDWARE_OPTIONS} placeholder="Select hardware"/>
-                </Field>
-                <Field label="Glass / Mirror">
-                  <Select value={form.glass} onChange={v=>setF("glass",v)} options={GLASS_OPTIONS} placeholder="Select glass"/>
-                </Field>
-              </div>
-              <div style={S.row}>
-                <Field label="Ceiling Board">
-                  <Select value={form.ceiling} onChange={v=>setF("ceiling",v)} options={CEILING_OPTIONS} placeholder="Select ceiling"/>
-                </Field>
-                <Field label="Ceiling Lights">
-                  <Select value={form.lights} onChange={v=>setF("lights",v)} options={LIGHTS_OPTIONS} placeholder="Select lights"/>
-                </Field>
-              </div>
-              <div style={{ marginBottom:18 }}>
-                <Field label="Kitchen Handles">
-                  <Select value={form.handles} onChange={v=>setF("handles",v)} options={HANDLES_OPTIONS} placeholder="Select handles"/>
-                </Field>
-              </div>
+              <div style={S.sec}>Room-wise Material Selection</div>
+              {form.rooms.length === 0 ? (
+                <div style={{ textAlign:"center", padding:"32px", background:C.light, borderRadius:12, color:C.muted, fontSize:13 }}>
+                  ☝️ Please select rooms in the Dimensions tab first
+                </div>
+              ) : (
+                <>
+                  {form.rooms.map(room => {
+                    const applicableMats = ROOM_MATERIALS[room] || ["plywood","laminate","ceiling","lights"];
+                    const rm = form.roomMaterials?.[room] || {};
+                    const setRM = (matType, field, val) => setForm(f => ({
+                      ...f,
+                      roomMaterials: {
+                        ...(f.roomMaterials||{}),
+                        [room]: {
+                          ...(f.roomMaterials?.[room]||{}),
+                          [matType]: { ...(f.roomMaterials?.[room]?.[matType]||{}), [field]: val }
+                        }
+                      }
+                    }));
+
+                    // Calculate room material cost
+                    const roomCost = applicableMats.reduce((total, matType) => {
+                      const sel = rm[matType];
+                      if (!sel?.name) return total;
+                      const item = MATERIAL_CATALOG[matType]?.find(m => m.name === sel.name);
+                      if (!item) return total;
+                      const qty = parseFloat(sel.qty || 0);
+                      return total + (qty * item.price);
+                    }, 0);
+
+                    return (
+                      <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.border}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
+                        {/* Room header */}
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, paddingBottom:12, borderBottom:`1px solid ${C.border}` }}>
+                          <div style={{ fontSize:15, fontWeight:700, color:C.red }}>🏠 {room}</div>
+                          {roomCost > 0 && <span style={{ background:C.red, color:"#fff", fontSize:13, fontWeight:700, padding:"4px 14px", borderRadius:20 }}>Est. {fmt(Math.round(roomCost))}</span>}
+                        </div>
+
+                        {/* Material rows */}
+                        {applicableMats.map(matType => {
+                          const items = MATERIAL_CATALOG[matType] || [];
+                          const sel = rm[matType] || {};
+                          const selectedItem = items.find(m => m.name === sel.name);
+                          const lineTotal = selectedItem && sel.qty ? Math.round(parseFloat(sel.qty) * selectedItem.price) : null;
+
+                          return (
+                            <div key={matType} style={{ marginBottom:14, background:"#FFFAFA", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}` }}>
+                              <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10, fontWeight:700 }}>{MATERIAL_LABELS[matType]}</div>
+                              <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
+                                {/* Material selector */}
+                                <div style={{ flex:2 }}>
+                                  <label style={S.label}>Brand / Type</label>
+                                  <select style={S.input} value={sel.name||""} onChange={e => setRM(matType, "name", e.target.value)}>
+                                    <option value="">Select {MATERIAL_LABELS[matType]}</option>
+                                    {items.map(m => (
+                                      <option key={m.name} value={m.name}>{m.name} — ₹{m.price}/{m.unit}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                {/* Quantity */}
+                                <div style={{ flex:1 }}>
+                                  <label style={S.label}>Qty ({selectedItem?.unit||"unit"})</label>
+                                  <input style={S.input} type="number" value={sel.qty||""} onChange={e => setRM(matType, "qty", e.target.value)} placeholder="0"/>
+                                </div>
+                                {/* Rate display */}
+                                <div style={{ flex:1 }}>
+                                  <label style={S.label}>Rate</label>
+                                  <div style={{ ...S.input, background:"#F5EEEE", color:C.muted, cursor:"default" }}>
+                                    {selectedItem ? `₹${selectedItem.price}/${selectedItem.unit}` : "—"}
+                                  </div>
+                                </div>
+                                {/* Line total */}
+                                <div style={{ flex:1 }}>
+                                  <label style={S.label}>Total</label>
+                                  <div style={{ ...S.input, background:lineTotal?C.light:"#F5F5F5", color:lineTotal?C.red:C.muted, fontWeight:700, cursor:"default" }}>
+                                    {lineTotal ? fmt(lineTotal) : "—"}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+
+                  {/* Grand total across all rooms */}
+                  {(() => {
+                    const grandTotal = form.rooms.reduce((total, room) => {
+                      const applicableMats = ROOM_MATERIALS[room] || [];
+                      const rm = form.roomMaterials?.[room] || {};
+                      return total + applicableMats.reduce((rt, matType) => {
+                        const sel = rm[matType];
+                        if (!sel?.name) return rt;
+                        const item = MATERIAL_CATALOG[matType]?.find(m => m.name === sel.name);
+                        if (!item) return rt;
+                        return rt + (parseFloat(sel.qty||0) * item.price);
+                      }, 0);
+                    }, 0);
+
+                    return grandTotal > 0 ? (
+                      <div style={{ background:C.red, borderRadius:14, padding:"20px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <div>
+                          <div style={{ color:"#FFEEEE", fontSize:12, letterSpacing:2, textTransform:"uppercase" }}>Estimated Material Cost</div>
+                          <div style={{ color:"#FFAAAA", fontSize:11, marginTop:4 }}>Based on selected materials & quantities</div>
+                        </div>
+                        <div style={{ color:"#fff", fontSize:26, fontWeight:700 }}>{fmt(Math.round(grandTotal))}</div>
+                      </div>
+                    ) : null;
+                  })()}
+                </>
+              )}
             </div>
           )}
 
