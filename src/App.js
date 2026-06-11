@@ -345,22 +345,132 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               ))}
             </div>
           </div>
-          {/* Scope */}
+          {/* Scope — Room wise Dimensions */}
           <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Scope of Work</div>
-            {(selected.rooms||[]).length>0 && <div style={{ display:"flex",flexWrap:"wrap",gap:8,marginBottom:16 }}>{selected.rooms.map(r=><span key={r} style={RS.pill(C.light,C.red)}>{r}</span>)}</div>}
-            {(selected.dimensions?.length&&selected.dimensions?.width) && <div style={{ ...RS.row,marginBottom:8 }}><span style={{ color:C.muted }}>Total Area</span><strong>{selected.dimensions.length} × {selected.dimensions.width} ft = {(selected.dimensions.length*selected.dimensions.width).toFixed(0)} sq ft</strong></div>}
-            {(scopeLines.length>0?scopeLines:noteLines).map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)}
-          </div>
-          {/* Materials */}
-          {(selected.plywood||selected.laminate||selected.hardware) && (
-            <div style={{ marginBottom:32 }}>
-              <div style={RS.sTitle}>Material Specifications</div>
-              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 32px" }}>
-                {[["Plywood",selected.plywood],["Laminate",selected.laminate],["Hardware",selected.hardware],["Glass/Mirror",selected.glass],["Ceiling",selected.ceiling],["Lights",selected.lights],["Handles",selected.handles]].filter(([,v])=>v).map(([l,v])=>(
-                  <div key={l} style={RS.row}><span style={{ color:C.muted }}>{l}</span><strong>{v}</strong></div>
-                ))}
+            <div style={RS.sTitle}>Scope of Work — Room Dimensions</div>
+            {(selected.rooms||[]).length>0 ? (
+              <div>
+                {/* Table header */}
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"8px 12px", background:C.red, borderRadius:"10px 10px 0 0" }}>
+                  {["Room","Length (ft)","Width (ft)","Height (ft)","Area (sq ft)"].map(h=>(
+                    <div key={h} style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase" }}>{h}</div>
+                  ))}
+                </div>
+                {selected.rooms.map((r,i) => {
+                  const rd = selected.roomDetails?.[r] || {};
+                  const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
+                  return (
+                    <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.border}` }}>
+                      <div style={{ fontWeight:700, fontSize:13, color:C.red }}>🏠 {r}</div>
+                      <div style={{ fontSize:13 }}>{rd.length||"—"}</div>
+                      <div style={{ fontSize:13 }}>{rd.width||"—"}</div>
+                      <div style={{ fontSize:13 }}>{rd.height||"—"}</div>
+                      <div style={{ fontSize:13, fontWeight:700 }}>{area !== "—" ? `${area} sq ft` : "—"}</div>
+                    </div>
+                  );
+                })}
+                {/* Total row */}
+                {(() => {
+                  const totalArea = (selected.rooms||[]).reduce((sum,r) => {
+                    const rd = selected.roomDetails?.[r]||{};
+                    return sum + (rd.length&&rd.width ? parseFloat(rd.length)*parseFloat(rd.width) : 0);
+                  }, 0);
+                  return totalArea > 0 ? (
+                    <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:C.red, borderRadius:"0 0 10px 10px" }}>
+                      <div style={{ fontWeight:700, fontSize:13, color:"#FFEEEE" }}>Total</div>
+                      <div/><div/><div/>
+                      <div style={{ fontWeight:700, fontSize:14, color:"#fff" }}>{totalArea.toFixed(0)} sq ft</div>
+                    </div>
+                  ) : <div style={{ borderRadius:"0 0 10px 10px", border:`1px solid ${C.border}`, borderTop:"none" }}/>;
+                })()}
+                {/* Room photos */}
+                {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
+                  <div style={{ marginTop:16 }}>
+                    <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Room Photos</div>
+                    {(selected.rooms||[]).map(r => {
+                      const photos = selected.roomDetails?.[r]?.photos||[];
+                      if (!photos.length) return null;
+                      return (
+                        <div key={r} style={{ marginBottom:12 }}>
+                          <div style={{ fontSize:12, fontWeight:700, color:C.red, marginBottom:6 }}>🏠 {r}</div>
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                            {photos.map((p,i)=><img key={i} src={p} alt={r} style={{ width:100, height:100, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.border}` }}/>)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
+            ) : (
+              <div style={{ color:C.muted, fontSize:13 }}>No rooms selected</div>
+            )}
+            {/* Scope notes */}
+            {scopeLines.length>0 && (
+              <div style={{ marginTop:16 }}>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8 }}>Work Description</div>
+                {scopeLines.map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)}
+              </div>
+            )}
+          </div>
+
+          {/* Materials — Room wise */}
+          {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
+            <div style={{ marginBottom:32 }}>
+              <div style={RS.sTitle}>Material Specifications & Cost</div>
+              {Object.entries(selected.roomMaterials).map(([room, mats]) => {
+                const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
+                if (!matEntries.length) return null;
+                const roomCost = matEntries.reduce((total,[matType,sel])=>{
+                  const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                  return total + (item&&sel.qty ? parseFloat(sel.qty)*item.price : 0);
+                },0);
+                return (
+                  <div key={room} style={{ marginBottom:16 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, borderRadius:"10px 10px 0 0", padding:"10px 14px" }}>
+                      <span style={{ fontWeight:700, fontSize:13, color:"#fff" }}>🏠 {room}</span>
+                      {roomCost>0 && <span style={{ fontWeight:700, fontSize:13, color:"#FFEEEE" }}>Est. {fmt(Math.round(roomCost))}</span>}
+                    </div>
+                    {/* Material table header */}
+                    <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"8px 14px", background:"#4A1A1A" }}>
+                      {["Material","Brand/Type","Qty","Rate","Total"].map(h=>(
+                        <div key={h} style={{ fontSize:10, fontWeight:700, color:"#FFAAAA", letterSpacing:1, textTransform:"uppercase" }}>{h}</div>
+                      ))}
+                    </div>
+                    {matEntries.map(([matType,sel],i)=>{
+                      const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                      const lineTotal = item&&sel.qty ? Math.round(parseFloat(sel.qty)*item.price) : null;
+                      return (
+                        <div key={matType} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"9px 14px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.border}` }}>
+                          <div style={{ fontSize:12, color:C.muted, fontWeight:700 }}>{MATERIAL_LABELS[matType]}</div>
+                          <div style={{ fontSize:12 }}>{sel.name}</div>
+                          <div style={{ fontSize:12 }}>{sel.qty||"—"} {item?.unit||""}</div>
+                          <div style={{ fontSize:12 }}>{item?`₹${item.price}`:"—"}</div>
+                          <div style={{ fontSize:12, fontWeight:700, color:C.red }}>{lineTotal?fmt(lineTotal):"—"}</div>
+                        </div>
+                      );
+                    })}
+                    <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"9px 14px", background:C.light, borderRadius:"0 0 10px 10px", borderTop:`2px solid ${C.border}` }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:C.red, gridColumn:"1/5" }}>Room Subtotal</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.red }}>{roomCost>0?fmt(Math.round(roomCost)):"—"}</div>
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Grand material total */}
+              {(() => {
+                const grand = Object.values(selected.roomMaterials).reduce((t,mats)=>
+                  t+Object.entries(mats).reduce((rt,[matType,sel])=>{
+                    const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                    return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+                  },0),0);
+                return grand>0?(
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, borderRadius:12, padding:"16px 20px" }}>
+                    <span style={{ color:"#FFEEEE", fontWeight:700, fontSize:15 }}>Total Estimated Material Cost</span>
+                    <strong style={{ color:"#fff", fontSize:22 }}>{fmt(Math.round(grand))}</strong>
+                  </div>
+                ):null;
+              })()}
             </div>
           )}
           {/* Out of Scope */}
