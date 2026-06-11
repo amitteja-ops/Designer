@@ -110,6 +110,9 @@ export const toRow = (f) => {
   room_materials:     f.roomMaterials && Object.keys(f.roomMaterials).length > 0
                         ? JSON.stringify(f.roomMaterials)
                         : null,
+  rebate_type:        f.rebateType         || null,
+  rebate_value:       f.rebateValue        ? parseFloat(f.rebateValue) : null,
+  coupon_code:        f.couponCode         || null,
   room_details:       f.roomDetails && Object.keys(f.roomDetails).length > 0
                         ? JSON.stringify(
                             // Strip photo data before saving to DB (too large)
@@ -157,6 +160,9 @@ export const fromRow = (r) => {
     roomMaterials:    r.room_materials
                         ? (typeof r.room_materials === "string" ? JSON.parse(r.room_materials) : r.room_materials)
                         : {},
+    rebateType:       r.rebate_type        || "amount",
+    rebateValue:      r.rebate_value  != null ? String(r.rebate_value) : "",
+    couponCode:       r.coupon_code        || "",
     roomDetails:      r.room_details
                         ? (typeof r.room_details === "string" ? JSON.parse(r.room_details) : r.room_details)
                         : {},

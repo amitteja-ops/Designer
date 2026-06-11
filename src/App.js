@@ -93,6 +93,7 @@ const EMPTY = {
   plywood:"", laminate:"", hardware:"", glass:"", ceiling:"", lights:"", handles:"",
   roomDetails:{},
   roomMaterials:{},
+  rebateType:"amount", rebateValue:"", couponCode:"",
 };
 
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
@@ -237,6 +238,9 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       handles:           c.handles           || "",
       roomDetails:       c.roomDetails       || {},
       roomMaterials:     c.roomMaterials     || {},
+      rebateType:        c.rebateType        || "amount",
+      rebateValue:       c.rebateValue       || "",
+      couponCode:        c.couponCode        || "",
     });
     setActiveTab("personal");
     setView("form");
@@ -429,7 +433,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   <div key={room} style={{ marginBottom:16 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, borderRadius:"10px 10px 0 0", padding:"10px 14px" }}>
                       <span style={{ fontWeight:700, fontSize:13, color:"#fff" }}>🏠 {room}</span>
-                      {roomCost>0 && <span style={{ fontWeight:700, fontSize:13, color:"#FFEEEE" }}>Est. {fmt(Math.round(roomCost))}</span>}
+                      {roomCost>0 && <span style={{ fontWeight:700, fontSize:13, color:"#FFEEEE" }}>Est. {fmt(Math.round(roomCost*1.5))}</span>}
                     </div>
                     {/* Material table header */}
                     <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"8px 14px", background:"#4A1A1A" }}>
@@ -451,23 +455,34 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       );
                     })}
                     <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"9px 14px", background:C.light, borderRadius:"0 0 10px 10px", borderTop:`2px solid ${C.border}` }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:C.red, gridColumn:"1/5" }}>Room Subtotal</div>
-                      <div style={{ fontSize:13, fontWeight:700, color:C.red }}>{roomCost>0?fmt(Math.round(roomCost)):"—"}</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:C.red, gridColumn:"1/5" }}>Room Total (Incl. Labour)</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.red }}>{roomCost>0?fmt(Math.round(roomCost*1.5)):"—"}</div>
                     </div>
                   </div>
                 );
               })}
-              {/* Grand material total */}
+              {/* Grand total with 50% labour included */}
               {(() => {
-                const grand = Object.values(selected.roomMaterials).reduce((t,mats)=>
+                const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
                   t+Object.entries(mats).reduce((rt,[matType,sel])=>{
                     const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
                     return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
                   },0),0);
-                return grand>0?(
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, borderRadius:12, padding:"16px 20px" }}>
-                    <span style={{ color:"#FFEEEE", fontWeight:700, fontSize:15 }}>Total Estimated Material Cost</span>
-                    <strong style={{ color:"#fff", fontSize:22 }}>{fmt(Math.round(grand))}</strong>
+                const totalWithLabour = Math.round(matCost * 1.5);
+                return matCost>0?(
+                  <div style={{ borderRadius:12, overflow:"hidden", border:`1.5px solid ${C.border}` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 18px", background:"#FFFAFA", borderBottom:`1px solid ${C.border}` }}>
+                      <span style={{ color:C.muted, fontSize:13 }}>Materials Subtotal</span>
+                      <span style={{ fontSize:13 }}>{fmt(Math.round(matCost))}</span>
+                    </div>
+                    <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 18px", background:"#FFFAFA", borderBottom:`1px solid ${C.border}` }}>
+                      <span style={{ color:C.muted, fontSize:13 }}>Installation & Labour (included)</span>
+                      <span style={{ fontSize:13 }}>{fmt(Math.round(matCost * 0.5))}</span>
+                    </div>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, padding:"16px 20px" }}>
+                      <span style={{ color:"#FFEEEE", fontWeight:700, fontSize:15 }}>Total Project Cost (Incl. Labour)</span>
+                      <strong style={{ color:"#fff", fontSize:22 }}>{fmt(totalWithLabour)}</strong>
+                    </div>
                   </div>
                 ):null;
               })()}
@@ -485,10 +500,34 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* Budget */}
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Budget Summary</div>
-            {selected.previousQuotation && <div style={RS.row}><span style={{ color:C.muted }}>Previous</span><span style={{ textDecoration:"line-through",color:C.muted }}>{fmt(selected.previousQuotation)}</span></div>}
-            {selected.revisedQuotation  && <div style={RS.row}><span style={{ color:C.muted }}>Revised</span><span>{fmt(selected.revisedQuotation)}</span></div>}
+            {selected.previousQuotation && (
+              <div style={RS.row}>
+                <span style={{ color:C.muted }}>Previous Quotation</span>
+                <span style={{ textDecoration: selected.revisedQuotation?"line-through":"none", color:C.muted }}>{fmt(selected.previousQuotation)}</span>
+              </div>
+            )}
+            {selected.rebateValue && (
+              <div style={{ ...RS.row, background:"#F0FFF4", borderRadius:8, padding:"8px 12px", margin:"4px 0" }}>
+                <span style={{ color:"#27AE60", fontWeight:700 }}>
+                  🎁 Rebate Applied {selected.couponCode && `(Code: ${selected.couponCode})`}
+                </span>
+                <span style={{ color:"#27AE60", fontWeight:700 }}>
+                  - {selected.rebateType==="percent" ? `${selected.rebateValue}%` : fmt(selected.rebateValue)}
+                  {selected.previousQuotation && ` = - ${fmt(selected.rebateType==="percent" ? Math.round(Number(selected.previousQuotation)*Number(selected.rebateValue)/100) : Number(selected.rebateValue))}`}
+                </span>
+              </div>
+            )}
+            {selected.revisedQuotation && (
+              <div style={RS.row}>
+                <span style={{ color:C.muted }}>Revised Quotation (After Rebate)</span>
+                <span style={{ fontWeight:700, color:C.dark }}>{fmt(selected.revisedQuotation)}</span>
+              </div>
+            )}
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.red,borderRadius:12,padding:"16px 20px",marginTop:12 }}>
-              <span style={{ color:"#FFEEEE",fontWeight:700,fontSize:16 }}>Final Quotation</span>
+              <div>
+                <span style={{ color:"#FFEEEE",fontWeight:700,fontSize:16 }}>Final Quotation</span>
+                {selected.couponCode && <div style={{ color:"#FFAAAA", fontSize:11, marginTop:2 }}>Coupon: {selected.couponCode}</div>}
+              </div>
               <strong style={{ color:"#fff",fontSize:26 }}>{fmt(selected.quotation)||selected.budget||"TBD"}</strong>
             </div>
           </div>
@@ -1247,26 +1286,93 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {activeTab==="quotation" && (
             <div>
               <div style={S.sec}>Project Quotation (INR ₹)</div>
+
+              {/* Auto-calculate from materials button */}
+              {form.roomMaterials && Object.keys(form.roomMaterials).length > 0 && (() => {
+                const matCost = Object.values(form.roomMaterials).reduce((t,mats)=>
+                  t+Object.entries(mats).reduce((rt,[matType,sel])=>{
+                    const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                    return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+                  },0),0);
+                const withLabour = Math.round(matCost * 1.5);
+                return matCost > 0 ? (
+                  <div style={{ background:C.light, borderRadius:12, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <div>
+                      <div style={{ fontSize:12, fontWeight:700, color:C.red, letterSpacing:1 }}>AUTO-CALCULATED FROM MATERIALS</div>
+                      <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>Material cost {fmt(Math.round(matCost))} + Labour (50%) = <strong style={{ color:C.red }}>{fmt(withLabour)}</strong></div>
+                    </div>
+                    <button style={{ ...S.btn(), fontSize:11, padding:"8px 16px" }}
+                      onClick={() => {
+                        setF("previousQuotation", withLabour.toString());
+                        setF("quotation", withLabour.toString());
+                      }}>
+                      ↓ Use This
+                    </button>
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Previous Quotation */}
               <div style={S.row}>
                 <Field label="Previous Quotation ₹">
-                  <input style={S.input} type="number" value={form.previousQuotation} onChange={e=>setF("previousQuotation",e.target.value)} placeholder="e.g. 2291171"/>
+                  <input style={S.input} type="number" value={form.previousQuotation} onChange={e=>setF("previousQuotation",e.target.value)} placeholder="Auto-filled from materials"/>
                 </Field>
                 <Field label="Revised Quotation ₹">
-                  <input style={S.input} type="number" value={form.revisedQuotation} onChange={e=>setF("revisedQuotation",e.target.value)} placeholder="e.g. 2704388"/>
+                  <input style={{ ...S.input, color: form.revisedQuotation ? C.red : C.muted }} type="number" value={form.revisedQuotation} onChange={e=>setF("revisedQuotation",e.target.value)} placeholder="After rebate"/>
                 </Field>
               </div>
-              <div style={{ marginBottom:24 }}>
-                <label style={S.label}>Final Quotation ₹</label>
-                <input style={{ ...S.input,fontSize:18,fontWeight:700 }} type="number" value={form.quotation} onChange={e=>setF("quotation",e.target.value)} placeholder="e.g. 2504040"/>
+
+              {/* Rebate / Coupon */}
+              <div style={{ background:"#FFFAFA", borderRadius:12, padding:"18px 20px", border:`1px solid ${C.border}`, marginBottom:20 }}>
+                <div style={S.sec}>Rebate / Coupon Code</div>
+                <div style={S.row}>
+                  <Field label="Rebate Type">
+                    <select style={S.input} value={form.rebateType} onChange={e=>setF("rebateType",e.target.value)}>
+                      <option value="amount">Fixed Amount (₹)</option>
+                      <option value="percent">Percentage (%)</option>
+                    </select>
+                  </Field>
+                  <Field label={form.rebateType==="percent" ? "Rebate %" : "Rebate Amount ₹"}>
+                    <input style={S.input} type="number" value={form.rebateValue} onChange={e=>{
+                      setF("rebateValue", e.target.value);
+                      const base = parseFloat(form.previousQuotation||0);
+                      if (!base) return;
+                      const rebate = form.rebateType==="percent"
+                        ? Math.round(base * parseFloat(e.target.value||0) / 100)
+                        : parseFloat(e.target.value||0);
+                      setF("revisedQuotation", Math.round(base - rebate).toString());
+                    }} placeholder={form.rebateType==="percent"?"e.g. 10":"e.g. 25000"}/>
+                  </Field>
+                  <Field label="Coupon Code">
+                    <input style={S.input} value={form.couponCode} onChange={e=>setF("couponCode",e.target.value)} placeholder="e.g. HIGHRISE10"/>
+                  </Field>
+                </div>
+                {form.previousQuotation && form.rebateValue && (
+                  <div style={{ display:"flex", gap:20, fontSize:13, padding:"10px 0", borderTop:`1px solid ${C.border}` }}>
+                    <div><span style={{ color:C.muted }}>Base: </span><strong>{fmt(form.previousQuotation)}</strong></div>
+                    <div><span style={{ color:C.muted }}>Rebate: </span><strong style={{ color:"#27AE60" }}>- {form.rebateType==="percent"?`${form.rebateValue}%`:fmt(form.rebateValue)}</strong></div>
+                    <div><span style={{ color:C.muted }}>After Rebate: </span><strong style={{ color:C.red }}>{fmt(form.revisedQuotation)}</strong></div>
+                  </div>
+                )}
               </div>
+
+              {/* Final Quotation */}
+              <div style={{ marginBottom:24 }}>
+                <label style={S.label}>Final Quotation ₹ (Client sees this)</label>
+                <input style={{ ...S.input, fontSize:18, fontWeight:700, borderColor:C.red }} type="number" value={form.quotation}
+                  onChange={e=>setF("quotation",e.target.value)} placeholder="e.g. 2504040"/>
+                <div style={{ fontSize:11, color:C.muted, marginTop:6, letterSpacing:1 }}>
+                  💡 Tip: Set Final = Revised Quotation after applying rebate
+                </div>
+              </div>
+
+              {/* Payment Schedule */}
               {form.quotation && (
                 <div>
                   <div style={S.sec}>Auto Payment Schedule</div>
                   {PAYMENT_PHASES.map((p,i)=>(
                     <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.light,borderRadius:12,padding:"14px 18px",marginBottom:10,border:`1px solid ${C.border}` }}>
-                      <div>
-                        <div style={{ fontWeight:700,fontSize:13,color:C.red }}>{p.day} — {p.pct}% — {p.label}</div>
-                      </div>
+                      <div><div style={{ fontWeight:700,fontSize:13,color:C.red }}>{p.day} — {p.pct}% — {p.label}</div></div>
                       <div style={{ fontSize:18,fontWeight:700,color:C.red }}>{fmt(Math.round(Number(form.quotation)*p.pct/100))}</div>
                     </div>
                   ))}
