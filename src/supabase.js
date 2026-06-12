@@ -110,6 +110,8 @@ export const toRow = (f) => {
   room_materials:     f.roomMaterials && Object.keys(f.roomMaterials).length > 0
                         ? JSON.stringify(f.roomMaterials)
                         : null,
+  coupon_applied:     f.couponApplied      || false,
+  labour_pct:         f.labourPct          != null ? f.labourPct : 50,
   rebate_type:        f.rebateType         || null,
   rebate_value:       f.rebateValue        ? parseFloat(f.rebateValue) : null,
   coupon_code:        f.couponCode         || null,
@@ -160,6 +162,8 @@ export const fromRow = (r) => {
     roomMaterials:    r.room_materials
                         ? (typeof r.room_materials === "string" ? JSON.parse(r.room_materials) : r.room_materials)
                         : {},
+    couponApplied:     r.coupon_applied     || false,
+    labourPct:        r.labour_pct     != null ? r.labour_pct : 50,
     rebateType:       r.rebate_type        || "amount",
     rebateValue:      r.rebate_value  != null ? String(r.rebate_value) : "",
     couponCode:       r.coupon_code        || "",

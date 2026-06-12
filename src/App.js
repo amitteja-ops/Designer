@@ -93,7 +93,7 @@ const EMPTY = {
   plywood:"", laminate:"", hardware:"", glass:"", ceiling:"", lights:"", handles:"",
   roomDetails:{},
   roomMaterials:{},
-  rebateType:"amount", rebateValue:"", couponCode:"",
+  rebateType:"amount", rebateValue:"", couponCode:"", couponApplied:false, labourPct:50,
 };
 
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
@@ -248,6 +248,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       rebateType:        c.rebateType        || "amount",
       rebateValue:       c.rebateValue       || "",
       couponCode:        c.couponCode        || "",
+      couponApplied:     c.couponApplied     || false,
+      labourPct:         c.labourPct         != null ? c.labourPct : 50,
     });
     setActiveTab("personal");
     setView("form");
@@ -440,7 +442,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   <div key={room} style={{ marginBottom:16 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, borderRadius:"10px 10px 0 0", padding:"10px 14px" }}>
                       <span style={{ fontWeight:700, fontSize:13, color:"#fff" }}>🏠 {room}</span>
-                      {roomCost>0 && <span style={{ fontWeight:700, fontSize:13, color:"#FFEEEE" }}>Est. {fmt(Math.round(roomCost*1.5))}</span>}
+                      {roomCost>0 && <span style={{ fontWeight:700, fontSize:13, color:"#FFEEEE" }}>Est. {fmt(Math.round(roomCost*(1+(selected.labourPct||50)/100)))}</span>}
                     </div>
                     {/* Material table header */}
                     <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"8px 14px", background:"#4A1A1A" }}>
@@ -463,7 +465,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     })}
                     <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"9px 14px", background:C.light, borderRadius:"0 0 10px 10px", borderTop:`2px solid ${C.border}` }}>
                       <div style={{ fontSize:12, fontWeight:700, color:C.red, gridColumn:"1/5" }}>Room Total (Incl. Labour)</div>
-                      <div style={{ fontSize:13, fontWeight:700, color:C.red }}>{roomCost>0?fmt(Math.round(roomCost*1.5)):"—"}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.red }}>{roomCost>0?fmt(Math.round(roomCost*(1+(selected.labourPct||50)/100))):"—"}</div>
                     </div>
                   </div>
                 );
@@ -475,7 +477,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
                     return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
                   },0),0);
-                const totalWithLabour = Math.round(matCost * 1.5);
+                const labourMult = 1 + (selected.labourPct||50)/100;
+                const totalWithLabour = Math.round(matCost * labourMult);
                 return matCost>0?(
                   <div style={{ borderRadius:12, overflow:"hidden", border:`1.5px solid ${C.border}` }}>
                     <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 18px", background:"#FFFAFA", borderBottom:`1px solid ${C.border}` }}>
@@ -1306,6 +1309,25 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             <div>
               <div style={S.sec}>Project Quotation (INR ₹)</div>
 
+              {/* Configurable Labour % */}
+              <div style={{ display:"flex", alignItems:"center", gap:16, background:C.light, borderRadius:10, padding:"12px 18px", marginBottom:16, border:`1px solid ${C.border}` }}>
+                <div style={{ fontSize:12, fontWeight:700, color:C.red, letterSpacing:1 }}>⚙ LABOUR COST %</div>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <input style={{ ...S.input, width:80, textAlign:"center", fontWeight:700 }} type="number" min="0" max="100"
+                    value={form.labourPct} onChange={e=>setF("labourPct", parseFloat(e.target.value)||0)}/>
+                  <span style={{ fontSize:13, color:C.muted }}>% of material cost</span>
+                </div>
+                <div style={{ fontSize:12, color:C.muted }}>
+                  Total = Material × {1 + (form.labourPct||50)/100}x
+                </div>
+                <div style={{ display:"flex", gap:6, marginLeft:"auto" }}>
+                  {[30,40,50,60].map(p=>(
+                    <button key={p} style={{ ...S.btn(form.labourPct===p?"p":"light"), padding:"6px 12px", fontSize:11 }}
+                      onClick={()=>setF("labourPct",p)}>{p}%</button>
+                  ))}
+                </div>
+              </div>
+
               {/* Auto-calculate from materials button */}
               {form.roomMaterials && Object.keys(form.roomMaterials).length > 0 && (() => {
                 const matCost = Object.values(form.roomMaterials).reduce((t,mats)=>
@@ -1313,12 +1335,13 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
                     return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
                   },0),0);
-                const withLabour = Math.round(matCost * 1.5);
+                const labourMult = 1 + (form.labourPct||50)/100;
+                const withLabour = Math.round(matCost * labourMult);
                 return matCost > 0 ? (
                   <div style={{ background:C.light, borderRadius:12, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div>
                       <div style={{ fontSize:12, fontWeight:700, color:C.red, letterSpacing:1 }}>AUTO-CALCULATED FROM MATERIALS</div>
-                      <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>Material cost {fmt(Math.round(matCost))} + Labour (50%) = <strong style={{ color:C.red }}>{fmt(withLabour)}</strong></div>
+                      <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>Material cost {fmt(Math.round(matCost))} + Labour ({form.labourPct||50}%) = <strong style={{ color:C.red }}>{fmt(withLabour)}</strong></div>
                     </div>
                     <button style={{ ...S.btn(), fontSize:11, padding:"8px 16px" }}
                       onClick={() => {
@@ -1342,33 +1365,55 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 </Field>
               </div>
 
-              {/* Rebate / Coupon */}
+              {/* Rebate & Coupon — two separate discounts */}
               <div style={{ background:"#FFFAFA", borderRadius:12, padding:"18px 20px", border:`1px solid ${C.border}`, marginBottom:20 }}>
-                <div style={S.sec}>Rebate / Coupon Code</div>
+                <div style={S.sec}>Rebate & Coupon Discount</div>
+
+                {/* Row 1: Rebate */}
+                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8, fontWeight:700 }}>Step 1 — Rebate</div>
                 <div style={S.row}>
                   <Field label="Rebate Type">
-                    <select style={S.input} value={form.rebateType} onChange={e=>setF("rebateType",e.target.value)}>
+                    <select style={S.input} value={form.rebateType} onChange={e=>{
+                      setF("rebateType",e.target.value);
+                    }}>
                       <option value="amount">Fixed Amount (₹)</option>
                       <option value="percent">Percentage (%)</option>
                     </select>
                   </Field>
                   <Field label={form.rebateType==="percent" ? "Rebate % (max 5%)" : "Rebate Amount ₹"}>
-                    <input style={S.input} type="number" min="0" max={form.rebateType==="percent"?"5":undefined} value={form.rebateValue} onChange={e=>{
-                      setF("rebateValue", e.target.value);
-                      const base = parseFloat(form.previousQuotation||0);
-                      if (!base) return;
-                      const pct = parseFloat(e.target.value||0);
-                      // Cap rebate at 5% max
-                      const safePct = form.rebateType==="percent" ? Math.min(pct, 5) : pct;
-                      const rebate = form.rebateType==="percent"
-                        ? Math.round(base * safePct / 100)
-                        : parseFloat(e.target.value||0);
-                      const revised = Math.round(base - rebate);
-                      setF("revisedQuotation", revised.toString());
-                      setF("quotation", revised.toString());
-                    }} placeholder={form.rebateType==="percent"?"e.g. 10":"e.g. 25000"}/>
+                    <input style={S.input} type="number" min="0" max={form.rebateType==="percent"?"5":undefined}
+                      value={form.rebateValue}
+                      onChange={e=>{
+                        const val = e.target.value;
+                        const safePct = form.rebateType==="percent" ? Math.min(parseFloat(val||0),5) : parseFloat(val||0);
+                        setF("rebateValue", form.rebateType==="percent" ? String(safePct) : val);
+                        const base = parseFloat(form.previousQuotation||0);
+                        if (!base) return;
+                        const rebateAmt = form.rebateType==="percent" ? Math.round(base*safePct/100) : safePct;
+                        const afterRebate = Math.round(base - rebateAmt);
+                        // Also apply coupon on top if exists
+                        const couponAmt = form.couponApplied ? Math.round(afterRebate*0.05) : 0;
+                        const revised = afterRebate - couponAmt;
+                        setF("revisedQuotation", revised.toString());
+                        setF("quotation", revised.toString());
+                      }}
+                      placeholder={form.rebateType==="percent"?"max 5%":"e.g. 25000"}/>
                   </Field>
-                  <Field label="Referral Coupon Code">
+                  <Field label="Rebate Amount">
+                    <div style={{ ...S.input, background:"#F5EEEE", color:C.red, fontWeight:700, cursor:"default" }}>
+                      {form.previousQuotation && form.rebateValue
+                        ? `- ${form.rebateType==="percent"
+                            ? fmt(Math.round(parseFloat(form.previousQuotation)*Math.min(parseFloat(form.rebateValue||0),5)/100))
+                            : fmt(parseFloat(form.rebateValue||0))}`
+                        : "—"}
+                    </div>
+                  </Field>
+                </div>
+
+                {/* Row 2: Coupon (additional 5%) */}
+                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8, fontWeight:700, marginTop:4 }}>Step 2 — Referral Coupon (Additional 5%)</div>
+                <div style={S.row}>
+                  <Field label="Customer Referral Code">
                     <div style={{ display:"flex", gap:8 }}>
                       <input style={S.input} value={form.couponCode} onChange={e=>setF("couponCode",e.target.value)} placeholder="Auto-generate or type"/>
                       <button style={{ ...S.btn("light"), whiteSpace:"nowrap", padding:"10px 14px", fontSize:11 }}
@@ -1377,12 +1422,64 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       </button>
                     </div>
                   </Field>
+                  <Field label="Apply Coupon Discount?">
+                    <div style={{ display:"flex", gap:10, marginTop:4 }}>
+                      <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", fontSize:13 }}>
+                        <input type="checkbox" checked={!!form.couponApplied}
+                          onChange={e=>{
+                            setF("couponApplied", e.target.checked);
+                            const base = parseFloat(form.previousQuotation||0);
+                            if (!base) return;
+                            const rebateAmt = form.rebateType==="percent"
+                              ? Math.round(base*Math.min(parseFloat(form.rebateValue||0),5)/100)
+                              : parseFloat(form.rebateValue||0);
+                            const afterRebate = Math.round(base - rebateAmt);
+                            const couponAmt = e.target.checked ? Math.round(afterRebate*0.05) : 0;
+                            const revised = afterRebate - couponAmt;
+                            setF("revisedQuotation", revised.toString());
+                            setF("quotation", revised.toString());
+                          }}
+                          style={{ width:16, height:16 }}
+                        />
+                        Apply 5% coupon discount
+                      </label>
+                    </div>
+                  </Field>
+                  <Field label="Coupon Discount">
+                    <div style={{ ...S.input, background:"#F0FFF4", color:"#166534", fontWeight:700, cursor:"default" }}>
+                      {form.couponApplied && form.previousQuotation
+                        ? (() => {
+                            const base = parseFloat(form.previousQuotation||0);
+                            const rebateAmt = form.rebateType==="percent"
+                              ? Math.round(base*Math.min(parseFloat(form.rebateValue||0),5)/100)
+                              : parseFloat(form.rebateValue||0);
+                            return `- ${fmt(Math.round((base-rebateAmt)*0.05))}`;
+                          })()
+                        : "—"}
+                    </div>
+                  </Field>
                 </div>
-                {form.previousQuotation && form.rebateValue && (
-                  <div style={{ display:"flex", gap:20, fontSize:13, padding:"10px 0", borderTop:`1px solid ${C.border}` }}>
-                    <div><span style={{ color:C.muted }}>Base: </span><strong>{fmt(form.previousQuotation)}</strong></div>
-                    <div><span style={{ color:C.muted }}>Rebate: </span><strong style={{ color:"#27AE60" }}>- {form.rebateType==="percent"?`${form.rebateValue}%`:fmt(form.rebateValue)}</strong></div>
-                    <div><span style={{ color:C.muted }}>After Rebate: </span><strong style={{ color:C.red }}>{fmt(form.revisedQuotation)}</strong></div>
+
+                {/* Live Summary */}
+                {form.previousQuotation && (
+                  <div style={{ background:"#fff", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}`, marginTop:4 }}>
+                    {(() => {
+                      const base = parseFloat(form.previousQuotation||0);
+                      const rebateAmt = form.rebateType==="percent"
+                        ? Math.round(base*Math.min(parseFloat(form.rebateValue||0),5)/100)
+                        : parseFloat(form.rebateValue||0);
+                      const afterRebate = base - rebateAmt;
+                      const couponAmt = form.couponApplied ? Math.round(afterRebate*0.05) : 0;
+                      const final = afterRebate - couponAmt;
+                      return (
+                        <div style={{ display:"flex", gap:16, flexWrap:"wrap", fontSize:13, alignItems:"center" }}>
+                          <div><span style={{ color:C.muted }}>Base: </span><strong>{fmt(base)}</strong></div>
+                          {rebateAmt>0 && <div><span style={{ color:C.muted }}>Rebate: </span><strong style={{ color:C.red }}>-{fmt(rebateAmt)}</strong></div>}
+                          {couponAmt>0 && <div><span style={{ color:C.muted }}>Coupon 5%: </span><strong style={{ color:"#166534" }}>-{fmt(couponAmt)}</strong></div>}
+                          <div style={{ marginLeft:"auto" }}><span style={{ color:C.muted }}>Final: </span><strong style={{ color:C.red, fontSize:16 }}>{fmt(final)}</strong></div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
