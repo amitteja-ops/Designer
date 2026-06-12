@@ -98,6 +98,13 @@ const EMPTY = {
 
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
 
+// Generate unique referral coupon from customer name + id
+const genCoupon = (name, id) => {
+  const prefix = (name||"HRI").toUpperCase().replace(/[^A-Z]/g,"").slice(0,4)||"HRI";
+  const suffix  = String(id||Date.now()).slice(-4);
+  return `${prefix}${suffix}`;
+};
+
 // ── Styles ────────────────────────────────────────────────────────────
 const C = {
   red:   "#8B1A1A",
@@ -507,14 +514,26 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               </div>
             )}
             {selected.rebateValue && (
-              <div style={{ ...RS.row, background:"#F0FFF4", borderRadius:8, padding:"8px 12px", margin:"4px 0" }}>
-                <span style={{ color:"#27AE60", fontWeight:700 }}>
-                  🎁 Rebate Applied {selected.couponCode && `(Code: ${selected.couponCode})`}
-                </span>
-                <span style={{ color:"#27AE60", fontWeight:700 }}>
-                  - {selected.rebateType==="percent" ? `${selected.rebateValue}%` : fmt(selected.rebateValue)}
-                  {selected.previousQuotation && ` = - ${fmt(selected.rebateType==="percent" ? Math.round(Number(selected.previousQuotation)*Number(selected.rebateValue)/100) : Number(selected.rebateValue))}`}
-                </span>
+              <div style={{ background:"#F0FFF4", borderRadius:8, padding:"10px 14px", margin:"6px 0", border:"1px solid #BBF7D0" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <span style={{ color:"#166534", fontWeight:700 }}>
+                    🎁 Rebate Applied {selected.couponCode && `(Code: ${selected.couponCode})`}
+                  </span>
+                  <span style={{ color:"#166534", fontWeight:700 }}>
+                    - {selected.rebateType==="percent" ? `${selected.rebateValue}%` : fmt(selected.rebateValue)}
+                    {selected.previousQuotation && ` = - ${fmt(selected.rebateType==="percent" ? Math.round(Number(selected.previousQuotation)*Number(selected.rebateValue)/100) : Number(selected.rebateValue))}`}
+                  </span>
+                </div>
+              </div>
+            )}
+            {selected.couponCode && (
+              <div style={{ background:"#F0FFF4", borderRadius:8, padding:"12px 16px", margin:"6px 0", border:"1px solid #BBF7D0" }}>
+                <div style={{ fontSize:12, fontWeight:700, color:"#166534", marginBottom:6 }}>🎁 YOUR REFERRAL CODE: <span style={{ fontSize:16, letterSpacing:3 }}>{selected.couponCode}</span></div>
+                <div style={{ fontSize:12, color:"#166534", lineHeight:1.8 }}>
+                  <div>• Share this code with friends & family</div>
+                  <div>• They get <strong>5% off</strong> their High Rise Interiors project</div>
+                  <div>• You get <strong>5% cashback</strong> credited to your account</div>
+                </div>
               </div>
             )}
             {selected.revisedQuotation && (
@@ -1305,6 +1324,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       onClick={() => {
                         setF("previousQuotation", withLabour.toString());
                         setF("quotation", withLabour.toString());
+                        setF("revisedQuotation", withLabour.toString());
                       }}>
                       ↓ Use This
                     </button>
@@ -1332,19 +1352,30 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       <option value="percent">Percentage (%)</option>
                     </select>
                   </Field>
-                  <Field label={form.rebateType==="percent" ? "Rebate %" : "Rebate Amount ₹"}>
-                    <input style={S.input} type="number" value={form.rebateValue} onChange={e=>{
+                  <Field label={form.rebateType==="percent" ? "Rebate % (max 5%)" : "Rebate Amount ₹"}>
+                    <input style={S.input} type="number" min="0" max={form.rebateType==="percent"?"5":undefined} value={form.rebateValue} onChange={e=>{
                       setF("rebateValue", e.target.value);
                       const base = parseFloat(form.previousQuotation||0);
                       if (!base) return;
+                      const pct = parseFloat(e.target.value||0);
+                      // Cap rebate at 5% max
+                      const safePct = form.rebateType==="percent" ? Math.min(pct, 5) : pct;
                       const rebate = form.rebateType==="percent"
-                        ? Math.round(base * parseFloat(e.target.value||0) / 100)
+                        ? Math.round(base * safePct / 100)
                         : parseFloat(e.target.value||0);
-                      setF("revisedQuotation", Math.round(base - rebate).toString());
+                      const revised = Math.round(base - rebate);
+                      setF("revisedQuotation", revised.toString());
+                      setF("quotation", revised.toString());
                     }} placeholder={form.rebateType==="percent"?"e.g. 10":"e.g. 25000"}/>
                   </Field>
-                  <Field label="Coupon Code">
-                    <input style={S.input} value={form.couponCode} onChange={e=>setF("couponCode",e.target.value)} placeholder="e.g. HIGHRISE10"/>
+                  <Field label="Referral Coupon Code">
+                    <div style={{ display:"flex", gap:8 }}>
+                      <input style={S.input} value={form.couponCode} onChange={e=>setF("couponCode",e.target.value)} placeholder="Auto-generate or type"/>
+                      <button style={{ ...S.btn("light"), whiteSpace:"nowrap", padding:"10px 14px", fontSize:11 }}
+                        onClick={()=>setF("couponCode", genCoupon(form.name, form.id||Date.now()))}>
+                        ⚡ Generate
+                      </button>
+                    </div>
                   </Field>
                 </div>
                 {form.previousQuotation && form.rebateValue && (
@@ -1355,6 +1386,18 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   </div>
                 )}
               </div>
+
+              {/* Referral Program Info */}
+              {form.couponCode && (
+                <div style={{ background:"#F0FFF4", borderRadius:12, padding:"14px 18px", marginBottom:16, border:"1.5px solid #BBF7D0" }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:"#166534", letterSpacing:1, marginBottom:8 }}>🎁 REFERRAL PROGRAM</div>
+                  <div style={{ fontSize:13, color:"#166534", lineHeight:1.9 }}>
+                    <div>• Client shares code <strong>{form.couponCode}</strong> with friends</div>
+                    <div>• Referred friend gets <strong>5% off</strong> their project</div>
+                    <div>• This client gets <strong>5% cashback</strong> on their final invoice</div>
+                  </div>
+                </div>
+              )}
 
               {/* Final Quotation */}
               <div style={{ marginBottom:24 }}>
