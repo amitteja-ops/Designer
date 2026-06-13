@@ -1675,7 +1675,19 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                               files.forEach(file => {
                                 const reader = new FileReader();
                                 reader.onload = ev => {
-                                  setRD("photos", [...(rd.photos||[]), ev.target.result]);
+                                  // Compress to max 800px, JPEG 0.72 quality before saving
+                                  const img = new Image();
+                                  img.onload = () => {
+                                    const canvas = document.createElement("canvas");
+                                    const maxW = 800;
+                                    const scale = img.width > maxW ? maxW/img.width : 1;
+                                    canvas.width  = Math.round(img.width  * scale);
+                                    canvas.height = Math.round(img.height * scale);
+                                    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+                                    const compressed = canvas.toDataURL("image/jpeg", 0.72);
+                                    setRD("photos", [...(rd.photos||[]), compressed]);
+                                  };
+                                  img.src = ev.target.result;
                                 };
                                 reader.readAsDataURL(file);
                               });

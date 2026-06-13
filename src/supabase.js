@@ -120,9 +120,16 @@ export const toRow = (f) => {
 
   room_details:       f.roomDetails && Object.keys(f.roomDetails).length > 0
                         ? JSON.stringify(
-                            // Strip photo data before saving to DB (too large)
+                            // Save all fields including photos and subsections
                             Object.fromEntries(
-                              Object.entries(f.roomDetails).map(([k,v]) => [k, { length:v.length, width:v.width, height:v.height, notes:v.notes }])
+                              Object.entries(f.roomDetails).map(([k,v]) => [k, {
+                                length:     v.length,
+                                width:      v.width,
+                                height:     v.height,
+                                notes:      v.notes,
+                                photos:     v.photos   || [],
+                                subsections:v.subsections || {},
+                              }])
                             )
                           )
                         : null,
