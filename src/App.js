@@ -1979,15 +1979,28 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       onChange={e=>{
                         const code = e.target.value.toUpperCase();
                         setF("appliedReferralCode", code);
-                        // Validate: find if code belongs to another client
+                        if (!code) { setF("referralDiscount", false); return; }
+
+                        // Check if code is this client's own code
+                        // For existing client: match by id. For new client: match by referralCode in form
+                        const isOwnCode = form.referralCode && form.referralCode === code;
+
+                        if (isOwnCode) {
+                          setF("referralDiscount", false);
+                          showToast("Cannot apply your own referral code", "error");
+                          return;
+                        }
+
+                        // Find referrer — must be a different customer with this code
                         const referrer = customers.find(c =>
-                          c.referralCode === code && c.id !== form.id
+                          c.referralCode === code &&
+                          (form.id ? c.id !== form.id : true)
                         );
-                        if(referrer){
+
+                        if (referrer) {
                           setF("referralDiscount", true);
-                          // Apply 5% on post-rebate amount
                           const base = parseFloat(form.previousQuotation||0);
-                          if(base){
+                          if (base) {
                             const rebateAmt = form.rebateType==="percent"
                               ? Math.round(base*Math.min(parseFloat(form.rebateValue||0),5)/100)
                               : parseFloat(form.rebateValue||0);
@@ -1997,10 +2010,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                             setF("revisedQuotation", revised.toString());
                             setF("quotation", revised.toString());
                           }
-                          showToast(`✓ Valid code — ${referrer.name} gets 5% cashback!`,"success");
-                        } else if(code && customers.find(c=>c.referralCode===code && c.id===form.id)){
-                          setF("referralDiscount", false);
-                          showToast("Cannot apply your own referral code","error");
+                          showToast(`✓ Valid — ${referrer.name} earns 5% cashback!`, "success");
                         } else {
                           setF("referralDiscount", false);
                         }
@@ -2010,8 +2020,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   </Field>
                   <Field label="Validation">
                     <div style={{ ...S.input, cursor:"default",
-                      background: form.referralDiscount ? "#DCFCE7" : form.appliedReferralCode ? "#FEF2F2" : C.smoke,
-                      color:      form.referralDiscount ? "#166534" : form.appliedReferralCode ? C.rust : C.muted,
+                      background: form.referralDiscount ? "#DCFCE7"
+                        : form.appliedReferralCode ? "#FEF2F2" : C.smoke,
+                      color: form.referralDiscount ? "#166534"
+                        : form.appliedReferralCode ? C.rust : C.muted,
                       fontWeight:700 }}>
                       {form.referralDiscount
                         ? (() => {
@@ -2019,10 +2031,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                             return `✓ Valid — Referred by ${r?.name||"client"}`;
                           })()
                         : form.appliedReferralCode
-                          ? (customers.find(c=>c.referralCode===form.appliedReferralCode && c.id===form.id)
+                          ? (form.referralCode===form.appliedReferralCode
                               ? "✗ Cannot use own code"
-                              : "✗ Code not found")
-                          : "Enter code to validate"
+                              : "✗ Code not found in system")
+                          : "Enter a referral code to validate"
                       }
                     </div>
                   </Field>
