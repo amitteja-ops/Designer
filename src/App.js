@@ -398,16 +398,16 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       <div style={{ background:"#fff",minHeight:"100vh",fontFamily:"'Cormorant Garamond',Georgia,serif",color:C.dark,paddingBottom:60 }}>
         <style>{`@media print{.np{display:none!important}}`}</style>
         <div className="np" style={{ background:C.dark,padding:"12px 32px",display:"flex",gap:12,alignItems:"center" }}>
-          <button onClick={()=>setView("detail")} style={{ background:"transparent",color:"#FFAAAA",border:"1px solid #FFAAAA",borderRadius:8,padding:"8px 18px",cursor:"pointer",fontFamily:"inherit",fontSize:12 }}>← Back</button>
+          <button onClick={()=>setView("detail")} style={{ background:"transparent",color:"#E0D0FF",border:"1px solid #FFAAAA",borderRadius:8,padding:"8px 18px",cursor:"pointer",fontFamily:"inherit",fontSize:12 }}>← Back</button>
           <button onClick={()=>window.print()} style={{ background:C.red,color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700 }}>🖨 Print / Save PDF</button>
         </div>
         <div style={{ background:`linear-gradient(135deg,${C.red},#C0392B)`,padding:"28px 48px",marginBottom:36 }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
             <div>
               <div style={{ color:"#fff",fontSize:26,fontWeight:700,letterSpacing:3,textTransform:"uppercase" }}>High Rise Interiors</div>
-              <div style={{ color:"#FFAAAA",fontSize:12,letterSpacing:4,marginTop:4 }}>Project Summary Report</div>
+              <div style={{ color:"#E0D0FF",fontSize:12,letterSpacing:4,marginTop:4 }}>Project Summary Report</div>
             </div>
-            <div style={{ textAlign:"right",color:"#FFAAAA",fontSize:12 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
+            <div style={{ textAlign:"right",color:"#E0D0FF",fontSize:12 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
           </div>
         </div>
         <div style={{ maxWidth:800,margin:"0 auto",padding:"0 48px" }}>
@@ -436,7 +436,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
                   return (
                     <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.border}` }}>
-                      <div style={{ fontWeight:700, fontSize:13, color:C.red }}>🏠 {r}</div>
+                      <div style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</div>
                       <div style={{ fontSize:13 }}>{rd.length||"—"}</div>
                       <div style={{ fontSize:13 }}>{rd.width||"—"}</div>
                       <div style={{ fontSize:13 }}>{rd.height||"—"}</div>
@@ -452,7 +452,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   }, 0);
                   return totalArea > 0 ? (
                     <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:C.red, borderRadius:"0 0 10px 10px" }}>
-                      <div style={{ fontWeight:700, fontSize:13, color:"#FFEEEE" }}>Total</div>
+                      <div style={{ fontWeight:700, fontSize:13, color:"#fff" }}>Total</div>
                       <div/><div/><div/>
                       <div style={{ fontWeight:700, fontSize:14, color:"#fff" }}>{totalArea.toFixed(0)} sq ft</div>
                     </div>
@@ -508,8 +508,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   if (!roomTotal) return null;
                   return (
                     <div key={room} style={{ display:"grid", gridTemplateColumns:"2fr 1fr", padding:"11px 16px", background:i%2===0?"#FFFAFA":C.light, borderTop:`1px solid ${C.border}` }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:C.red }}>🏠 {room}</div>
-                      <div style={{ fontSize:13, fontWeight:700, color:C.red, textAlign:"right" }}>{fmt(roomTotal)}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.ink }}>🏠 {room}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.ink, textAlign:"right" }}>{fmt(roomTotal)}</div>
                     </div>
                   );
                 })}
@@ -523,7 +523,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   const total = Math.round(matCost*(1+lp/100));
                   return total>0?(
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, padding:"14px 16px", borderTop:`2px solid #6A0A0A` }}>
-                      <span style={{ color:"#FFEEEE", fontWeight:700, fontSize:14 }}>Total Estimated Project Cost</span>
+                      <span style={{ color:"#fff", fontWeight:700, fontSize:14 }}>Total Estimated Project Cost</span>
                       <strong style={{ color:"#fff", fontSize:20 }}>{fmt(total)}</strong>
                     </div>
                   ):null;
@@ -537,7 +537,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             <div style={{ marginBottom:32 }}>
               <div style={RS.sTitle}>Out of Scope</div>
               <div style={{ background:C.light,borderRadius:12,padding:"16px 20px",border:`1px solid ${C.border}` }}>
-                {outOfScope.map((l,i)=><div key={i} style={{ ...RS.bullet,color:C.red }}>✗ {l}</div>)}
+                {outOfScope.map((l,i)=><div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {l}</div>)}
               </div>
             </div>
           )}
@@ -581,8 +581,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             )}
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.red,borderRadius:12,padding:"16px 20px",marginTop:12 }}>
               <div>
-                <span style={{ color:"#FFEEEE",fontWeight:700,fontSize:16 }}>Final Quotation</span>
-                {selected.couponCode && <div style={{ color:"#FFAAAA", fontSize:11, marginTop:2 }}>Coupon: {selected.couponCode}</div>}
+                <span style={{ color:"#fff",fontWeight:700,fontSize:16 }}>Final Quotation</span>
+                {selected.couponCode && <div style={{ color:"#E0D0FF", fontSize:11, marginTop:2 }}>Coupon: {selected.couponCode}</div>}
               </div>
               <strong style={{ color:"#fff",fontSize:26 }}>{fmt(selected.quotation)||selected.budget||"TBD"}</strong>
             </div>
@@ -604,11 +604,11 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 <div style={{ display:"flex",alignItems:"center",gap:14 }}>
                   <div style={{ background:C.red,color:"#fff",borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,flexShrink:0 }}>{i+1}</div>
                   <div>
-                    <div style={{ fontWeight:700,fontSize:13,color:C.red }}>{p.day} — {p.label}</div>
+                    <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.day} — {p.label}</div>
                     <div style={{ fontSize:12,color:C.muted,marginTop:2 }}>{p.pct}% of total value</div>
                   </div>
                 </div>
-                <strong style={{ fontSize:16,color:C.red }}>{selected.quotation ? fmt(Math.round(Number(selected.quotation)*p.pct/100)) : `${p.pct}%`}</strong>
+                <strong style={{ fontSize:16,color:C.ink }}>{selected.quotation ? fmt(Math.round(Number(selected.quotation)*p.pct/100)) : `${p.pct}%`}</strong>
               </div>
             ))}
             <div style={{ background:"#FFFAFA",borderRadius:10,padding:"14px 18px",border:`1px solid ${C.border}`,fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
@@ -643,7 +643,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             </div>
             <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:12 }}>
               <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Authorised by</div>
-              <div style={{ fontSize:14,fontWeight:700,color:C.red }}>High Rise Interiors</div>
+              <div style={{ fontSize:14,fontWeight:700,color:C.teal }}>High Rise Interiors</div>
               <div style={{ fontSize:12,color:C.muted }}>Hyderabad, Telangana</div>
               <div style={{ marginTop:36,borderTop:"1px dashed #9A7070",paddingTop:8,fontSize:11,color:C.muted }}>Signature / Stamp / Date</div>
             </div>
@@ -679,7 +679,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       <div style={{ background:"#fff",minHeight:"100vh",fontFamily:"'Cormorant Garamond',Georgia,serif",color:C.dark,paddingBottom:60 }}>
         <style>{`@media print{.np{display:none!important}}`}</style>
         <div className="np" style={{ background:C.dark,padding:"12px 32px",display:"flex",gap:12,alignItems:"center" }}>
-          <button onClick={()=>setView("detail")} style={{ background:"transparent",color:"#FFAAAA",border:"1px solid #FFAAAA",borderRadius:8,padding:"8px 18px",cursor:"pointer",fontFamily:"inherit",fontSize:12 }}>← Back</button>
+          <button onClick={()=>setView("detail")} style={{ background:"transparent",color:"#E0D0FF",border:"1px solid #FFAAAA",borderRadius:8,padding:"8px 18px",cursor:"pointer",fontFamily:"inherit",fontSize:12 }}>← Back</button>
           <button onClick={()=>window.print()} style={{ background:C.red,color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700 }}>🖨 Print / Save PDF</button>
           <span style={{ color:"#9A7070",fontSize:12 }}>Tip: Choose "Save as PDF" in print dialog</span>
         </div>
@@ -815,7 +815,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             </div>
             <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:12 }}>
               <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Authorised by</div>
-              <div style={{ fontSize:14,fontWeight:700,color:C.red }}>High Rise Interiors</div>
+              <div style={{ fontSize:14,fontWeight:700,color:C.teal }}>High Rise Interiors</div>
               <div style={{ fontSize:12,color:C.muted }}>Hyderabad, Telangana</div>
               <div style={{ marginTop:36,borderTop:"1px dashed #9A7070",paddingTop:8,fontSize:11,color:C.muted }}>Signature / Stamp / Date</div>
             </div>
@@ -876,7 +876,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     return (
                       <div key={r} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}` }}>
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-                          <span style={{ fontWeight:700, fontSize:13, color:C.red }}>🏠 {r}</span>
+                          <span style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</span>
                           {area && <span style={{ fontSize:12, color:C.muted }}>{rd.length} × {rd.width} ft = <strong>{area} sq ft</strong></span>}
                         </div>
                         {rd.height && <div style={{ fontSize:12, color:C.muted, marginBottom:4 }}>Ceiling: {rd.height} ft</div>}
@@ -904,7 +904,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   return (
                     <div key={room} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}` }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                        <span style={{ fontWeight:700, fontSize:13, color:C.red }}>🏠 {room}</span>
+                        <span style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {room}</span>
                         {roomCost > 0 && <span style={{ fontWeight:700, fontSize:13, color:C.red }}>{fmt(Math.round(roomCost))}</span>}
                       </div>
                       {Object.entries(mats).filter(([,v])=>v?.name).map(([matType, sel]) => (
@@ -926,7 +926,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     }, 0), 0);
                   return grand > 0 ? (
                     <div style={{ display:"flex", justifyContent:"space-between", background:C.red, borderRadius:10, padding:"10px 16px" }}>
-                      <span style={{ color:"#FFEEEE", fontWeight:700, fontSize:13 }}>Total Material Cost</span>
+                      <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>Total Material Cost</span>
                       <span style={{ color:"#fff", fontWeight:700, fontSize:16 }}>{fmt(Math.round(grand))}</span>
                     </div>
                   ) : null;
@@ -938,7 +938,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 <div style={S.sec}>Quotation</div>
                 {selected.previousQuotation && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:C.muted }}>Previous: </span><span style={{ textDecoration:"line-through" }}>{fmt(selected.previousQuotation)}</span></div>}
                 {selected.revisedQuotation  && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:C.muted }}>Revised: </span>{fmt(selected.revisedQuotation)}</div>}
-                <div style={{ fontSize:20,fontWeight:700,color:C.red,marginTop:8 }}>Final: {fmt(selected.quotation)}</div>
+                <div style={{ fontSize:20,fontWeight:700,color:C.teal,marginTop:8 }}>Final: {fmt(selected.quotation)}</div>
               </div>
             )}
           </div>
@@ -957,7 +957,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Studio CRM</span></div>
         <div style={{ display:"flex",alignItems:"center",gap:10 }}>
           <span style={{ background:connected?"#27AE60":"#C0392B",color:"#fff",fontSize:10,padding:"3px 10px",borderRadius:20 }}>● {connected?"Connected":"Offline"}</span>
-          <span style={{ color:"#FFAAAA",fontSize:11 }}>{user?.email}</span>
+          <span style={{ color:"#E0D0FF",fontSize:11 }}>{user?.email}</span>
           <button style={S.btn("dark")} onClick={fetchCustomers}>↻</button>
           <button style={S.btn("dark")} onClick={exportCSV}>↓ CSV</button>
           <button style={S.btn("dark")} onClick={onLogout}>Sign Out</button>
@@ -1133,7 +1133,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.border}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
                     {/* Room header */}
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-                      <div style={{ fontSize:15, fontWeight:700, color:C.red }}>🏠 {room}</div>
+                      <div style={{ fontSize:15, fontWeight:700, color:C.ink }}>🏠 {room}</div>
                       {area && <span style={{ background:C.light, color:C.red, fontSize:12, fontWeight:700, padding:"3px 12px", borderRadius:20 }}>{area} sq ft</span>}
                     </div>
 
@@ -1257,7 +1257,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.border}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
                         {/* Room header */}
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, paddingBottom:12, borderBottom:`1px solid ${C.border}` }}>
-                          <div style={{ fontSize:15, fontWeight:700, color:C.red }}>🏠 {room}</div>
+                          <div style={{ fontSize:15, fontWeight:700, color:C.ink }}>🏠 {room}</div>
                           {roomCost > 0 && <span style={{ background:C.red, color:"#fff", fontSize:13, fontWeight:700, padding:"4px 14px", borderRadius:20 }}>Est. {fmt(Math.round(roomCost))}</span>}
                         </div>
 
@@ -1326,8 +1326,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     return grandTotal > 0 ? (
                       <div style={{ background:C.red, borderRadius:14, padding:"20px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                         <div>
-                          <div style={{ color:"#FFEEEE", fontSize:12, letterSpacing:2, textTransform:"uppercase" }}>Estimated Material Cost</div>
-                          <div style={{ color:"#FFAAAA", fontSize:11, marginTop:4 }}>Based on selected materials & quantities</div>
+                          <div style={{ color:"#fff", fontSize:12, letterSpacing:2, textTransform:"uppercase" }}>Estimated Material Cost</div>
+                          <div style={{ color:"#E0D0FF", fontSize:11, marginTop:4 }}>Based on selected materials & quantities</div>
                         </div>
                         <div style={{ color:"#fff", fontSize:26, fontWeight:700 }}>{fmt(Math.round(grandTotal))}</div>
                       </div>
@@ -1375,7 +1375,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   <div style={{ background:C.light, borderRadius:12, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div>
                       <div style={{ fontSize:12, fontWeight:700, color:C.red, letterSpacing:1 }}>AUTO-CALCULATED FROM MATERIALS</div>
-                      <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>Material cost {fmt(Math.round(matCost))} + Labour ({form.labourPct||50}%) = <strong style={{ color:C.red }}>{fmt(withLabour)}</strong></div>
+                      <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>Material cost {fmt(Math.round(matCost))} + Labour ({form.labourPct||50}%) = <strong style={{ color:C.teal }}>{fmt(withLabour)}</strong></div>
                     </div>
                     <button style={{ ...S.btn(), fontSize:11, padding:"8px 16px" }}
                       onClick={() => {
@@ -1509,9 +1509,9 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       return (
                         <div style={{ display:"flex", gap:16, flexWrap:"wrap", fontSize:13, alignItems:"center" }}>
                           <div><span style={{ color:C.muted }}>Base: </span><strong>{fmt(base)}</strong></div>
-                          {rebateAmt>0 && <div><span style={{ color:C.muted }}>Rebate: </span><strong style={{ color:C.red }}>-{fmt(rebateAmt)}</strong></div>}
+                          {rebateAmt>0 && <div><span style={{ color:C.muted }}>Rebate: </span><strong style={{ color:C.teal }}>-{fmt(rebateAmt)}</strong></div>}
                           {couponAmt>0 && <div><span style={{ color:C.muted }}>Coupon 5%: </span><strong style={{ color:"#166534" }}>-{fmt(couponAmt)}</strong></div>}
-                          <div style={{ marginLeft:"auto" }}><span style={{ color:C.muted }}>Final: </span><strong style={{ color:C.red, fontSize:16 }}>{fmt(final)}</strong></div>
+                          <div style={{ marginLeft:"auto" }}><span style={{ color:C.muted }}>Final: </span><strong style={{ color:C.teal, fontSize:16 }}>{fmt(final)}</strong></div>
                         </div>
                       );
                     })()}
@@ -1547,8 +1547,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   <div style={S.sec}>Auto Payment Schedule</div>
                   {PAYMENT_PHASES.map((p,i)=>(
                     <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.light,borderRadius:12,padding:"14px 18px",marginBottom:10,border:`1px solid ${C.border}` }}>
-                      <div><div style={{ fontWeight:700,fontSize:13,color:C.red }}>{p.day} — {p.pct}% — {p.label}</div></div>
-                      <div style={{ fontSize:18,fontWeight:700,color:C.red }}>{fmt(Math.round(Number(form.quotation)*p.pct/100))}</div>
+                      <div><div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.day} — {p.pct}% — {p.label}</div></div>
+                      <div style={{ fontSize:18,fontWeight:700,color:C.teal }}>{fmt(Math.round(Number(form.quotation)*p.pct/100))}</div>
                     </div>
                   ))}
                 </div>
