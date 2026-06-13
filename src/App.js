@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { sb, toRow, fromRow, TABLE } from "./supabase";
 
 const ROOMS = ["Drawing Room","Living Area","Dining","Master Bedroom","Children Bedroom","Guest Bedroom","Kitchen","Pooja","Entrance","Balcony","Bathroom","Study Room"];
@@ -52,6 +52,103 @@ const MATERIAL_CATALOG = {
   handles: [
     { name:"Gola Profile", price:280, unit:"piece" },
     { name:"Standard",     price:120, unit:"piece" },
+  ],
+};
+
+// Room subsections from Excel quotation — Product & Type columns
+const ROOM_SUBSECTIONS = {
+  "Entrance": [
+    { name:"Shoe Rack",              type:"Box" },
+    { name:"Entrance Frame",         type:"Frame" },
+  ],
+  "Living Area": [
+    { name:"TV Unit Bottom Box",     type:"Box" },
+    { name:"TV Unit Side Louvers",   type:"Louvers" },
+    { name:"TV Unit Back Panel",     type:"Panel" },
+    { name:"TV Unit Wall Partition", type:"Partition PVD" },
+    { name:"Living Room Wall Design",type:"POP Design" },
+    { name:"Living Ceiling",         type:"Ceiling" },
+  ],
+  "Dining": [
+    { name:"Crockery Top Box",       type:"Open Box" },
+    { name:"Crockery Top Box Glass", type:"Profile Door" },
+    { name:"Crockery Granite Tabletop", type:"Granite" },
+    { name:"Crockery Bottom Box",    type:"Box" },
+    { name:"Crockery Top Loft",      type:"Frame" },
+    { name:"Diamond Mirror Backslash", type:"Diamond Mirror" },
+    { name:"Crockery Mirror",        type:"Glass" },
+    { name:"Dining Ceiling",         type:"Ceiling" },
+    { name:"Balcony PVC Ceiling",    type:"PVC Ceiling" },
+  ],
+  "Master Bedroom": [
+    { name:"Wardrobe Box",           type:"Box" },
+    { name:"Wardrobe Loft",          type:"Box" },
+    { name:"Bed",                    type:"Bed" },
+    { name:"Bed Back Panel",         type:"Panel" },
+    { name:"TV Unit",                type:"Box" },
+    { name:"Dressing Mirror",        type:"Profile Door" },
+    { name:"Ceiling",                type:"Ceiling" },
+  ],
+  "Children Bedroom": [
+    { name:"Wardrobe",               type:"Box" },
+    { name:"Wardrobe Loft",          type:"Frame" },
+    { name:"Study Table",            type:"Frame" },
+    { name:"Bed",                    type:"Bed" },
+    { name:"Office Cabinet",         type:"Box" },
+    { name:"Mirror",                 type:"Mirror" },
+    { name:"Ceiling",                type:"Ceiling" },
+  ],
+  "Guest Bedroom": [
+    { name:"Wardrobe",               type:"Box" },
+    { name:"Wardrobe Loft",          type:"Box" },
+    { name:"Used Clothes Pullout",   type:"Box" },
+    { name:"Study Table",            type:"Table" },
+    { name:"Ceiling",                type:"Ceiling" },
+  ],
+  "Pooja": [
+    { name:"Pooja Box",              type:"Box" },
+    { name:"Pooja Door",             type:"Pooja Profile Door" },
+    { name:"Pooja Tiles",            type:"Tiles" },
+    { name:"Pooja Drawers",          type:"Drawer" },
+  ],
+  "Kitchen": [
+    { name:"Counter Below",          type:"Box" },
+    { name:"Granite Countertop",     type:"Granite" },
+    { name:"Long Unit",              type:"Box" },
+    { name:"Backslash Tiles",        type:"Tiles" },
+    { name:"Loft 1",                 type:"Frame" },
+    { name:"Loft 1 Profile Doors",   type:"Profile Door" },
+    { name:"Loft 2",                 type:"Frame" },
+    { name:"Sink",                   type:"Sink" },
+    { name:"Wash Area",              type:"Box" },
+    { name:"Wash Area Granite",      type:"Granite" },
+    { name:"Kitchen Ceiling",        type:"Ceiling" },
+  ],
+  "Drawing Room": [
+    { name:"TV Unit Bottom Box",     type:"Box" },
+    { name:"TV Unit Side Louvers",   type:"Louvers" },
+    { name:"TV Unit Back Panel",     type:"Panel" },
+    { name:"TV Unit Ceiling Panel",  type:"Panel" },
+    { name:"TV Unit Glass Profile",  type:"Profile Door" },
+    { name:"TV Unit Long Unit",      type:"Box" },
+    { name:"Magnetic Track",         type:"Magnetic Track" },
+    { name:"Ceiling",                type:"Ceiling" },
+  ],
+  "Balcony": [
+    { name:"PVC Ceiling",            type:"PVC Ceiling" },
+  ],
+  "Bathroom": [
+    { name:"Bathroom Mirror",        type:"Mirror" },
+    { name:"Bathroom Partition",     type:"Partition Glass" },
+    { name:"Accessories",            type:"Accessories" },
+    { name:"Lighting & Exhaust Fan", type:"Lights" },
+  ],
+  "Study Room": [
+    { name:"Wardrobe",               type:"Box" },
+    { name:"Wardrobe Loft",          type:"Frame" },
+    { name:"Study Table",            type:"Table" },
+    { name:"Dressing Mirror",        type:"Glass" },
+    { name:"Ceiling",                type:"Ceiling" },
   ],
 };
 
@@ -678,6 +775,258 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     );
   }
 
+
+  // ── INTERNAL REPORT ──────────────────────────────────────────────────
+  if (view==="internal" && selected) {
+    const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+    const lp = selected.labourPct != null ? selected.labourPct : 50;
+
+    // Build full materials order list from roomMaterials
+    const allMaterials = {};
+    Object.entries(selected.roomMaterials||{}).forEach(([room, mats]) => {
+      Object.entries(mats).forEach(([matType, sel]) => {
+        if (!sel?.name || !sel?.qty) return;
+        const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+        if (!item) return;
+        const k = `${matType}||${sel.name}`;
+        if (!allMaterials[k]) allMaterials[k] = { matType, name:sel.name, unit:item.unit, price:item.price, qty:0, rooms:[] };
+        allMaterials[k].qty += parseFloat(sel.qty);
+        allMaterials[k].rooms.push(room);
+      });
+    });
+
+    const matList = Object.values(allMaterials);
+    const matTotal = matList.reduce((t,m)=>t+m.qty*m.price,0);
+
+    // Build subsections list from roomDetails
+    const allSubsections = [];
+    (selected.rooms||[]).forEach(room => {
+      const rd = selected.roomDetails?.[room] || {};
+      const subs = ROOM_SUBSECTIONS[room]||[];
+      subs.forEach(item => {
+        const key = item.name.split(" ").join("_").toLowerCase();
+        const sub = rd.subsections?.[key];
+        if (sub?.included) {
+          allSubsections.push({ room, item:item.name, type:item.type, qty:sub.qty||"—", dim:`${rd.length||"?"}×${rd.width||"?"}ft` });
+        }
+      });
+    });
+
+    const IR = {
+      page:   { background:C.white, minHeight:"100vh", fontFamily:"'DM Sans',system-ui,sans-serif", color:C.ink, paddingBottom:60 },
+      hdr:    { background:C.ink, padding:"20px 48px", marginBottom:0, borderBottom:`3px solid ${C.teal}` },
+      body:   { maxWidth:920, margin:"0 auto", padding:"32px 48px" },
+      sec:    { fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase", color:C.teal,
+               borderBottom:`2px solid ${C.teal}`, paddingBottom:6, marginBottom:14, marginTop:28 },
+      th:     { padding:"8px 12px", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase",
+               background:C.ink, color:"#fff" },
+      td:     (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?C.white:C.smoke, borderBottom:`1px solid ${C.line}` }),
+      tag:    (c) => ({ background:c, color:"#fff", padding:"2px 8px", borderRadius:2, fontSize:9, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }),
+    };
+
+    return (
+      <div style={IR.page}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
+
+        {/* Toolbar */}
+        <div className="np" style={{ background:C.ink, padding:"12px 36px", display:"flex", gap:12, alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
+          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+          <button onClick={()=>window.print()} style={S.btn()}>🖨 Print</button>
+          <span style={{ background:"#FDE68A", color:"#5C3A00", padding:"3px 10px", borderRadius:2, fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>🔒 INTERNAL — Do not share with client</span>
+        </div>
+
+        {/* Header */}
+        <div style={IR.hdr}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
+            <div>
+              <div style={{ color:"#fff", fontSize:18, fontWeight:700, letterSpacing:4, textTransform:"uppercase" }}>High Rise Interiors</div>
+              <div style={{ color:C.teal, fontSize:10, letterSpacing:5, marginTop:6, textTransform:"uppercase" }}>Internal Work Order & Material Report</div>
+            </div>
+            <div style={{ textAlign:"right", color:C.muted, fontSize:11 }}>
+              <div>{d}</div>
+              <div style={{ color:"#FDE68A", fontSize:10, marginTop:4, fontWeight:700, letterSpacing:1 }}>⚠ CONFIDENTIAL — TEAM ONLY</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={IR.body}>
+
+          {/* Client Summary */}
+          <div style={IR.sec}>Client & Project Summary</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 40px", border:`1px solid ${C.line}`, borderRadius:3, padding:"16px 20px", background:C.smoke }}>
+            {[
+              ["Client",       selected.name],
+              ["Phone",        selected.phone],
+              ["Address",      selected.address],
+              ["Project Type", selected.projectType],
+              ["Start Date",   selected.startDate],
+              ["Duration",     selected.timeline],
+              ["Style",        selected.style],
+              ["Status",       selected.status],
+            ].filter(([,v])=>v).map(([l,v])=>(
+              <div key={l} style={{ display:"flex", gap:8, padding:"5px 0", borderBottom:`1px solid ${C.line}`, fontSize:12 }}>
+                <span style={{ color:C.muted, minWidth:100 }}>{l}</span>
+                <strong>{v}</strong>
+              </div>
+            ))}
+          </div>
+
+          {/* Rooms & Dimensions */}
+          <div style={IR.sec}>Room Dimensions</div>
+          <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:0 }}>
+              {["Room","Length (ft)","Width (ft)","Height (ft)","Area (sq ft)"].map(h=>(
+                <div key={h} style={IR.th}>{h}</div>
+              ))}
+            </div>
+            {(selected.rooms||[]).map((r,i) => {
+              const rd = selected.roomDetails?.[r]||{};
+              const area = rd.length&&rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
+              return (
+                <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr" }}>
+                  <div style={IR.td(i)}><strong style={{ color:C.teal }}>🏠 {r}</strong></div>
+                  <div style={IR.td(i)}>{rd.length||"—"}</div>
+                  <div style={IR.td(i)}>{rd.width||"—"}</div>
+                  <div style={IR.td(i)}>{rd.height||"—"}</div>
+                  <div style={{ ...IR.td(i), fontWeight:700 }}>{area!=="—"?`${area} sq ft`:"—"}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Work Items — Subsections */}
+          {allSubsections.length > 0 && (
+            <>
+              <div style={IR.sec}>Work Items to Execute</div>
+              <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1.5fr 2fr 1fr 1fr 0.5fr", gap:0 }}>
+                  {["Room","Work Item","Type","Qty (sq ft)","✓"].map(h=>(
+                    <div key={h} style={IR.th}>{h}</div>
+                  ))}
+                </div>
+                {allSubsections.map((s,i)=>(
+                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1.5fr 2fr 1fr 1fr 0.5fr" }}>
+                    <div style={IR.td(i)}><span style={{ color:C.teal, fontWeight:600 }}>{s.room}</span></div>
+                    <div style={IR.td(i)}>{s.item}</div>
+                    <div style={IR.td(i)}><span style={{ ...IR.tag(C.teal) }}>{s.type}</span></div>
+                    <div style={IR.td(i)}>{s.qty}</div>
+                    <div style={{ ...IR.td(i), textAlign:"center", fontSize:16 }}>☐</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Materials Order List — with actual prices (internal only) */}
+          {matList.length > 0 && (
+            <>
+              <div style={IR.sec}>Materials Order List (with Actual Costs)</div>
+              <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 2fr 1fr 1fr 1fr 1fr", gap:0 }}>
+                  {["#","Category","Brand / Material","Unit","Qty","Rate ₹","Total ₹"].map(h=>(
+                    <div key={h} style={IR.th}>{h}</div>
+                  ))}
+                </div>
+                {matList.map((m,i)=>{
+                  const lineTotal = Math.round(m.qty*m.price);
+                  return (
+                    <div key={i} style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 2fr 1fr 1fr 1fr 1fr" }}>
+                      <div style={IR.td(i)}>{i+1}</div>
+                      <div style={IR.td(i)}><span style={{ ...IR.tag(C.teal) }}>{MATERIAL_LABELS[m.matType]}</span></div>
+                      <div style={{ ...IR.td(i), fontWeight:600 }}>{m.name}</div>
+                      <div style={IR.td(i)}>{m.unit}</div>
+                      <div style={IR.td(i)}>{m.qty.toFixed(1)}</div>
+                      <div style={IR.td(i)}>₹{m.price}</div>
+                      <div style={{ ...IR.td(i), fontWeight:700, color:C.teal }}>₹{lineTotal.toLocaleString("en-IN")}</div>
+                    </div>
+                  );
+                })}
+                {/* Rooms used for each material */}
+                <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 2fr 1fr 1fr 1fr 1fr", background:"#FFFFF0", borderTop:`2px solid ${C.teal}` }}>
+                  <div style={{ padding:"10px 12px", gridColumn:"1/7", fontWeight:700, fontSize:12, color:C.ink }}>Total Material Cost (Actual)</div>
+                  <div style={{ padding:"10px 12px", fontWeight:700, fontSize:14, color:C.teal }}>₹{Math.round(matTotal).toLocaleString("en-IN")}</div>
+                </div>
+              </div>
+
+              {/* Cost breakdown — internal view shows actual split */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop:16 }}>
+                <div style={{ border:`1px solid ${C.line}`, borderRadius:3, padding:"16px 20px" }}>
+                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:12 }}>Internal Cost Breakdown</div>
+                  {[
+                    ["Material Cost",        `₹${Math.round(matTotal).toLocaleString("en-IN")}`],
+                    [`Labour (${lp}%)`,      `₹${Math.round(matTotal*lp/100).toLocaleString("en-IN")}`],
+                    ["Total Project Cost",   `₹${Math.round(matTotal*(1+lp/100)).toLocaleString("en-IN")}`],
+                  ].map(([l,v],i)=>(
+                    <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.line}`, fontSize:13 }}>
+                      <span style={{ color:i===2?C.ink:C.muted }}>{l}</span>
+                      <strong style={{ color:i===2?C.teal:C.ink }}>{v}</strong>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ border:`1px solid ${C.line}`, borderRadius:3, padding:"16px 20px" }}>
+                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:12 }}>Quoted to Client</div>
+                  {[
+                    ["Previous Quotation", selected.previousQuotation ? `₹${Number(selected.previousQuotation).toLocaleString("en-IN")}` : "—"],
+                    ["Revised Quotation",  selected.revisedQuotation  ? `₹${Number(selected.revisedQuotation).toLocaleString("en-IN")}`  : "—"],
+                    ["Final Quotation",    selected.quotation         ? `₹${Number(selected.quotation).toLocaleString("en-IN")}`         : "—"],
+                    ["Margin",             selected.quotation && matTotal>0
+                      ? `₹${(Number(selected.quotation)-Math.round(matTotal)).toLocaleString("en-IN")} (${(((Number(selected.quotation)-matTotal)/Number(selected.quotation))*100).toFixed(1)}%)`
+                      : "—"],
+                  ].map(([l,v],i)=>(
+                    <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.line}`, fontSize:13 }}>
+                      <span style={{ color:i===3?"#27AE60":C.muted }}>{l}</span>
+                      <strong style={{ color:i===3?"#27AE60":i===2?C.teal:C.ink }}>{v}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Payment Schedule */}
+          {selected.quotation && (
+            <>
+              <div style={IR.sec}>Payment Collection Schedule</div>
+              <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr 1fr 1fr", gap:0 }}>
+                  {["Phase","Milestone","%","Amount","Collected ✓"].map(h=>(
+                    <div key={h} style={IR.th}>{h}</div>
+                  ))}
+                </div>
+                {PAYMENT_PHASES.map((p,i)=>(
+                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr 1fr 1fr" }}>
+                    <div style={{ ...IR.td(i), fontWeight:700, color:C.teal }}>{p.day}</div>
+                    <div style={IR.td(i)}>{p.label}</div>
+                    <div style={IR.td(i)}>{p.pct}%</div>
+                    <div style={{ ...IR.td(i), fontWeight:700 }}>₹{Math.round(Number(selected.quotation)*p.pct/100).toLocaleString("en-IN")}</div>
+                    <div style={{ ...IR.td(i), textAlign:"center", fontSize:16 }}>☐</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Notes */}
+          {selected.notes && (
+            <>
+              <div style={IR.sec}>Project Notes & Client Requirements</div>
+              <div style={{ background:C.smoke, borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, fontSize:13, lineHeight:2, whiteSpace:"pre-wrap" }}>
+                {selected.notes}
+              </div>
+            </>
+          )}
+
+          {/* Footer */}
+          <div style={{ borderTop:`2px solid ${C.line}`, paddingTop:16, marginTop:40, display:"flex", justifyContent:"space-between", fontSize:11, color:C.muted }}>
+            <span>High Rise Interiors — Internal Document</span>
+            <span>Generated: {d} · Powered by Genovatech IT Services Pvt. Ltd.</span>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
   // ── INVOICE ───────────────────────────────────────────────────────────
   if (view==="invoice" && selected) {
     const d         = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
@@ -866,7 +1215,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
         <div style={{ display:"flex",gap:10 }}>
           <button style={S.btn("dark")} onClick={()=>setView("list")}>← Back</button>
-          <button style={S.btn("dark")} onClick={()=>setView("report")}>📄 Report</button>
+          <button style={S.btn("dark")} onClick={()=>setView("report")}>📄 Client Report</button>
+          <button style={S.btn("dark")} onClick={()=>setView("internal")}>🔧 Internal Report</button>
           <button style={S.btn("dark")} onClick={()=>setView("invoice")}>🧾 Invoice</button>
           <button style={S.btn()} onClick={()=>openEdit(selected)}>Edit</button>
         </div>
@@ -1174,6 +1524,57 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                         <input style={S.input} type="number" value={rd.height||""} onChange={e=>setRD("height",e.target.value)} placeholder="0"/>
                       </div>
                     </div>
+
+                    {/* Subsections from Excel */}
+                    {ROOM_SUBSECTIONS[room] && (
+                      <div style={{ marginBottom:14 }}>
+                        <label style={S.label}>Work Items</label>
+                        <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:0,
+                            padding:"6px 12px", background:C.ink, fontSize:10, fontWeight:700,
+                            color:"#fff", letterSpacing:1.5, textTransform:"uppercase" }}>
+                            <span>Item</span><span>Type</span><span>Qty (sq ft)</span><span>Include?</span>
+                          </div>
+                          {ROOM_SUBSECTIONS[room].map((item, idx) => {
+                            const key = item.name.split(" ").join("_").toLowerCase();
+                            const sub = rd.subsections?.[key] || {};
+                            const setSub = (field, val) => setForm(f => ({
+                              ...f,
+                              roomDetails: {
+                                ...(f.roomDetails||{}),
+                                [room]: {
+                                  ...(f.roomDetails?.[room]||{}),
+                                  subsections: {
+                                    ...(f.roomDetails?.[room]?.subsections||{}),
+                                    [key]: { ...(f.roomDetails?.[room]?.subsections?.[key]||{}), [field]: val }
+                                  }
+                                }
+                              }
+                            }));
+                            return (
+                              <div key={key} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr",
+                                padding:"8px 12px", background:idx%2===0?C.white:C.smoke,
+                                borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
+                                <span style={{ fontSize:12, fontWeight:600, color:C.ink }}>{item.name}</span>
+                                <span style={{ fontSize:11, color:C.muted }}>{item.type}</span>
+                                <input style={{ ...S.input, padding:"4px 8px", fontSize:12, width:"80px" }}
+                                  type="number" value={sub.qty||""}
+                                  onChange={e=>setSub("qty",e.target.value)}
+                                  placeholder="0"/>
+                                <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer" }}>
+                                  <input type="checkbox" checked={!!sub.included}
+                                    onChange={e=>setSub("included",e.target.checked)}
+                                    style={{ width:14, height:14, accentColor:C.teal }}/>
+                                  <span style={{ fontSize:11, color:sub.included?C.teal:C.muted }}>
+                                    {sub.included?"Yes":"No"}
+                                  </span>
+                                </label>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Notes for this room */}
                     <div style={{ marginBottom:14 }}>
