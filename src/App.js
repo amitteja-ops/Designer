@@ -280,6 +280,11 @@ const ROOM_MATERIALS = {
   "Study Room":      ["plywood","laminate","hardware","ceiling","lights"],
 };
 
+// Helper — always returns flat array for any material type including hardware
+const getCatalog = (matType) => matType==="hardware"
+  ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
+  : (MATERIAL_CATALOG[matType]||[]);
+
 const MATERIAL_LABELS = {
   plywood:"Plywood", laminate:"Laminate", hardware:"Hardware",
   glass:"Glass/Mirror", ceiling:"Ceiling Board", lights:"Ceiling Lights", handles:"Handles",
@@ -763,10 +768,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 </div>
                 {Object.entries(selected.roomMaterials).map(([room, mats], i) => {
                   const roomCost = Object.entries(mats).filter(([,v])=>v?.name).reduce((t,[matType,sel])=>{
-                    const catalog = matType==="hardware"
-      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
-      : MATERIAL_CATALOG[matType]||[];
-    const item = catalog.find(m=>m.name===sel.name);
+                    const item = getCatalog(matType).find(m=>m.name===sel.name);
                     return t + (item&&sel.qty ? parseFloat(sel.qty)*item.price : 0);
                   },0);
                   const lp = selected.labourPct != null ? selected.labourPct : 50;
@@ -783,10 +785,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   const lp = selected.labourPct != null ? selected.labourPct : 50;
                   const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
                     t+Object.entries(mats).reduce((rt,[matType,sel])=>{
-                      const catalog = matType==="hardware"
-      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
-      : MATERIAL_CATALOG[matType]||[];
-    const item = catalog.find(m=>m.name===sel.name);
+                      const item = getCatalog(matType).find(m=>m.name===sel.name);
                       return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
                     },0),0);
                   const total = Math.round(matCost*(1+lp/100));
@@ -944,10 +943,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     Object.entries(selected.roomMaterials||{}).forEach(([room, mats]) => {
       Object.entries(mats).forEach(([matType, sel]) => {
         if (!sel?.name || !sel?.qty) return;
-        const catalog = matType==="hardware"
-      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
-      : MATERIAL_CATALOG[matType]||[];
-    const item = catalog.find(m=>m.name===sel.name);
+        const item = getCatalog(matType).find(m=>m.name===sel.name);
         if (!item) return;
         const k = `${matType}||${sel.name}`;
         if (!allMaterials[k]) allMaterials[k] = { matType, name:sel.name, unit:item.unit, price:item.price, qty:0, rooms:[] };
@@ -1181,10 +1177,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       {["Category","Brand","Qty","Status","Ordered","Delivered","Notes"].map(h=><span key={h}>{h}</span>)}
                     </div>
                     {roomItems.map(({matType, sel, inv}, i) => {
-                      const catalog = matType==="hardware"
-      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
-      : MATERIAL_CATALOG[matType]||[];
-    const item = catalog.find(m=>m.name===sel.name);
+                      const item = getCatalog(matType).find(m=>m.name===sel.name);
                       const sc = {
                         Pending:   { bg:"#FEF3C7", c:"#92400E" },
                         Ordered:   { bg:"#DBEAFE", c:"#1E40AF" },
@@ -1478,7 +1471,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 {Object.entries(selected.roomMaterials).map(([room, mats]) => {
                   const roomCost = Object.entries(mats).reduce((total, [matType, sel]) => {
                     if (!sel?.name) return total;
-                    const item = MATERIAL_CATALOG[matType]?.find(m => m.name === sel.name);
+                    const item = getCatalog(matType).find(m=>m.name===sel.name);
                     return total + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
                   }, 0);
                   return (
@@ -1491,7 +1484,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                         <div key={matType} style={{ fontSize:12, color:C.dark, marginBottom:3 }}>
                           <span style={{ color:C.muted }}>{MATERIAL_LABELS[matType]}: </span>
                           <strong>{sel.name}</strong>
-                          {sel.qty && <span style={{ color:C.muted }}> × {sel.qty} {MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name)?.unit}</span>}
+                          {sel.qty && <span style={{ color:C.muted }}> × {sel.qty} {getCatalog(matType).find(m=>m.name===sel.name)?.unit}</span>}
                         </div>
                       ))}
                     </div>
@@ -1501,7 +1494,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   const grand = Object.values(selected.roomMaterials).reduce((t, mats) =>
                     t + Object.entries(mats).reduce((rt, [matType, sel]) => {
                       if (!sel?.name) return rt;
-                      const item = MATERIAL_CATALOG[matType]?.find(m => m.name === sel.name);
+                      const item = getCatalog(matType).find(m=>m.name===sel.name);
                       return rt + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
                     }, 0), 0);
                   return grand > 0 ? (
@@ -1662,15 +1655,16 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   <Select value={form.budget} onChange={v=>setF("budget",v)} options={BUDGETS} placeholder="Select budget"/>
                 </Field>
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:18 }}>
-                <div>
-                  <label style={S.label}>Start Date</label>
-                  <input style={S.input} type="date" value={form.startDate} onChange={e=>setF("startDate",e.target.value)}/>
-                </div>
-                <div>
-                  <label style={S.label}>Duration</label>
-                  <Select value={form.timeline} onChange={v=>setF("timeline",v)} options={TIMELINES} placeholder="Select duration"/>
-                </div>
+              <div style={{ marginBottom:18 }}>
+                <label style={S.label}>Start Date</label>
+                <input style={S.input} type="date" value={form.startDate} onChange={e=>setF("startDate",e.target.value)}/>
+              </div>
+              <div style={{ marginBottom:18 }}>
+                <label style={S.label}>Duration</label>
+                <select style={S.input} value={form.timeline} onChange={e=>setF("timeline",e.target.value)}>
+                  <option value="">Select duration</option>
+                  {TIMELINES.map(t=><option key={t} value={t}>{t}</option>)}
+                </select>
               </div>
               <div style={{ marginBottom:18 }}>
                 <label style={S.label}>Interior Style</label>
@@ -1892,7 +1886,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     const roomCost = applicableMats.reduce((total, matType) => {
                       const sel = rm[matType];
                       if (!sel?.name) return total;
-                      const item = MATERIAL_CATALOG[matType]?.find(m => m.name === sel.name);
+                      const item = getCatalog(matType).find(m=>m.name===sel.name);
                       if (!item) return total;
                       const qty = parseFloat(sel.qty || 0);
                       return total + (qty * item.price);
@@ -1911,7 +1905,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                           // Hardware has sub-categories (channels/hinges)
                           const items = matType==="hardware"
                             ? [...(MATERIAL_CATALOG.hardware.channels||[]), ...(MATERIAL_CATALOG.hardware.hinges||[])]
-                            : MATERIAL_CATALOG[matType] || [];
+                            : getCatalog(matType);
                           const sel = rm[matType] || {};
                           const selectedItem = items.find(m => m.name === sel.name);
                           const lineTotal = selectedItem && sel.qty ? Math.round(parseFloat(sel.qty) * selectedItem.price) : null;
@@ -1978,7 +1972,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       return total + applicableMats.reduce((rt, matType) => {
                         const sel = rm[matType];
                         if (!sel?.name) return rt;
-                        const item = MATERIAL_CATALOG[matType]?.find(m => m.name === sel.name);
+                        const item = getCatalog(matType).find(m=>m.name===sel.name);
                         if (!item) return rt;
                         return rt + (parseFloat(sel.qty||0) * item.price);
                       }, 0);
@@ -2027,10 +2021,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               {form.roomMaterials && Object.keys(form.roomMaterials).length > 0 && (() => {
                 const matCost = Object.values(form.roomMaterials).reduce((t,mats)=>
                   t+Object.entries(mats).reduce((rt,[matType,sel])=>{
-                    const catalog = matType==="hardware"
-      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
-      : MATERIAL_CATALOG[matType]||[];
-    const item = catalog.find(m=>m.name===sel.name);
+                    const item = getCatalog(matType).find(m=>m.name===sel.name);
                     return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
                   },0),0);
                 const labourMult = 1 + (form.labourPct != null ? form.labourPct : 50)/100;
@@ -2352,10 +2343,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                               return { ...f, inventory: { ...(f.inventory||{}), [invKey]: updated } };
                             });
                           };
-                          const catalog = matType==="hardware"
-      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
-      : MATERIAL_CATALOG[matType]||[];
-    const item = catalog.find(m=>m.name===sel.name);
+                          const item = getCatalog(matType).find(m=>m.name===sel.name);
                           return (
                             <div key={invKey} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
                               padding:"10px 14px", background:i%2===0?C.white:C.smoke,
