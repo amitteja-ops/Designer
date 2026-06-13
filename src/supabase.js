@@ -110,6 +110,7 @@ export const toRow = (f) => {
   room_materials:     f.roomMaterials && Object.keys(f.roomMaterials).length > 0
                         ? JSON.stringify(f.roomMaterials)
                         : null,
+  inventory:          f.inventory && Object.keys(f.inventory).length > 0 ? JSON.stringify(f.inventory) : null,
   referral_code:      f.referralCode       || null,
   applied_referral:   f.appliedReferralCode|| null,
   referral_discount:  f.referralDiscount   || false,
@@ -164,6 +165,7 @@ export const fromRow = (r) => {
     roomMaterials:    r.room_materials
                         ? (typeof r.room_materials === "string" ? JSON.parse(r.room_materials) : r.room_materials)
                         : {},
+    inventory:          r.inventory ? (typeof r.inventory==="string" ? JSON.parse(r.inventory) : r.inventory) : {},
     referralCode:       r.referral_code      || "",
     appliedReferralCode:r.applied_referral   || "",
     referralDiscount:   r.referral_discount  || false,

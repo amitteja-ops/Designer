@@ -191,6 +191,7 @@ const EMPTY = {
   roomDetails:{},
   roomMaterials:{},
   rebateType:"amount", rebateValue:"", labourPct:50,
+  inventory:{},             // per-material status: { key: {status, orderedDate, deliveredDate, notes} }
   referralCode:"",         // this client's own permanent referral code
   appliedReferralCode:"",  // referral code from another customer applied to this project
   referralDiscount:false,  // whether the applied code gives 5% discount
@@ -410,6 +411,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       roomMaterials:     c.roomMaterials     || {},
       rebateType:        c.rebateType        || "amount",
       rebateValue:       c.rebateValue       || "",
+      inventory:           c.inventory           || {},
       referralCode:        c.referralCode        || "",
       appliedReferralCode: c.appliedReferralCode || "",
       referralDiscount:   c.referralDiscount   || false,
@@ -596,6 +598,30 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               <div style={{ marginTop:16 }}>
                 <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8 }}>Work Description</div>
                 {scopeLines.map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)}
+              </div>
+            )}
+
+            {/* Room Photos in Client Report */}
+            {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
+              <div style={{ marginTop:20 }}>
+                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Room Reference Photos</div>
+                {(selected.rooms||[]).map(r => {
+                  const photos = selected.roomDetails?.[r]?.photos||[];
+                  if (!photos.length) return null;
+                  return (
+                    <div key={r} style={{ marginBottom:20 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:C.teal, marginBottom:8 }}>🏠 {r}</div>
+                      <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                        {photos.map((p,i)=>(
+                          <div key={i}>
+                            <img src={p} alt={`${r} ${i+1}`} style={{ width:140, height:105,
+                              objectFit:"cover", borderRadius:3, border:`1px solid ${C.line}` }}/>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -945,25 +971,108 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             </>
           )}
 
-          {/* Payment Schedule */}
-          {selected.quotation && (
+          {/* Payment schedule removed from internal report */}
+
+          {/* Room Photos in Internal Report */}
+          {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
             <>
-              <div style={IR.sec}>Payment Collection Schedule (% only)</div>
-              <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 3fr 1fr 1fr", gap:0 }}>
-                  {["Phase","Milestone","%","Collected ✓"].map(h=>(
-                    <div key={h} style={IR.th}>{h}</div>
-                  ))}
-                </div>
-                {PAYMENT_PHASES.map((p,i)=>(
-                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 3fr 1fr 1fr" }}>
-                    <div style={{ ...IR.td(i), fontWeight:700, color:C.teal }}>{p.day}</div>
-                    <div style={IR.td(i)}>{p.label}</div>
-                    <div style={IR.td(i)}>{p.pct}%</div>
-                    <div style={{ ...IR.td(i), textAlign:"center", fontSize:16 }}>☐</div>
+              <div style={IR.sec}>Room Reference Photos</div>
+              {(selected.rooms||[]).map(r => {
+                const photos = selected.roomDetails?.[r]?.photos||[];
+                if (!photos.length) return null;
+                return (
+                  <div key={r} style={{ marginBottom:20 }}>
+                    <div style={{ fontSize:11, fontWeight:700, color:C.teal, letterSpacing:2,
+                      textTransform:"uppercase", marginBottom:10 }}>🏠 {r}</div>
+                    <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                      {photos.map((p,i)=>(
+                        <div key={i} style={{ position:"relative" }}>
+                          <img src={p} alt={`${r} ${i+1}`} style={{ width:160, height:120,
+                            objectFit:"cover", borderRadius:3, border:`1px solid ${C.line}` }}/>
+                          <div style={{ fontSize:9, color:C.muted, marginTop:4, textAlign:"center" }}>
+                            {r} — Photo {i+1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
+            </>
+          )}
+
+          {/* Inventory Status Table */}
+          {selected.inventory && Object.keys(selected.inventory).length > 0 && (
+            <>
+              <div style={IR.sec}>Material Inventory Status</div>
+              {/* Progress summary */}
+              {(() => {
+                const allKeys = Object.keys(selected.inventory);
+                const counts = { Pending:0, Ordered:0, Delivered:0, Installed:0 };
+                allKeys.forEach(k => { const s=selected.inventory[k]?.status||"Pending"; counts[s]=(counts[s]||0)+1; });
+                const total = allKeys.length;
+                return (
+                  <div style={{ display:"flex", gap:12, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
+                    <div style={{ flex:1, height:6, borderRadius:3, overflow:"hidden", background:C.line, display:"flex" }}>
+                      {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#F59E0B"]].map(([s,col])=>(
+                        counts[s]>0 && <div key={s} style={{ flex:counts[s], background:col }}/>
+                      ))}
+                    </div>
+                    {[["Pending","#92400E","#FEF3C7"],["Ordered","#1E40AF","#DBEAFE"],["Delivered","#065F46","#D1FAE5"],["Installed","#4C1D95","#EDE9FE"]].map(([s,c,bg])=>(
+                      <span key={s} style={{ background:bg, color:c, padding:"2px 10px", borderRadius:2, fontSize:10, fontWeight:700 }}>{counts[s]} {s}</span>
+                    ))}
+                    <span style={{ fontSize:11, color:C.muted }}>{counts.Installed}/{total} complete</span>
+                  </div>
+                );
+              })()}
+              {/* Group by room */}
+              {Object.entries(selected.roomMaterials||{}).map(([room, mats]) => {
+                const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
+                if (!matEntries.length) return null;
+                const roomItems = matEntries.map(([matType, sel]) => ({
+                  matType, sel,
+                  inv: selected.inventory?.[`${room}__${sel.name}`] || { status:"Pending" }
+                }));
+                return (
+                  <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                    <div style={{ background:C.ink, padding:"8px 14px", display:"flex", justifyContent:"space-between" }}>
+                      <span style={{ color:"#fff", fontWeight:700, fontSize:12 }}>🏠 {room}</span>
+                      <span style={{ color:C.teal, fontSize:10, letterSpacing:1 }}>
+                        {roomItems.filter(({inv})=>inv.status==="Installed").length}/{roomItems.length} installed
+                      </span>
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr 2fr", padding:"6px 14px",
+                      background:"#2A3A4A", fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
+                      {["Category","Brand","Qty","Status","Ordered","Delivered","Notes"].map(h=><span key={h}>{h}</span>)}
+                    </div>
+                    {roomItems.map(({matType, sel, inv}, i) => {
+                      const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                      const sc = {
+                        Pending:   { bg:"#FEF3C7", c:"#92400E" },
+                        Ordered:   { bg:"#DBEAFE", c:"#1E40AF" },
+                        Delivered: { bg:"#D1FAE5", c:"#065F46" },
+                        Installed: { bg:"#EDE9FE", c:"#4C1D95" },
+                      }[inv.status||"Pending"];
+                      return (
+                        <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr 2fr",
+                          padding:"9px 14px", background:i%2===0?C.white:C.smoke, borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
+                          <div style={IR.td(i)}><span style={IR.tag(C.teal)}>{MATERIAL_LABELS[matType]}</span></div>
+                          <div style={{ ...IR.td(i), fontWeight:600 }}>{sel.name}</div>
+                          <div style={IR.td(i)}>{sel.qty} {item?.unit||""}</div>
+                          <div style={{ padding:"9px 14px" }}>
+                            <span style={{ ...sc, padding:"3px 8px", borderRadius:2, fontSize:9, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>
+                              {inv.status||"Pending"}
+                            </span>
+                          </div>
+                          <div style={{ ...IR.td(i), fontSize:10, color:C.muted }}>{inv.orderedDate||"—"}</div>
+                          <div style={{ ...IR.td(i), fontSize:10, color:C.muted }}>{inv.deliveredDate||"—"}</div>
+                          <div style={{ ...IR.td(i), fontSize:11, color:C.muted }}>{inv.notes||""}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </>
           )}
 
