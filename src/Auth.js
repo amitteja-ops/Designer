@@ -91,8 +91,8 @@ export default function Auth({ onLogin }) {
   return (
     <div style={S.page}>
       <div style={S.card}>
-        <div style={S.title}>Maison Intérieur</div>
-        <span style={S.sub}>Customer Registry</span>
+        <div style={S.title}>High Rise Interiors</div>
+        <span style={S.sub}>Studio CRM</span>
 
         <div style={{ fontSize:15, fontWeight:700, color:"#2C1F0E", marginBottom:18, textAlign:"center" }}>
           {mode==="login" ? "Sign in to your account" : "Create an account"}
@@ -129,7 +129,7 @@ export default function Auth({ onLogin }) {
             ? <>No account? <span style={S.link} onClick={()=>{setMode("signup");setError("");setDebug("");}}>Sign up</span></>
             : <>Have account? <span style={S.link} onClick={()=>{setMode("login");setError("");setDebug("");}}>Sign in</span></>}
         </div>
-        <div style={{ textAlign:"center", marginTop:16, fontSize:11, color:"#C9A882" }}>🔒 Secured by Supabase Auth</div>
+        <div style={{ textAlign:"center", marginTop:16, fontSize:11, color:"#C9A882" }}>🔒 Secured by Supabase · © Genovatech IT Services Pvt. Ltd.</div>
       </div>
     </div>
   );

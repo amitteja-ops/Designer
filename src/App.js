@@ -112,18 +112,18 @@ const genCoupon = (name, id) => {
 // Accent: deep teal #1A5276 — rare, deliberate, never decorative red.
 
 const C = {
-  ink:    "#0F1923",   // near-black, architectural
-  teal:   "#1A5276",   // signature accent — measured use only
-  tealL:  "#D6EAF8",   // teal tint for selected states
-  sand:   "#F5F1EA",   // linen background — warm but not cream-cliché
+  ink:    "#0F1923",   // near-black
+  teal:   "#1A5276",   // signature accent
+  tealL:  "#C5DCF0",   // teal tint — darkened for visibility
+  sand:   "#F5F1EA",   // linen background
   white:  "#FFFFFF",
-  line:   "#E2DDD6",   // hairline dividers
-  muted:  "#8A8278",   // secondary text
-  smoke:  "#F0ECE6",   // card background
-  green:  "#1A6645",   // success / completed
-  amber:  "#92610A",   // warning / lead
-  violet: "#5B3A8A",   // in progress
-  rust:   "#8B2E0A",   // danger / delete
+  line:   "#C8C2BA",   // darker hairline for visibility
+  muted:  "#5A564F",   // darkened — was too light
+  smoke:  "#ECEAE4",   // card background
+  green:  "#145235",   // darker green for contrast
+  amber:  "#7A500A",   // darker amber
+  violet: "#4A2E78",   // darker violet
+  rust:   "#7A2208",   // darker rust
 };
 
 const S = {
@@ -165,25 +165,25 @@ const S = {
     padding:"8px 16px", borderRadius:3, cursor:"pointer", fontSize:10,
     letterSpacing:2, textTransform:"uppercase", fontWeight:700, border:"none",
     fontFamily:"inherit", transition:"all 0.15s",
-    background: a ? C.teal : "transparent",
-    color:       a ? "#fff" : C.muted,
+    background: a ? C.teal     : C.smoke,
+    color:       a ? "#fff"     : C.ink,
     borderBottom: a ? `2px solid ${C.teal}` : "2px solid transparent",
   }),
   pill:  (a) => ({
     padding:"5px 14px", borderRadius:2, fontSize:11, cursor:"pointer",
     border:`1.5px solid ${a ? C.teal : C.line}`,
-    background: a ? C.tealL : "transparent",
-    color:       a ? C.teal  : C.muted,
+    background: a ? C.teal   : "transparent",
+    color:       a ? "#fff"   : C.muted,
     fontFamily:"inherit", fontWeight: a ? 700 : 400,
     transition:"all 0.12s",
   }),
   badge: (status) => {
     const m = {
-      Lead:         { bg:"#FEF3C7", c:C.amber   },
-      Active:       { bg:"#D1FAE5", c:C.green   },
-      "In Progress":{ bg:"#EDE9FE", c:C.violet  },
-      Completed:    { bg:"#D1FAE5", c:C.green   },
-      "On Hold":    { bg:"#FEE2E2", c:C.rust    },
+      Lead:         { bg:"#FDE68A", c:"#5C3A00" },
+      Active:       { bg:"#6EE7B7", c:"#064E3B" },
+      "In Progress":{ bg:"#C4B5FD", c:"#2D1B69" },
+      Completed:    { bg:"#6EE7B7", c:"#064E3B" },
+      "On Hold":    { bg:"#FCA5A5", c:"#5C0A0A" },
     };
     const s = m[status]||m.Lead;
     return { background:s.bg, color:s.c, padding:"3px 10px", borderRadius:2,
@@ -404,7 +404,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
         <div style={{ background:`linear-gradient(135deg,${C.red},#C0392B)`,padding:"28px 48px",marginBottom:36 }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
             <div>
-              <div style={{ color:"#fff",fontSize:26,fontWeight:700,letterSpacing:3,textTransform:"uppercase" }}>🏗 High Rise Interiors</div>
+              <div style={{ color:"#fff",fontSize:26,fontWeight:700,letterSpacing:3,textTransform:"uppercase" }}>High Rise Interiors</div>
               <div style={{ color:"#FFAAAA",fontSize:12,letterSpacing:4,marginTop:4 }}>Project Summary Report</div>
             </div>
             <div style={{ textAlign:"right",color:"#FFAAAA",fontSize:12 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
@@ -651,7 +651,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* Footer */}
           <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:16,marginTop:24 }}>
             <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted,marginBottom:6 }}>
-              <span>🏗 High Rise Interiors — Hyderabad, Telangana</span>
+              <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
               <span>{d}</span>
             </div>
             <div style={{ fontSize:11,color:"#C0A0A0",textAlign:"center",lineHeight:1.8 }}>
@@ -687,7 +687,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* Header */}
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:36,paddingBottom:24,borderBottom:`3px solid ${C.red}` }}>
             <div>
-              <div style={{ fontSize:28,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase" }}>🏗 High Rise Interiors</div>
+              <div style={{ fontSize:28,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase" }}>High Rise Interiors</div>
               <div style={{ fontSize:12,color:C.muted,marginTop:4,lineHeight:1.8 }}>Hyderabad, Telangana, India<br/>GSTIN: [Your GST Number]</div>
             </div>
             <div style={{ textAlign:"right" }}>
@@ -823,7 +823,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* Footer */}
           <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:16,marginTop:24 }}>
             <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted,marginBottom:6 }}>
-              <span>🏗 High Rise Interiors — Hyderabad, Telangana</span>
+              <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
               <span>{invNum} | {d}</span>
             </div>
             <div style={{ fontSize:11,color:"#C0A0A0",textAlign:"center",lineHeight:1.8 }}>
@@ -841,7 +841,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
-        <div><div style={S.logo}>🏗 High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
+        <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
         <div style={{ display:"flex",gap:10 }}>
           <button style={S.btn("dark")} onClick={()=>setView("list")}>← Back</button>
           <button style={S.btn("dark")} onClick={()=>setView("report")}>📄 Report</button>
@@ -954,7 +954,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
-        <div><div style={S.logo}>🏗 High Rise Interiors</div><span style={S.sub}>Customer Management</span></div>
+        <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Studio CRM</span></div>
         <div style={{ display:"flex",alignItems:"center",gap:10 }}>
           <span style={{ background:connected?"#27AE60":"#C0392B",color:"#fff",fontSize:10,padding:"3px 10px",borderRadius:20 }}>● {connected?"Connected":"Offline"}</span>
           <span style={{ color:"#FFAAAA",fontSize:11 }}>{user?.email}</span>
@@ -1027,7 +1027,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
-        <div><div style={S.logo}>🏗 High Rise Interiors</div><span style={S.sub}>{form.id?"Edit Client":"New Client"}</span></div>
+        <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>{form.id?"Edit Client":"New Client"}</span></div>
         <div style={{ display:"flex",gap:10 }}>
           <button style={S.btn("dark")} onClick={()=>setView("list")}>Cancel</button>
           <button style={{ ...S.btn(),opacity:saving?0.7:1 }} onClick={saveCustomer} disabled={saving}>{saving?"Saving…":form.id?"Update Client":"Save Client"}</button>
