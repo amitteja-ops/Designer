@@ -920,64 +920,26 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* Materials Order List — with actual prices (internal only) */}
           {matList.length > 0 && (
             <>
-              <div style={IR.sec}>Materials Order List (with Actual Costs)</div>
+              <div style={IR.sec}>Materials Order List & Specifications</div>
               <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 2fr 1fr 1fr 1fr 1fr", gap:0 }}>
-                  {["#","Category","Brand / Material","Unit","Qty","Rate ₹","Total ₹"].map(h=>(
+                <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 3fr 1fr 2fr", gap:0 }}>
+                  {["#","Category","Brand / Material","Qty","Rooms"].map(h=>(
                     <div key={h} style={IR.th}>{h}</div>
                   ))}
                 </div>
-                {matList.map((m,i)=>{
-                  const lineTotal = Math.round(m.qty*m.price);
-                  return (
-                    <div key={i} style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 2fr 1fr 1fr 1fr 1fr" }}>
-                      <div style={IR.td(i)}>{i+1}</div>
-                      <div style={IR.td(i)}><span style={{ ...IR.tag(C.teal) }}>{MATERIAL_LABELS[m.matType]}</span></div>
-                      <div style={{ ...IR.td(i), fontWeight:600 }}>{m.name}</div>
-                      <div style={IR.td(i)}>{m.unit}</div>
-                      <div style={IR.td(i)}>{m.qty.toFixed(1)}</div>
-                      <div style={IR.td(i)}>₹{m.price}</div>
-                      <div style={{ ...IR.td(i), fontWeight:700, color:C.teal }}>₹{lineTotal.toLocaleString("en-IN")}</div>
-                    </div>
-                  );
-                })}
-                {/* Rooms used for each material */}
-                <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 2fr 1fr 1fr 1fr 1fr", background:"#FFFFF0", borderTop:`2px solid ${C.teal}` }}>
-                  <div style={{ padding:"10px 12px", gridColumn:"1/7", fontWeight:700, fontSize:12, color:C.ink }}>Total Material Cost (Actual)</div>
-                  <div style={{ padding:"10px 12px", fontWeight:700, fontSize:14, color:C.teal }}>₹{Math.round(matTotal).toLocaleString("en-IN")}</div>
-                </div>
-              </div>
-
-              {/* Cost breakdown — internal view shows actual split */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop:16 }}>
-                <div style={{ border:`1px solid ${C.line}`, borderRadius:3, padding:"16px 20px" }}>
-                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:12 }}>Internal Cost Breakdown</div>
-                  {[
-                    ["Material Cost",        `₹${Math.round(matTotal).toLocaleString("en-IN")}`],
-                    [`Labour (${lp}%)`,      `₹${Math.round(matTotal*lp/100).toLocaleString("en-IN")}`],
-                    ["Total Project Cost",   `₹${Math.round(matTotal*(1+lp/100)).toLocaleString("en-IN")}`],
-                  ].map(([l,v],i)=>(
-                    <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.line}`, fontSize:13 }}>
-                      <span style={{ color:i===2?C.ink:C.muted }}>{l}</span>
-                      <strong style={{ color:i===2?C.teal:C.ink }}>{v}</strong>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ border:`1px solid ${C.line}`, borderRadius:3, padding:"16px 20px" }}>
-                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:12 }}>Quoted to Client</div>
-                  {[
-                    ["Previous Quotation", selected.previousQuotation ? `₹${Number(selected.previousQuotation).toLocaleString("en-IN")}` : "—"],
-                    ["Revised Quotation",  selected.revisedQuotation  ? `₹${Number(selected.revisedQuotation).toLocaleString("en-IN")}`  : "—"],
-                    ["Final Quotation",    selected.quotation         ? `₹${Number(selected.quotation).toLocaleString("en-IN")}`         : "—"],
-                    ["Margin",             selected.quotation && matTotal>0
-                      ? `₹${(Number(selected.quotation)-Math.round(matTotal)).toLocaleString("en-IN")} (${(((Number(selected.quotation)-matTotal)/Number(selected.quotation))*100).toFixed(1)}%)`
-                      : "—"],
-                  ].map(([l,v],i)=>(
-                    <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${C.line}`, fontSize:13 }}>
-                      <span style={{ color:i===3?"#27AE60":C.muted }}>{l}</span>
-                      <strong style={{ color:i===3?"#27AE60":i===2?C.teal:C.ink }}>{v}</strong>
-                    </div>
-                  ))}
+                {matList.map((m,i)=>(
+                  <div key={i} style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 3fr 1fr 2fr" }}>
+                    <div style={IR.td(i)}>{i+1}</div>
+                    <div style={IR.td(i)}><span style={IR.tag(C.teal)}>{MATERIAL_LABELS[m.matType]}</span></div>
+                    <div style={{ ...IR.td(i), fontWeight:600 }}>{m.name}</div>
+                    <div style={IR.td(i)}><strong>{m.qty.toFixed(1)}</strong> {m.unit}</div>
+                    <div style={{ ...IR.td(i), fontSize:11, color:C.muted }}>{[...new Set(m.rooms)].join(", ")}</div>
+                  </div>
+                ))}
+                <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 3fr 1fr 2fr", background:C.smoke, borderTop:`2px solid ${C.teal}` }}>
+                  <div style={{ padding:"10px 12px", gridColumn:"1/4", fontWeight:700, fontSize:12, color:C.ink }}>Total Items to Order</div>
+                  <div style={{ padding:"10px 12px", fontWeight:700, fontSize:13, color:C.teal }}>{matList.length} types</div>
+                  <div/>
                 </div>
               </div>
             </>
@@ -986,19 +948,18 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* Payment Schedule */}
           {selected.quotation && (
             <>
-              <div style={IR.sec}>Payment Collection Schedule</div>
+              <div style={IR.sec}>Payment Collection Schedule (% only)</div>
               <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr 1fr 1fr", gap:0 }}>
-                  {["Phase","Milestone","%","Amount","Collected ✓"].map(h=>(
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 3fr 1fr 1fr", gap:0 }}>
+                  {["Phase","Milestone","%","Collected ✓"].map(h=>(
                     <div key={h} style={IR.th}>{h}</div>
                   ))}
                 </div>
                 {PAYMENT_PHASES.map((p,i)=>(
-                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 2fr 1fr 1fr 1fr" }}>
+                  <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 3fr 1fr 1fr" }}>
                     <div style={{ ...IR.td(i), fontWeight:700, color:C.teal }}>{p.day}</div>
                     <div style={IR.td(i)}>{p.label}</div>
                     <div style={IR.td(i)}>{p.pct}%</div>
-                    <div style={{ ...IR.td(i), fontWeight:700 }}>₹{Math.round(Number(selected.quotation)*p.pct/100).toLocaleString("en-IN")}</div>
                     <div style={{ ...IR.td(i), textAlign:"center", fontSize:16 }}>☐</div>
                   </div>
                 ))}
