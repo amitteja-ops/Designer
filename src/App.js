@@ -2083,6 +2083,139 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             </div>
           )}
 
+          {/* ── INVENTORY ── */}
+          {activeTab==="inventory" && (
+            <div>
+              <div style={S.sec}>Project Material Inventory</div>
+              {!form.roomMaterials || Object.keys(form.roomMaterials).length===0 ? (
+                <div style={{ textAlign:"center", padding:40, background:C.smoke, borderRadius:3, color:C.muted, fontSize:13, border:`1px solid ${C.line}` }}>
+                  ☝️ Add materials in the <strong>Materials</strong> tab first, then track them here
+                </div>
+              ) : (
+                <>
+                  {/* Status legend */}
+                  <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap", alignItems:"center" }}>
+                    {[["Pending","#FEF3C7","#92400E"],["Ordered","#DBEAFE","#1E40AF"],["Delivered","#D1FAE5","#065F46"],["Installed","#EDE9FE","#4C1D95"]].map(([s,bg,c])=>(
+                      <span key={s} style={{ background:bg, color:c, padding:"4px 12px", borderRadius:2, fontSize:11, fontWeight:700, letterSpacing:1 }}>{s}</span>
+                    ))}
+                    <span style={{ fontSize:11, color:C.muted }}>— tap status to cycle through stages</span>
+                  </div>
+
+                  {/* Per-room material inventory */}
+                  {Object.entries(form.roomMaterials).map(([room, mats]) => {
+                    const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
+                    if (!matEntries.length) return null;
+                    const installedCount = matEntries.filter(([,sel])=>{
+                      const k=`${room}__${sel.name}`;
+                      return form.inventory?.[k]?.status==="Installed";
+                    }).length;
+                    return (
+                      <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                        {/* Room header */}
+                        <div style={{ background:C.ink, padding:"10px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                          <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
+                          <span style={{ color:installedCount===matEntries.length?C.teal:"#aaa", fontSize:10, letterSpacing:1 }}>
+                            {installedCount}/{matEntries.length} installed
+                          </span>
+                        </div>
+                        {/* Column headers */}
+                        <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
+                          padding:"6px 14px", background:"#2A3A4A",
+                          fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
+                          {["Category","Brand","Qty","Status","Dates","Notes"].map(h=><span key={h}>{h}</span>)}
+                        </div>
+                        {/* Material rows */}
+                        {matEntries.map(([matType, sel], i) => {
+                          const invKey = `${room}__${sel.name}`;
+                          const inv = form.inventory?.[invKey] || { status:"Pending" };
+                          const SINV = ["Pending","Ordered","Delivered","Installed"];
+                          const SC = {
+                            Pending:   { bg:"#FEF3C7", c:"#92400E" },
+                            Ordered:   { bg:"#DBEAFE", c:"#1E40AF" },
+                            Delivered: { bg:"#D1FAE5", c:"#065F46" },
+                            Installed: { bg:"#EDE9FE", c:"#4C1D95" },
+                          };
+                          const sc = SC[inv.status||"Pending"];
+                          const setInv = (field, val) => setForm(f=>({
+                            ...f,
+                            inventory: {
+                              ...(f.inventory||{}),
+                              [invKey]: { ...(f.inventory?.[invKey]||{status:"Pending"}), [field]: val }
+                            }
+                          }));
+                          const cycleStatus = () => {
+                            const idx = SINV.indexOf(inv.status||"Pending");
+                            const next = SINV[(idx+1)%SINV.length];
+                            const now = new Date().toISOString().split("T")[0];
+                            setInv("status", next);
+                            if (next==="Ordered")   setInv("orderedDate",   now);
+                            if (next==="Delivered") setInv("deliveredDate", now);
+                            if (next==="Installed") setInv("installedDate", now);
+                          };
+                          const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                          return (
+                            <div key={invKey} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
+                              padding:"10px 14px", background:i%2===0?C.white:C.smoke,
+                              borderTop:`1px solid ${C.line}`, alignItems:"center", gap:8 }}>
+                              <div style={{ fontSize:11, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
+                              <div style={{ fontSize:12, fontWeight:700, color:C.ink }}>{sel.name}</div>
+                              <div style={{ fontSize:12, color:C.muted }}>{sel.qty} {item?.unit||""}</div>
+                              {/* Clickable status */}
+                              <div onClick={cycleStatus} title="Click to update status"
+                                style={{ ...sc, padding:"5px 8px", borderRadius:2, fontSize:10,
+                                  fontWeight:700, letterSpacing:1, cursor:"pointer",
+                                  textTransform:"uppercase", textAlign:"center", userSelect:"none",
+                                  transition:"all 0.15s" }}>
+                                {inv.status||"Pending"}
+                              </div>
+                              {/* Auto-stamped dates */}
+                              <div style={{ fontSize:10, color:C.muted, lineHeight:1.8 }}>
+                                {inv.orderedDate   && <div>📦 {inv.orderedDate}</div>}
+                                {inv.deliveredDate && <div>🚚 {inv.deliveredDate}</div>}
+                                {inv.installedDate && <div>✅ {inv.installedDate}</div>}
+                              </div>
+                              {/* Notes */}
+                              <input style={{ ...S.input, padding:"5px 10px", fontSize:11 }}
+                                value={inv.notes||""}
+                                onChange={e=>setInv("notes", e.target.value)}
+                                placeholder="Supplier, PO#, remarks…"/>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+
+                  {/* Overall progress summary */}
+                  {(() => {
+                    const allKeys = Object.entries(form.roomMaterials).flatMap(([room,mats])=>
+                      Object.entries(mats).filter(([,v])=>v?.name).map(([,sel])=>`${room}__${sel.name}`)
+                    );
+                    const counts = {Pending:0,Ordered:0,Delivered:0,Installed:0};
+                    allKeys.forEach(k=>{ const s=form.inventory?.[k]?.status||"Pending"; counts[s]=(counts[s]||0)+1; });
+                    const total = allKeys.length;
+                    return total>0?(
+                      <div style={{ background:C.smoke, borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, marginTop:8 }}>
+                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Overall Progress</div>
+                        <div style={{ display:"flex", height:8, borderRadius:4, overflow:"hidden", marginBottom:12, background:C.line }}>
+                          {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#F59E0B"]].map(([s,col])=>(
+                            counts[s]>0 ? <div key={s} style={{ flex:counts[s], background:col }}/> : null
+                          ))}
+                        </div>
+                        <div style={{ display:"flex", gap:16, fontSize:12, flexWrap:"wrap" }}>
+                          {[["Pending","#92400E","#FEF3C7"],["Ordered","#1E40AF","#DBEAFE"],["Delivered","#065F46","#D1FAE5"],["Installed","#4C1D95","#EDE9FE"]].map(([s,c,bg])=>(
+                            <div key={s}><span style={{ background:bg, color:c, padding:"2px 8px", borderRadius:2, fontSize:10, fontWeight:700 }}>{counts[s]}</span> <span style={{ color:C.muted }}>{s}</span></div>
+                          ))}
+                          <div style={{ marginLeft:"auto", fontWeight:700, color:C.ink }}>{counts.Installed}/{total} Complete</div>
+                        </div>
+                      </div>
+                    ):null;
+                  })()}
+                </>
+              )}
+            </div>
+          )}
+
           {/* ── NOTES ── */}
           {activeTab==="notes" && (
             <div>
