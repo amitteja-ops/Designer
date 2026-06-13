@@ -1352,13 +1352,14 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       <option value="percent">Percentage (%)</option>
                     </select>
                   </Field>
-                  <Field label={form.rebateType==="percent" ? "Rebate % (max 5%)" : "Rebate Amount ₹"}>
-                    <input style={S.input} type="number" min="0" max={form.rebateType==="percent"?"5":undefined}
+                  <Field label={form.rebateType==="percent" ? "Rebate % (max 5%)" : "Rebate Amount ₹ (max ₹25,000)"}>
+                    <input style={S.input} type="number" min="0" max={form.rebateType==="percent"?"5":"25000"}
                       value={form.rebateValue}
                       onChange={e=>{
                         const val = e.target.value;
-                        const safePct = form.rebateType==="percent" ? Math.min(parseFloat(val||0),5) : parseFloat(val||0);
-                        setF("rebateValue", form.rebateType==="percent" ? String(safePct) : val);
+                        const rawVal = parseFloat(val||0);
+                        const safePct = form.rebateType==="percent" ? Math.min(rawVal,5) : Math.min(rawVal,25000);
+                        setF("rebateValue", String(safePct));
                         const base = parseFloat(form.previousQuotation||0);
                         if (!base) return;
                         const rebateAmt = form.rebateType==="percent" ? Math.round(base*safePct/100) : safePct;
