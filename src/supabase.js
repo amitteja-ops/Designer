@@ -110,11 +110,13 @@ export const toRow = (f) => {
   room_materials:     f.roomMaterials && Object.keys(f.roomMaterials).length > 0
                         ? JSON.stringify(f.roomMaterials)
                         : null,
-  coupon_applied:     f.couponApplied      || false,
+  referral_code:      f.referralCode       || null,
+  applied_referral:   f.appliedReferralCode|| null,
+  referral_discount:  f.referralDiscount   || false,
   labour_pct:         f.labourPct          != null ? Number(f.labourPct) : 50,
   rebate_type:        f.rebateType         || null,
   rebate_value:       f.rebateValue        ? parseFloat(f.rebateValue) : null,
-  coupon_code:        f.couponCode         || null,
+
   room_details:       f.roomDetails && Object.keys(f.roomDetails).length > 0
                         ? JSON.stringify(
                             // Strip photo data before saving to DB (too large)
@@ -162,11 +164,13 @@ export const fromRow = (r) => {
     roomMaterials:    r.room_materials
                         ? (typeof r.room_materials === "string" ? JSON.parse(r.room_materials) : r.room_materials)
                         : {},
-    couponApplied:     r.coupon_applied     || false,
+    referralCode:       r.referral_code      || "",
+    appliedReferralCode:r.applied_referral   || "",
+    referralDiscount:   r.referral_discount  || false,
     labourPct:        r.labour_pct     != null ? Number(r.labour_pct) : 50,
     rebateType:       r.rebate_type        || "amount",
     rebateValue:      r.rebate_value  != null ? String(r.rebate_value) : "",
-    couponCode:       r.coupon_code        || "",
+
     roomDetails:      r.room_details
                         ? (typeof r.room_details === "string" ? JSON.parse(r.room_details) : r.room_details)
                         : {},

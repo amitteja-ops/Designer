@@ -93,16 +93,20 @@ const EMPTY = {
   plywood:"", laminate:"", hardware:"", glass:"", ceiling:"", lights:"", handles:"",
   roomDetails:{},
   roomMaterials:{},
-  rebateType:"amount", rebateValue:"", couponCode:"", couponApplied:false, labourPct:50,
+  rebateType:"amount", rebateValue:"", labourPct:50,
+  referralCode:"",         // this client's own permanent referral code
+  appliedReferralCode:"",  // referral code from another customer applied to this project
+  referralDiscount:false,  // whether the applied code gives 5% discount
 };
 
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
 
-// Generate unique referral coupon from customer name + id
-const genCoupon = (name, id) => {
-  const prefix = (name||"HRI").toUpperCase().replace(/[^A-Z]/g,"").slice(0,4)||"HRI";
-  const suffix  = String(id||Date.now()).slice(-4);
-  return `${prefix}${suffix}`;
+// Generate permanent referral code: HRI + 2 random letters + client ID
+const genReferralCode = (id) => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O to avoid confusion
+  const r1 = chars[Math.floor(Math.random()*chars.length)];
+  const r2 = chars[Math.floor(Math.random()*chars.length)];
+  return `HRI${r1}${r2}${String(id).slice(-6)}`;
 };
 
 // ── Design System ─────────────────────────────────────────────────────
@@ -309,8 +313,9 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       roomMaterials:     c.roomMaterials     || {},
       rebateType:        c.rebateType        || "amount",
       rebateValue:       c.rebateValue       || "",
-      couponCode:        c.couponCode        || "",
-      couponApplied:     c.couponApplied     || false,
+      referralCode:        c.referralCode        || "",
+      appliedReferralCode: c.appliedReferralCode || "",
+      referralDiscount:   c.referralDiscount   || false,
       labourPct:         c.labourPct         != null ? c.labourPct : 50,
     });
     setActiveTab("personal");
@@ -563,7 +568,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               <div style={{ background:"#DCFCE7", borderRadius:3, padding:"10px 14px", margin:"6px 0", border:"1px solid #86EFAC" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                   <span style={{ color:"#166534", fontWeight:700 }}>
-                    🎁 Rebate Applied {selected.couponCode && `(Code: ${selected.couponCode})`}
+                    🎁 Rebate Applied {selected.appliedReferralCode && `(Referral: ${selected.appliedReferralCode})`}
                   </span>
                   <span style={{ color:"#166534", fontWeight:700 }}>
                     - {selected.rebateType==="percent" ? `${selected.rebateValue}%` : fmt(selected.rebateValue)}
@@ -572,13 +577,14 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 </div>
               </div>
             )}
-            {selected.couponCode && (
-              <div style={{ background:"#DCFCE7", borderRadius:3, padding:"12px 16px", margin:"6px 0", border:"1px solid #86EFAC" }}>
-                <div style={{ fontSize:12, fontWeight:700, color:"#166534", marginBottom:6 }}>🎁 YOUR REFERRAL CODE: <span style={{ fontSize:16, letterSpacing:3 }}>{selected.couponCode}</span></div>
-                <div style={{ fontSize:12, color:"#166534", lineHeight:1.8 }}>
+            {selected.referralCode && (
+              <div style={{ background:"#DCFCE7", borderRadius:3, padding:"14px 18px", margin:"8px 0", border:"1px solid #86EFAC" }}>
+                <div style={{ fontSize:10, fontWeight:700, color:"#166534", letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>🎁 Your Referral Code</div>
+                <div style={{ fontSize:24, fontWeight:800, letterSpacing:5, color:"#064E3B", fontFamily:"monospace", marginBottom:8 }}>{selected.referralCode}</div>
+                <div style={{ fontSize:12, color:"#166534", lineHeight:1.9 }}>
                   <div>• Share this code with friends & family</div>
-                  <div>• They get <strong>5% off</strong> their High Rise Interiors project</div>
-                  <div>• You get <strong>5% cashback</strong> credited to your account</div>
+                  <div>• Referred friend gets <strong>5% off</strong> their High Rise Interiors project</div>
+                  <div>• You earn <strong>5% cashback</strong> credited on your next payment</div>
                 </div>
               </div>
             )}
@@ -591,7 +597,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.red,borderRadius:12,padding:"16px 20px",marginTop:12 }}>
               <div>
                 <span style={{ color:"#fff",fontWeight:700,fontSize:16 }}>Final Quotation</span>
-                {selected.couponCode && <div style={{ color:"#E0D0FF", fontSize:11, marginTop:2 }}>Coupon: {selected.couponCode}</div>}
+                {selected.appliedReferralCode && <div style={{ color:"#7ECFF0", fontSize:11, marginTop:2 }}>Referral: {selected.appliedReferralCode}</div>}
               </div>
               <strong style={{ color:"#fff",fontSize:26 }}>{fmt(selected.quotation)||selected.budget||"TBD"}</strong>
             </div>
@@ -1461,44 +1467,66 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   </Field>
                 </div>
 
-                {/* Row 2: Coupon (additional 5%) */}
-                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8, fontWeight:700, marginTop:4 }}>Step 2 — Referral Coupon (Additional 5%)</div>
+                {/* Row 2: Apply another customer's referral code */}
+                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8, fontWeight:700, marginTop:4 }}>Step 2 — Apply Referral Code (from another client)</div>
                 <div style={S.row}>
-                  <Field label="Customer Referral Code">
-                    <div style={{ display:"flex", gap:8 }}>
-                      <input style={S.input} value={form.couponCode} onChange={e=>setF("couponCode",e.target.value)} placeholder="Auto-generate or type"/>
-                      <button style={{ ...S.btn("light"), whiteSpace:"nowrap", padding:"10px 14px", fontSize:11 }}
-                        onClick={()=>setF("couponCode", genCoupon(form.name, form.id||Date.now()))}>
-                        ⚡ Generate
-                      </button>
-                    </div>
-                  </Field>
-                  <Field label="Apply Coupon Discount?">
-                    <div style={{ display:"flex", gap:10, marginTop:4 }}>
-                      <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", fontSize:13 }}>
-                        <input type="checkbox" checked={!!form.couponApplied}
-                          onChange={e=>{
-                            setF("couponApplied", e.target.checked);
-                            const base = parseFloat(form.previousQuotation||0);
-                            if (!base) return;
+                  <Field label="Referral Code Used">
+                    <input style={S.input}
+                      value={form.appliedReferralCode}
+                      onChange={e=>{
+                        const code = e.target.value.toUpperCase();
+                        setF("appliedReferralCode", code);
+                        // Validate: find if code belongs to another client
+                        const referrer = customers.find(c =>
+                          c.referralCode === code && c.id !== form.id
+                        );
+                        if(referrer){
+                          setF("referralDiscount", true);
+                          // Apply 5% on post-rebate amount
+                          const base = parseFloat(form.previousQuotation||0);
+                          if(base){
                             const rebateAmt = form.rebateType==="percent"
                               ? Math.round(base*Math.min(parseFloat(form.rebateValue||0),5)/100)
                               : parseFloat(form.rebateValue||0);
-                            const afterRebate = Math.round(base - rebateAmt);
-                            const couponAmt = e.target.checked ? Math.round(afterRebate*0.05) : 0;
-                            const revised = afterRebate - couponAmt;
+                            const afterRebate = base - rebateAmt;
+                            const refDiscount = Math.round(afterRebate*0.05);
+                            const revised = afterRebate - refDiscount;
                             setF("revisedQuotation", revised.toString());
                             setF("quotation", revised.toString());
-                          }}
-                          style={{ width:16, height:16 }}
-                        />
-                        Apply 5% coupon discount
-                      </label>
+                          }
+                          showToast(`✓ Valid code — ${referrer.name} gets 5% cashback!`,"success");
+                        } else if(code && customers.find(c=>c.referralCode===code && c.id===form.id)){
+                          setF("referralDiscount", false);
+                          showToast("Cannot apply your own referral code","error");
+                        } else {
+                          setF("referralDiscount", false);
+                        }
+                      }}
+                      placeholder="e.g. HRIAB123456"
+                    />
+                  </Field>
+                  <Field label="Validation">
+                    <div style={{ ...S.input, cursor:"default",
+                      background: form.referralDiscount ? "#DCFCE7" : form.appliedReferralCode ? "#FEF2F2" : C.smoke,
+                      color:      form.referralDiscount ? "#166534" : form.appliedReferralCode ? C.rust : C.muted,
+                      fontWeight:700 }}>
+                      {form.referralDiscount
+                        ? (() => {
+                            const r = customers.find(c=>c.referralCode===form.appliedReferralCode);
+                            return `✓ Valid — Referred by ${r?.name||"client"}`;
+                          })()
+                        : form.appliedReferralCode
+                          ? (customers.find(c=>c.referralCode===form.appliedReferralCode && c.id===form.id)
+                              ? "✗ Cannot use own code"
+                              : "✗ Code not found")
+                          : "Enter code to validate"
+                      }
                     </div>
                   </Field>
-                  <Field label="Coupon Discount">
-                    <div style={{ ...S.input, background:"#F0FFF4", color:"#166534", fontWeight:700, cursor:"default" }}>
-                      {form.couponApplied && form.previousQuotation
+                  <Field label="Referral Discount (5%)">
+                    <div style={{ ...S.input, background:form.referralDiscount?"#DCFCE7":C.smoke,
+                      color:form.referralDiscount?"#166534":C.muted, fontWeight:700, cursor:"default" }}>
+                      {form.referralDiscount && form.previousQuotation
                         ? (() => {
                             const base = parseFloat(form.previousQuotation||0);
                             const rebateAmt = form.rebateType==="percent"
