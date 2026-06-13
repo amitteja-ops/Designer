@@ -1524,13 +1524,15 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   <Select value={form.budget} onChange={v=>setF("budget",v)} options={BUDGETS} placeholder="Select budget"/>
                 </Field>
               </div>
-              <div style={S.row}>
-                <Field label="Start Date">
+              <div style={{ display:"flex", gap:16, marginBottom:18, flexWrap:"wrap" }}>
+                <div style={{ flex:"1 1 200px" }}>
+                  <label style={S.label}>Start Date</label>
                   <input style={S.input} type="date" value={form.startDate} onChange={e=>setF("startDate",e.target.value)}/>
-                </Field>
-                <Field label="Duration">
+                </div>
+                <div style={{ flex:"1 1 200px" }}>
+                  <label style={S.label}>Duration</label>
                   <Select value={form.timeline} onChange={v=>setF("timeline",v)} options={TIMELINES} placeholder="Select duration"/>
-                </Field>
+                </div>
               </div>
               <div style={{ marginBottom:18 }}>
                 <label style={S.label}>Interior Style</label>
@@ -1950,6 +1952,24 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   </Field>
                 </div>
 
+                {/* This client's own referral code */}
+                <div style={{ background:C.smoke, borderRadius:3, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.line}` }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:C.teal, letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>
+                    This Client's Referral Code
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
+                    <div style={{ fontSize:22, fontWeight:800, letterSpacing:4, color:C.ink,
+                      fontFamily:"monospace", background:C.white, padding:"8px 20px",
+                      borderRadius:3, border:`2px solid ${C.teal}` }}>
+                      {form.referralCode || (form.id ? genReferralCode(form.id) : "— saved on first save —")}
+                    </div>
+                    <div style={{ fontSize:12, color:C.muted, lineHeight:1.8 }}>
+                      <div>Share with friends to earn <strong style={{ color:C.teal }}>5% cashback</strong></div>
+                      <div>Friends get <strong style={{ color:C.teal }}>5% off</strong> their project</div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Row 2: Apply another customer's referral code */}
                 <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8, fontWeight:700, marginTop:4 }}>Step 2 — Apply Referral Code (from another client)</div>
                 <div style={S.row}>
@@ -2146,11 +2166,21 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                           const cycleStatus = () => {
                             const idx = SINV.indexOf(inv.status||"Pending");
                             const next = SINV[(idx+1)%SINV.length];
+                            const nextIdx = SINV.indexOf(next);
                             const now = new Date().toISOString().split("T")[0];
-                            setInv("status", next);
-                            if (next==="Ordered")   setInv("orderedDate",   now);
-                            if (next==="Delivered") setInv("deliveredDate", now);
-                            if (next==="Installed") setInv("installedDate", now);
+                            setForm(f => {
+                              const current = f.inventory?.[invKey] || {status:"Pending"};
+                              const updated = { ...current, status: next };
+                              // Clear dates for any stage ABOVE the new status
+                              if (nextIdx < 1) { delete updated.orderedDate;   }
+                              if (nextIdx < 2) { delete updated.deliveredDate; }
+                              if (nextIdx < 3) { delete updated.installedDate; }
+                              // Stamp date for the new status
+                              if (next==="Ordered")   updated.orderedDate   = now;
+                              if (next==="Delivered") updated.deliveredDate = now;
+                              if (next==="Installed") updated.installedDate = now;
+                              return { ...f, inventory: { ...(f.inventory||{}), [invKey]: updated } };
+                            });
                           };
                           const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
                           return (
