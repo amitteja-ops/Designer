@@ -427,78 +427,50 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             )}
           </div>
 
-          {/* Materials — Room wise */}
+          {/* Room-wise Project Cost — no material rates shown to customer */}
           {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
             <div style={{ marginBottom:32 }}>
-              <div style={RS.sTitle}>Material Specifications & Cost</div>
-              {Object.entries(selected.roomMaterials).map(([room, mats]) => {
-                const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
-                if (!matEntries.length) return null;
-                const roomCost = matEntries.reduce((total,[matType,sel])=>{
-                  const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
-                  return total + (item&&sel.qty ? parseFloat(sel.qty)*item.price : 0);
-                },0);
-                return (
-                  <div key={room} style={{ marginBottom:16 }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, borderRadius:"10px 10px 0 0", padding:"10px 14px" }}>
-                      <span style={{ fontWeight:700, fontSize:13, color:"#fff" }}>🏠 {room}</span>
-                      {roomCost>0 && <span style={{ fontWeight:700, fontSize:13, color:"#FFEEEE" }}>Est. {fmt(Math.round(roomCost*(1+(selected.labourPct||50)/100)))}</span>}
-                    </div>
-                    {/* Material table header */}
-                    <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"8px 14px", background:"#4A1A1A" }}>
-                      {["Material","Brand/Type","Qty","Rate","Total"].map(h=>(
-                        <div key={h} style={{ fontSize:10, fontWeight:700, color:"#FFAAAA", letterSpacing:1, textTransform:"uppercase" }}>{h}</div>
-                      ))}
-                    </div>
-                    {matEntries.map(([matType,sel],i)=>{
-                      const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
-                      const lineTotal = item&&sel.qty ? Math.round(parseFloat(sel.qty)*item.price) : null;
-                      return (
-                        <div key={matType} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"9px 14px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.border}` }}>
-                          <div style={{ fontSize:12, color:C.muted, fontWeight:700 }}>{MATERIAL_LABELS[matType]}</div>
-                          <div style={{ fontSize:12 }}>{sel.name}</div>
-                          <div style={{ fontSize:12 }}>{sel.qty||"—"} {item?.unit||""}</div>
-                          <div style={{ fontSize:12 }}>{item?`₹${item.price}`:"—"}</div>
-                          <div style={{ fontSize:12, fontWeight:700, color:C.red }}>{lineTotal?fmt(lineTotal):"—"}</div>
-                        </div>
-                      );
-                    })}
-                    <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr", gap:8, padding:"9px 14px", background:C.light, borderRadius:"0 0 10px 10px", borderTop:`2px solid ${C.border}` }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:C.red, gridColumn:"1/5" }}>Room Total (Incl. Labour)</div>
-                      <div style={{ fontSize:13, fontWeight:700, color:C.red }}>{roomCost>0?fmt(Math.round(roomCost*(1+(selected.labourPct||50)/100))):"—"}</div>
-                    </div>
-                  </div>
-                );
-              })}
-              {/* Grand total with 50% labour included */}
-              {(() => {
-                const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
-                  t+Object.entries(mats).reduce((rt,[matType,sel])=>{
+              <div style={RS.sTitle}>Room-wise Project Cost</div>
+              <div style={{ border:`1.5px solid ${C.border}`, borderRadius:12, overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", padding:"10px 16px", background:C.red }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase" }}>Room</div>
+                  <div style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase", textAlign:"right" }}>Project Cost</div>
+                </div>
+                {Object.entries(selected.roomMaterials).map(([room, mats], i) => {
+                  const roomCost = Object.entries(mats).filter(([,v])=>v?.name).reduce((t,[matType,sel])=>{
                     const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
-                    return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
-                  },0),0);
-                const labourMult = 1 + (selected.labourPct||50)/100;
-                const totalWithLabour = Math.round(matCost * labourMult);
-                return matCost>0?(
-                  <div style={{ borderRadius:12, overflow:"hidden", border:`1.5px solid ${C.border}` }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 18px", background:"#FFFAFA", borderBottom:`1px solid ${C.border}` }}>
-                      <span style={{ color:C.muted, fontSize:13 }}>Materials Subtotal</span>
-                      <span style={{ fontSize:13 }}>{fmt(Math.round(matCost))}</span>
+                    return t + (item&&sel.qty ? parseFloat(sel.qty)*item.price : 0);
+                  },0);
+                  const lp = selected.labourPct != null ? selected.labourPct : 50;
+                  const roomTotal = Math.round(roomCost*(1+lp/100));
+                  if (!roomTotal) return null;
+                  return (
+                    <div key={room} style={{ display:"grid", gridTemplateColumns:"2fr 1fr", padding:"11px 16px", background:i%2===0?"#FFFAFA":C.light, borderTop:`1px solid ${C.border}` }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.red }}>🏠 {room}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.red, textAlign:"right" }}>{fmt(roomTotal)}</div>
                     </div>
-                    <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 18px", background:"#FFFAFA", borderBottom:`1px solid ${C.border}` }}>
-                      <span style={{ color:C.muted, fontSize:13 }}>Installation & Labour (included)</span>
-                      <span style={{ fontSize:13 }}>{fmt(Math.round(matCost * 0.5))}</span>
+                  );
+                })}
+                {(() => {
+                  const lp = selected.labourPct != null ? selected.labourPct : 50;
+                  const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
+                    t+Object.entries(mats).reduce((rt,[matType,sel])=>{
+                      const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                      return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+                    },0),0);
+                  const total = Math.round(matCost*(1+lp/100));
+                  return total>0?(
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, padding:"14px 16px", borderTop:`2px solid #6A0A0A` }}>
+                      <span style={{ color:"#FFEEEE", fontWeight:700, fontSize:14 }}>Total Estimated Project Cost</span>
+                      <strong style={{ color:"#fff", fontSize:20 }}>{fmt(total)}</strong>
                     </div>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, padding:"16px 20px" }}>
-                      <span style={{ color:"#FFEEEE", fontWeight:700, fontSize:15 }}>Total Project Cost (Incl. Labour)</span>
-                      <strong style={{ color:"#fff", fontSize:22 }}>{fmt(totalWithLabour)}</strong>
-                    </div>
-                  </div>
-                ):null;
-              })()}
+                  ):null;
+                })()}
+              </div>
             </div>
           )}
-          {/* Out of Scope */}
+
+                    {/* Out of Scope */}
           {outOfScope.length>0 && (
             <div style={{ marginBottom:32 }}>
               <div style={RS.sTitle}>Out of Scope</div>
@@ -1318,7 +1290,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   <span style={{ fontSize:13, color:C.muted }}>% of material cost</span>
                 </div>
                 <div style={{ fontSize:12, color:C.muted }}>
-                  Total = Material × {1 + (form.labourPct||50)/100}x
+                  Total = Material × {1 + (form.labourPct != null ? form.labourPct : 50)/100}x
                 </div>
                 <div style={{ display:"flex", gap:6, marginLeft:"auto" }}>
                   {[30,40,50,60].map(p=>(
@@ -1335,7 +1307,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
                     return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
                   },0),0);
-                const labourMult = 1 + (form.labourPct||50)/100;
+                const labourMult = 1 + (form.labourPct != null ? form.labourPct : 50)/100;
                 const withLabour = Math.round(matCost * labourMult);
                 return matCost > 0 ? (
                   <div style={{ background:C.light, borderRadius:12, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
