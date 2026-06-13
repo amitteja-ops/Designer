@@ -28,11 +28,123 @@ const MATERIAL_CATALOG = {
     { name:"Croma",           price:40,  unit:"sq ft" },
     { name:"Acrylic Sheets",  price:85,  unit:"sq ft" },
   ],
-  hardware: [
-    { name:"Nimmi Hinges",     price:180, unit:"piece" },
-    { name:"Nimmi Channels",   price:650, unit:"piece" },
-    { name:"Hettich Tandem",   price:2200,unit:"piece" },
-  ],
+  hardware: {
+    channels: [
+      { name:"Hettich KA5632 250mm Black Coated Telescopic Channel", price:378,  unit:"set" },
+      { name:"Hettich KA5632 250mm Zinc Coated Telescopic Channel",  price:378,  unit:"set" },
+      { name:"Hettich KA5632 300mm Zinc Coated Telescopic Channel",  price:396,  unit:"set" },
+      { name:"Hettich KA5632 300mm Black Coated Telescopic Channel", price:415,  unit:"set" },
+      { name:"Hettich KA5632 350mm Zinc Coated Telescopic Channel",  price:416,  unit:"set" },
+      { name:"Hettich KA5632 400mm Zinc Coated Telescopic Channel",  price:435,  unit:"set" },
+      { name:"Hettich KA5632 350mm Black Coated Telescopic Channel", price:439,  unit:"set" },
+      { name:"Hettich KA5632 450mm Zinc Coated Telescopic Channel",  price:453,  unit:"set" },
+      { name:"Hettich KA5632 400mm Black Coated Telescopic Channel", price:459,  unit:"set" },
+      { name:"Hettich KA5632 500mm Zinc Coated Telescopic Channel",  price:473,  unit:"set" },
+      { name:"Hettich KA5632 450mm Black Coated Telescopic Channel", price:479,  unit:"set" },
+      { name:"Hettich KA5632 500mm Black Coated Telescopic Channel", price:499,  unit:"set" },
+      { name:"Hettich KA5632 550mm Zinc Coated Telescopic Channel",  price:568,  unit:"set" },
+      { name:"Hettich KA5632 550mm Black Coated Telescopic Channel", price:568,  unit:"set" },
+      { name:"Hettich KA5632 600mm Zinc Coated Telescopic Channel",  price:662,  unit:"set" },
+      { name:"Hettich KA5632 600mm Black Coated Telescopic Channel", price:699,  unit:"set" },
+      { name:"Hettich KA5632 650mm Zinc Coated Telescopic Channel",  price:757,  unit:"set" },
+      { name:"Hettich KA5632 650mm Black Coated Telescopic Channel", price:799,  unit:"set" },
+      { name:"Hettich 24 inch Steel Zinc Wardrobe Telescopic Channel",price:848, unit:"set" },
+      { name:"Hettich KA5632 700mm Zinc Coated Telescopic Channel",  price:852,  unit:"set" },
+      { name:"Hettich KA5632 700mm Black Coated Telescopic Channel", price:899,  unit:"set" },
+      { name:"Hettich KA5740 300mm Drawer Runner",                   price:1009, unit:"set" },
+      { name:"Hettich KA4532 300mm Zinc Push to Open Runner",        price:1022, unit:"set" },
+      { name:"Hettich KA4532 300mm Silent System Runner",            price:1022, unit:"set" },
+      { name:"Hettich KA4632 300mm Black Coated Silent System Runner",price:1022,unit:"set" },
+      { name:"Hettich KA4532 350mm Zinc Push to Open Runner",        price:1058, unit:"set" },
+      { name:"Hettich KA4532 350mm Silent System Runner",            price:1058, unit:"set" },
+      { name:"Hettich KA4632 350mm Black Coated Silent System Runner",price:1058,unit:"set" },
+      { name:"Hettich KA4632 400mm Black Coated Silent System Runner",price:1095,unit:"set" },
+      { name:"Hettich KA4532 400mm Zinc Push to Open Runner",        price:1095, unit:"set" },
+      { name:"Hettich KA4532 400mm Silent System Runner",            price:1095, unit:"set" },
+      { name:"Hettich KA4532 450mm Zinc Push to Open Runner",        price:1113, unit:"set" },
+      { name:"Hettich KA4532 450mm Silent System Runner",            price:1113, unit:"set" },
+      { name:"Hettich KA4632 450mm Black Coated Silent System Runner",price:1113,unit:"set" },
+      { name:"Hettich KA4632 500mm Black Coated Silent System Runner",price:1132,unit:"set" },
+      { name:"Hettich KA4532 500mm Zinc Push to Open Runner",        price:1132, unit:"set" },
+      { name:"Hettich KA4532 500mm Silent System Runner",            price:1132, unit:"set" },
+      { name:"Hettich KA5740 400mm Drawer Runner",                   price:1145, unit:"set" },
+      { name:"Hettich KA4532 550mm Zinc Push to Open Runner",        price:1189, unit:"set" },
+      { name:"Hettich KA4532 550mm Silent System Runner",            price:1189, unit:"set" },
+      { name:"Hettich KA4632 550mm Black Coated Silent System Runner",price:1189,unit:"set" },
+      { name:"Hettich KA5740 350mm Drawer Runner",                   price:1214, unit:"set" },
+      { name:"Hettich 20 inch Steel Chrome Ball Bearing Channel",    price:1252, unit:"set" },
+      { name:"Hettich 20 inch Wardrobe Channel",                     price:1253, unit:"set" },
+      { name:"Hettich KA4532 600mm Zinc Push to Open Runner",        price:1281, unit:"set" },
+      { name:"Hettich KA4532 600mm Silent System Runner",            price:1281, unit:"set" },
+      { name:"Hettich KA5740 450mm Drawer Runner",                   price:1335, unit:"set" },
+      { name:"Hettich KA4532 650mm Zinc Push to Open Runner",        price:1374, unit:"set" },
+      { name:"Hettich KA4532 650mm Silent System Runner",            price:1374, unit:"set" },
+      { name:"Hettich KA5740 500mm Drawer Runner",                   price:1400, unit:"set" },
+      { name:"Hettich KA5740 650mm Drawer Runner",                   price:1436, unit:"set" },
+      { name:"Hettich KA5740 550mm Drawer Runner",                   price:1455, unit:"set" },
+      { name:"Hettich KA4532 700mm Silent System Runner",            price:1467, unit:"set" },
+      { name:"Hettich KA4532 700mm Zinc Push to Open Runner",        price:1467, unit:"set" },
+      { name:"Hettich KA5740 600mm Drawer Runner",                   price:1520, unit:"set" },
+      { name:"Hettich KA4620 400mm Drawer Runner",                   price:1545, unit:"set" },
+      { name:"Hettich KA4620 450mm Drawer Runner",                   price:1545, unit:"set" },
+      { name:"Hettich KA5740 700mm Drawer Runner",                   price:1645, unit:"set" },
+      { name:"Hettich KA4620 500mm Drawer Runner",                   price:1718, unit:"set" },
+      { name:"Hettich KA4620 550mm Drawer Runner",                   price:1737, unit:"set" },
+      { name:"Hettich KA4620 600mm Drawer Runner",                   price:1888, unit:"set" },
+      { name:"Hettich KA4620 650mm Drawer Runner",                   price:2371, unit:"set" },
+      { name:"Hettich KA4620 700mm Drawer Runner",                   price:2567, unit:"set" },
+    ],
+    hinges: [
+      { name:"Hettich Cover Cap for Sensys Hinge Arm",               price:16,   unit:"piece" },
+      { name:"Hettich Cover Cap for Sensys Hinge Cup",               price:25,   unit:"piece" },
+      { name:"Hettich 200mm Aluminium Folding Door Hinge",           price:37,   unit:"piece" },
+      { name:"Hettich 14-25mm Auto Closing Concealed Hinge (Eco)",   price:89,   unit:"set" },
+      { name:"Hettich Black Cross Mounting Plate Eccentric Cam",      price:89,   unit:"piece" },
+      { name:"Hettich 14-25mm Auto Closing Concealed Hinge (Std)",   price:94,   unit:"set" },
+      { name:"Hettich 14-25mm Auto Closing Concealed Hinge",         price:98,   unit:"set" },
+      { name:"Hettich Linear Mounting Plate for Sensys Hinge",       price:121,  unit:"piece" },
+      { name:"Hettich D7-GP9 Black Magnetic Catch",                  price:155,  unit:"piece" },
+      { name:"Hettich 15-25mm Intermat 9943 Hinge Set",              price:286,  unit:"set" },
+      { name:"Hettich 14-32mm Intermat 9936 Hinge Set",              price:288,  unit:"set" },
+      { name:"Hettich 15-25mm Intermat 9943 Hinge Set (Mid)",        price:316,  unit:"set" },
+      { name:"Hettich 14-32mm Intermat 9936 Hinge Set (Mid)",        price:320,  unit:"set" },
+      { name:"Hettich 15-25mm Intermat 9943 Hinge Set (Premium)",    price:324,  unit:"set" },
+      { name:"Hettich 14-32mm Intermat 9936 Hinge Set (Eco)",        price:352,  unit:"set" },
+      { name:"Hettich 14-25mm Onsys 4447i Hinge Set (Eco)",          price:356,  unit:"set" },
+      { name:"Hettich 15-24mm Obsidian Black Sensys 8645i (Lite)",   price:364,  unit:"piece" },
+      { name:"Hettich 15-32mm Obsidian Black Sensys 8631i (Std)",    price:388,  unit:"piece" },
+      { name:"Hettich 14-25mm Onsys 4447i Hinge Set",                price:388,  unit:"set" },
+      { name:"Hettich 15-24mm Obsidian Black Sensys 8645i",          price:389,  unit:"piece" },
+      { name:"Hettich 14-25mm Onsys 4447i Hinge Set (Premium)",      price:393,  unit:"set" },
+      { name:"Hettich KA5740 Accessory Kit",                         price:394,  unit:"set" },
+      { name:"Hettich 15-32mm Obsidian Black Sensys 8631i",          price:407,  unit:"piece" },
+      { name:"Hettich 15-24mm Obsidian Black Sensys 8645i (Soft)",   price:413,  unit:"piece" },
+      { name:"Hettich P20 Universal Maxi Push to Open",              price:437,  unit:"piece" },
+      { name:"Hettich 15-32mm Obsidian Black Sensys 8631i (Heavy)",  price:441,  unit:"piece" },
+      { name:"Hettich 19mm Aluminium Profile Intermat 9936 Hinge",   price:484,  unit:"set" },
+      { name:"Hettich 10-16mm Obsidian Black Sensys 8646i",          price:534,  unit:"piece" },
+      { name:"Hettich 24mm Steel Silver Sensys 8645i Pair",          price:551,  unit:"set" },
+      { name:"Hettich 10-16mm Obsidian Black Sensys 8646i (Ultra)",  price:558,  unit:"piece" },
+      { name:"Hettich 10-16mm Obsidian Black Sensys 8646i (Heavy)",  price:582,  unit:"piece" },
+      { name:"Hettich Push to Open Pin Strong",                      price:598,  unit:"piece" },
+      { name:"Hettich 15-32mm Sensys 8654i Hinge Set (Std)",         price:630,  unit:"set" },
+      { name:"Hettich 15-32mm Sensys 8654i Hinge Set",               price:672,  unit:"set" },
+      { name:"Hettich 15-32mm Sensys 8654i Hinge Set (Premium)",     price:711,  unit:"set" },
+      { name:"Hettich 16-21mm Sensys Hinge Set",                     price:832,  unit:"set" },
+      { name:"Hettich 19mm Aluminium Sensys 8638i W90 Hinge",        price:873,  unit:"set" },
+      { name:"Hettich 16-43mm Intermat 9935 Hinge Set",              price:889,  unit:"set" },
+      { name:"Hettich 16-24mm Intermat 9956 Hinge Set",              price:889,  unit:"set" },
+      { name:"Hettich 16-43mm Intermat 9935 Hinge Set (Premium)",    price:938,  unit:"set" },
+      { name:"Hettich 15-32mm Obsidian Black Sensys 8657i",          price:955,  unit:"piece" },
+      { name:"Hettich 5x3x3 SS Ball Bearing Hinge Set",              price:969,  unit:"set" },
+      { name:"Hettich 16-43mm Intermat 9935 Hinge Set (Heavy)",      price:985,  unit:"set" },
+      { name:"Hettich 65mm SS Cylindrical Door Knob Set",            price:1019, unit:"set" },
+      { name:"Hettich 90 deg Sensys 8639i W90 Hinge Set",            price:1276, unit:"set" },
+      { name:"Hettich 15-32mm Sensys Wide Angle Hinge Set",          price:1313, unit:"set" },
+      { name:"Hettich 105 deg Glass Door Hinge Set",                 price:1370, unit:"set" },
+      { name:"Hettich HTS FS-463 Floor Spring",                      price:4779, unit:"piece" },
+    ],
+  },
   glass: [
     { name:"Modi Guard 4mm Black Tinted", price:95,  unit:"sq ft" },
     { name:"Modi Guard Mirror",           price:80,  unit:"sq ft" },
@@ -199,11 +311,13 @@ const EMPTY = {
 
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
 
-// Generate permanent referral code: HRI + 2 random letters + client ID
+// Generate permanent referral code: HRI + 2 deterministic letters from ID + client ID
+// Deterministic — same ID always produces same code, no Math.random()
 const genReferralCode = (id) => {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O to avoid confusion
-  const r1 = chars[Math.floor(Math.random()*chars.length)];
-  const r2 = chars[Math.floor(Math.random()*chars.length)];
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const n = parseInt(String(id).replace(/[^0-9]/g,"").slice(-8)||"0");
+  const r1 = chars[n % chars.length];
+  const r2 = chars[Math.floor(n / chars.length) % chars.length];
   return `HRI${r1}${r2}${String(id).slice(-6)}`;
 };
 
@@ -431,12 +545,24 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     if (!form.name.trim()) { showToast("Client name is required", "error"); return; }
     setSaving(true);
     try {
-      const row = toRow(form);
-      if (form.id) {
-        await safeCall(t => sb(`${TABLE}?id=eq.${form.id}`, "PATCH", row, t));
+      // For existing clients — preserve existing referral code, never regenerate
+      const formToSave = {...form};
+      if (!formToSave.id) {
+        // New client — will generate code after we get the real ID back
+        formToSave.referralCode = "";
+      }
+      // Existing client — referralCode stays exactly as loaded, no change
+      const row = toRow(formToSave);
+      if (formToSave.id) {
+        await safeCall(t => sb(`${TABLE}?id=eq.${formToSave.id}`, "PATCH", row, t));
         showToast("✓ Client updated");
       } else {
-        await safeCall(t => sb(TABLE, "POST", row, t));
+        const result = await safeCall(t => sb(TABLE, "POST", row, t));
+        // Generate permanent code using the real DB id
+        if (result && result[0]?.id) {
+          const realCode = genReferralCode(result[0].id);
+          await safeCall(t => sb(`${TABLE}?id=eq.${result[0].id}`, "PATCH", { referral_code: realCode }, t));
+        }
         showToast("✓ Client saved");
       }
       await fetchCustomers();
@@ -637,7 +763,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 </div>
                 {Object.entries(selected.roomMaterials).map(([room, mats], i) => {
                   const roomCost = Object.entries(mats).filter(([,v])=>v?.name).reduce((t,[matType,sel])=>{
-                    const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                    const catalog = matType==="hardware"
+      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
+      : MATERIAL_CATALOG[matType]||[];
+    const item = catalog.find(m=>m.name===sel.name);
                     return t + (item&&sel.qty ? parseFloat(sel.qty)*item.price : 0);
                   },0);
                   const lp = selected.labourPct != null ? selected.labourPct : 50;
@@ -654,7 +783,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   const lp = selected.labourPct != null ? selected.labourPct : 50;
                   const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
                     t+Object.entries(mats).reduce((rt,[matType,sel])=>{
-                      const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                      const catalog = matType==="hardware"
+      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
+      : MATERIAL_CATALOG[matType]||[];
+    const item = catalog.find(m=>m.name===sel.name);
                       return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
                     },0),0);
                   const total = Math.round(matCost*(1+lp/100));
@@ -812,7 +944,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     Object.entries(selected.roomMaterials||{}).forEach(([room, mats]) => {
       Object.entries(mats).forEach(([matType, sel]) => {
         if (!sel?.name || !sel?.qty) return;
-        const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+        const catalog = matType==="hardware"
+      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
+      : MATERIAL_CATALOG[matType]||[];
+    const item = catalog.find(m=>m.name===sel.name);
         if (!item) return;
         const k = `${matType}||${sel.name}`;
         if (!allMaterials[k]) allMaterials[k] = { matType, name:sel.name, unit:item.unit, price:item.price, qty:0, rooms:[] };
@@ -1046,7 +1181,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       {["Category","Brand","Qty","Status","Ordered","Delivered","Notes"].map(h=><span key={h}>{h}</span>)}
                     </div>
                     {roomItems.map(({matType, sel, inv}, i) => {
-                      const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                      const catalog = matType==="hardware"
+      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
+      : MATERIAL_CATALOG[matType]||[];
+    const item = catalog.find(m=>m.name===sel.name);
                       const sc = {
                         Pending:   { bg:"#FEF3C7", c:"#92400E" },
                         Ordered:   { bg:"#DBEAFE", c:"#1E40AF" },
@@ -1524,12 +1662,12 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   <Select value={form.budget} onChange={v=>setF("budget",v)} options={BUDGETS} placeholder="Select budget"/>
                 </Field>
               </div>
-              <div style={{ display:"flex", gap:16, marginBottom:18, flexWrap:"wrap" }}>
-                <div style={{ flex:"1 1 200px" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:18 }}>
+                <div>
                   <label style={S.label}>Start Date</label>
                   <input style={S.input} type="date" value={form.startDate} onChange={e=>setF("startDate",e.target.value)}/>
                 </div>
-                <div style={{ flex:"1 1 200px" }}>
+                <div>
                   <label style={S.label}>Duration</label>
                   <Select value={form.timeline} onChange={v=>setF("timeline",v)} options={TIMELINES} placeholder="Select duration"/>
                 </div>
@@ -1770,7 +1908,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
 
                         {/* Material rows */}
                         {applicableMats.map(matType => {
-                          const items = MATERIAL_CATALOG[matType] || [];
+                          // Hardware has sub-categories (channels/hinges)
+                          const items = matType==="hardware"
+                            ? [...(MATERIAL_CATALOG.hardware.channels||[]), ...(MATERIAL_CATALOG.hardware.hinges||[])]
+                            : MATERIAL_CATALOG[matType] || [];
                           const sel = rm[matType] || {};
                           const selectedItem = items.find(m => m.name === sel.name);
                           const lineTotal = selectedItem && sel.qty ? Math.round(parseFloat(sel.qty) * selectedItem.price) : null;
@@ -1784,7 +1925,20 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                                   <label style={S.label}>Brand / Type</label>
                                   <select style={S.input} value={sel.name||""} onChange={e => setRM(matType, "name", e.target.value)}>
                                     <option value="">Select {MATERIAL_LABELS[matType]}</option>
-                                    {items.map(m => (
+                                    {matType==="hardware" ? (
+                                      <>
+                                        <optgroup label="── Drawer Channels & Runners ──">
+                                          {(MATERIAL_CATALOG.hardware.channels||[]).map(m=>(
+                                            <option key={m.name} value={m.name}>{m.name} — ₹{m.price}/{m.unit}</option>
+                                          ))}
+                                        </optgroup>
+                                        <optgroup label="── Hinges & Accessories ──">
+                                          {(MATERIAL_CATALOG.hardware.hinges||[]).map(m=>(
+                                            <option key={m.name} value={m.name}>{m.name} — ₹{m.price}/{m.unit}</option>
+                                          ))}
+                                        </optgroup>
+                                      </>
+                                    ) : items.map(m => (
                                       <option key={m.name} value={m.name}>{m.name} — ₹{m.price}/{m.unit}</option>
                                     ))}
                                   </select>
@@ -1873,7 +2027,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               {form.roomMaterials && Object.keys(form.roomMaterials).length > 0 && (() => {
                 const matCost = Object.values(form.roomMaterials).reduce((t,mats)=>
                   t+Object.entries(mats).reduce((rt,[matType,sel])=>{
-                    const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                    const catalog = matType==="hardware"
+      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
+      : MATERIAL_CATALOG[matType]||[];
+    const item = catalog.find(m=>m.name===sel.name);
                     return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
                   },0),0);
                 const labourMult = 1 + (form.labourPct != null ? form.labourPct : 50)/100;
@@ -1958,10 +2115,11 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     This Client's Referral Code
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
-                    <div style={{ fontSize:22, fontWeight:800, letterSpacing:4, color:C.ink,
+                    <div style={{ fontSize:22, fontWeight:800, letterSpacing:4,
+                      color: form.referralCode ? C.ink : C.muted,
                       fontFamily:"monospace", background:C.white, padding:"8px 20px",
-                      borderRadius:3, border:`2px solid ${C.teal}` }}>
-                      {form.referralCode || (form.id ? genReferralCode(form.id) : "— saved on first save —")}
+                      borderRadius:3, border:`2px solid ${form.referralCode ? C.teal : C.line}` }}>
+                      {form.referralCode || "— auto-generated on save —"}
                     </div>
                     <div style={{ fontSize:12, color:C.muted, lineHeight:1.8 }}>
                       <div>Share with friends to earn <strong style={{ color:C.teal }}>5% cashback</strong></div>
@@ -2194,7 +2352,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                               return { ...f, inventory: { ...(f.inventory||{}), [invKey]: updated } };
                             });
                           };
-                          const item = MATERIAL_CATALOG[matType]?.find(m=>m.name===sel.name);
+                          const catalog = matType==="hardware"
+      ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
+      : MATERIAL_CATALOG[matType]||[];
+    const item = catalog.find(m=>m.name===sel.name);
                           return (
                             <div key={invKey} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
                               padding:"10px 14px", background:i%2===0?C.white:C.smoke,
