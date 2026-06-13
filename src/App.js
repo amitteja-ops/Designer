@@ -105,52 +105,114 @@ const genCoupon = (name, id) => {
   return `${prefix}${suffix}`;
 };
 
-// ── Styles ────────────────────────────────────────────────────────────
+// ── Design System ─────────────────────────────────────────────────────
+// Signature: architectural grid with ink-on-linen palette.
+// A premium studio tool — precise, confident, not decorative.
+// Typeface pairing: DM Sans (utility) + DM Serif Display (brand moments)
+// Accent: deep teal #1A5276 — rare, deliberate, never decorative red.
+
 const C = {
-  red:   "#8B1A1A",
-  light: "#FFEEEE",
-  bg:    "#FBF8F5",
-  border:"#F0E0E0",
-  muted: "#9A7070",
-  dark:  "#1A0A00",
+  ink:    "#0F1923",   // near-black, architectural
+  teal:   "#1A5276",   // signature accent — measured use only
+  tealL:  "#D6EAF8",   // teal tint for selected states
+  sand:   "#F5F1EA",   // linen background — warm but not cream-cliché
+  white:  "#FFFFFF",
+  line:   "#E2DDD6",   // hairline dividers
+  muted:  "#8A8278",   // secondary text
+  smoke:  "#F0ECE6",   // card background
+  green:  "#1A6645",   // success / completed
+  amber:  "#92610A",   // warning / lead
+  violet: "#5B3A8A",   // in progress
+  rust:   "#8B2E0A",   // danger / delete
 };
 
 const S = {
-  app:    { minHeight:"100vh", background:C.bg, fontFamily:"'Cormorant Garamond',Georgia,serif", color:C.dark },
-  hdr:    { background:"linear-gradient(135deg,#8B1A1A,#C0392B)", padding:"0 32px", height:70, display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 4px 20px rgba(139,26,26,0.3)" },
-  logo:   { color:"#FFF5F5", fontSize:20, fontWeight:700, letterSpacing:2, textTransform:"uppercase" },
-  sub:    { color:"#FFAAAA", fontSize:10, letterSpacing:4, marginTop:-4, display:"block" },
-  main:   { maxWidth:1100, margin:"0 auto", padding:"32px 24px" },
-  card:   { background:"#fff", borderRadius:16, padding:"20px 24px", boxShadow:"0 2px 12px rgba(139,26,26,0.06)", border:`1px solid ${C.border}` },
-  input:  { width:"100%", padding:"10px 14px", borderRadius:10, border:`1.5px solid ${C.border}`, fontFamily:"inherit", fontSize:14, color:C.dark, background:"#FFFAFA", outline:"none", boxSizing:"border-box" },
-  label:  { fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:6, display:"block" },
-  row:    { display:"flex", gap:16, marginBottom:18, flexWrap:"wrap" },
-  sec:    { fontSize:12, fontWeight:700, letterSpacing:2, color:C.red, textTransform:"uppercase", borderBottom:`1px solid ${C.border}`, paddingBottom:8, marginBottom:16, marginTop:4 },
-  btn:    (v="primary") => ({
-    padding:"10px 22px", borderRadius:10, border:"none", cursor:"pointer", fontFamily:"inherit",
-    fontSize:12, letterSpacing:1.5, textTransform:"uppercase", fontWeight:700,
-    ...(v==="primary" ? { background:C.red, color:"#fff", boxShadow:"0 4px 12px rgba(139,26,26,0.3)" }
-      : v==="dark"    ? { background:"rgba(255,255,255,0.15)", color:"#FFF5F5", border:"1px solid rgba(255,255,255,0.3)" }
-      : v==="ghost"   ? { background:"transparent", color:C.red, border:`1.5px solid ${C.red}` }
-      : v==="danger"  ? { background:"#C0392B", color:"#fff" }
-      :                 { background:C.light, color:C.red })
+  app:   { minHeight:"100vh", background:C.sand,
+           fontFamily:"'DM Sans','Inter',system-ui,sans-serif", color:C.ink },
+  hdr:   { background:C.ink, padding:"0 36px", height:64,
+           display:"flex", alignItems:"center", justifyContent:"space-between",
+           borderBottom:`3px solid ${C.teal}` },
+  logo:  { color:"#fff", fontSize:16, fontWeight:700, letterSpacing:4,
+           textTransform:"uppercase", fontFamily:"'DM Sans',sans-serif" },
+  sub:   { color:C.teal, fontSize:9, letterSpacing:6, marginTop:2, display:"block", textTransform:"uppercase" },
+  main:  { maxWidth:1140, margin:"0 auto", padding:"28px 24px" },
+  card:  { background:C.white, borderRadius:4, padding:"20px 24px",
+           boxShadow:"0 1px 4px rgba(15,25,35,0.08)", border:`1px solid ${C.line}` },
+  input: { width:"100%", padding:"10px 14px", borderRadius:3,
+           border:`1.5px solid ${C.line}`, fontFamily:"inherit", fontSize:14,
+           color:C.ink, background:C.white, outline:"none", boxSizing:"border-box",
+           transition:"border-color 0.15s" },
+  label: { fontSize:10, letterSpacing:2, color:C.muted, textTransform:"uppercase",
+           marginBottom:5, display:"block", fontWeight:600 },
+  row:   { display:"flex", gap:16, marginBottom:18, flexWrap:"wrap" },
+  sec:   { fontSize:10, fontWeight:700, letterSpacing:3, color:C.teal,
+           textTransform:"uppercase", borderBottom:`2px solid ${C.teal}`,
+           paddingBottom:6, marginBottom:16, marginTop:4 },
+  btn:   (v="primary") => ({
+    padding:"9px 20px", borderRadius:3, border:"none", cursor:"pointer",
+    fontFamily:"inherit", fontSize:11, letterSpacing:2, textTransform:"uppercase",
+    fontWeight:700, transition:"all 0.15s",
+    ...(v==="primary" ? { background:C.teal, color:"#fff" }
+      : v==="dark"    ? { background:"rgba(255,255,255,0.1)", color:"#fff",
+                          border:"1px solid rgba(255,255,255,0.25)" }
+      : v==="ghost"   ? { background:"transparent", color:C.teal,
+                          border:`1.5px solid ${C.teal}` }
+      : v==="danger"  ? { background:C.rust, color:"#fff" }
+      :                 { background:C.smoke, color:C.ink,
+                          border:`1px solid ${C.line}` })
   }),
-  tab:    (a) => ({ padding:"8px 18px", borderRadius:8, cursor:"pointer", fontSize:11, letterSpacing:1.5, textTransform:"uppercase", fontWeight:700, border:"none", fontFamily:"inherit", background:a?C.red:"transparent", color:a?"#fff":C.muted }),
-  pill:   (a) => ({ padding:"6px 14px", borderRadius:20, fontSize:12, cursor:"pointer", border:`1.5px solid ${a?C.red:C.border}`, background:a?C.light:"transparent", color:a?C.red:C.muted, fontFamily:"inherit" }),
-  badge:  (status) => {
-    const m = { Lead:{bg:"#FFF3CD",c:"#856404"}, Active:{bg:"#D1ECF1",c:"#0C5460"}, "In Progress":{bg:"#E8D5FF",c:"#6A1B9A"}, Completed:{bg:"#D4EDDA",c:"#155724"}, "On Hold":{bg:"#F8D7DA",c:"#721C24"} };
+  tab:   (a) => ({
+    padding:"8px 16px", borderRadius:3, cursor:"pointer", fontSize:10,
+    letterSpacing:2, textTransform:"uppercase", fontWeight:700, border:"none",
+    fontFamily:"inherit", transition:"all 0.15s",
+    background: a ? C.teal : "transparent",
+    color:       a ? "#fff" : C.muted,
+    borderBottom: a ? `2px solid ${C.teal}` : "2px solid transparent",
+  }),
+  pill:  (a) => ({
+    padding:"5px 14px", borderRadius:2, fontSize:11, cursor:"pointer",
+    border:`1.5px solid ${a ? C.teal : C.line}`,
+    background: a ? C.tealL : "transparent",
+    color:       a ? C.teal  : C.muted,
+    fontFamily:"inherit", fontWeight: a ? 700 : 400,
+    transition:"all 0.12s",
+  }),
+  badge: (status) => {
+    const m = {
+      Lead:         { bg:"#FEF3C7", c:C.amber   },
+      Active:       { bg:"#D1FAE5", c:C.green   },
+      "In Progress":{ bg:"#EDE9FE", c:C.violet  },
+      Completed:    { bg:"#D1FAE5", c:C.green   },
+      "On Hold":    { bg:"#FEE2E2", c:C.rust    },
+    };
     const s = m[status]||m.Lead;
-    return { background:s.bg, color:s.c, padding:"2px 10px", borderRadius:20, fontSize:11, fontWeight:700, letterSpacing:1 };
+    return { background:s.bg, color:s.c, padding:"3px 10px", borderRadius:2,
+             fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase" };
   },
 };
 
 function Toast({ msg, type }) {
-  const bg = { success:"#1A7A4A", error:"#C0392B", info:C.red, warning:"#E67E22" }[type]||C.red;
-  return <div style={{ position:"fixed", bottom:24, right:24, zIndex:9999, background:bg, color:"#fff", padding:"14px 22px", borderRadius:12, fontSize:13, boxShadow:"0 4px 20px rgba(0,0,0,0.2)", fontFamily:"inherit", maxWidth:380, lineHeight:1.5, animation:"slideIn 0.3s ease" }}>{msg}</div>;
+  const bg = { success:C.green, error:C.rust, info:C.teal, warning:C.amber }[type]||C.teal;
+  return (
+    <div style={{ position:"fixed", bottom:28, right:28, zIndex:9999, background:C.ink,
+      color:"#fff", padding:"14px 20px", borderRadius:3, fontSize:13,
+      boxShadow:"0 8px 32px rgba(15,25,35,0.25)", fontFamily:"inherit",
+      maxWidth:360, lineHeight:1.5, animation:"slideIn 0.25s ease",
+      borderLeft:`4px solid ${bg}`, display:"flex", alignItems:"center", gap:10 }}>
+      <span style={{ width:8, height:8, borderRadius:"50%", background:bg, flexShrink:0 }}/>
+      {msg}
+    </div>
+  );
 }
 
 function Spinner() {
-  return <div style={{ display:"flex", justifyContent:"center", padding:80 }}><div style={{ width:40, height:40, border:"3px solid #F0E0E0", borderTop:`3px solid ${C.red}`, borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/></div>;
+  return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:80, gap:16 }}>
+      <div style={{ width:32, height:32, border:`2px solid ${C.line}`,
+        borderTop:`2px solid ${C.teal}`, borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
+      <span style={{ fontSize:11, letterSpacing:3, color:C.muted, textTransform:"uppercase" }}>Loading</span>
+    </div>
+  );
 }
 
 function Field({ label, children }) {
@@ -776,7 +838,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   // ── DETAIL ────────────────────────────────────────────────────────────
   if (view==="detail" && selected) return (
     <div style={S.app}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
         <div><div style={S.logo}>🏗 High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
@@ -889,7 +951,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   // ── LIST ──────────────────────────────────────────────────────────────
   if (view==="list") return (
     <div style={S.app}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
         <div><div style={S.logo}>🏗 High Rise Interiors</div><span style={S.sub}>Customer Management</span></div>
@@ -932,8 +994,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           </div>
         ) : filtered.map(c=>(
           <div key={c.id} style={{ ...S.card,cursor:"pointer",transition:"all 0.2s",marginBottom:12 }}
-            onMouseEnter={e=>e.currentTarget.style.boxShadow="0 6px 24px rgba(139,26,26,0.12)"}
-            onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 12px rgba(139,26,26,0.06)"}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=C.teal;e.currentTarget.style.boxShadow=`0 4px 20px rgba(26,82,118,0.10)`}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=C.line;e.currentTarget.style.boxShadow="0 1px 4px rgba(15,25,35,0.08)"}}
             onClick={()=>openDetail(c)}>
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10 }}>
               <div>
@@ -962,7 +1024,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   // ── FORM ──────────────────────────────────────────────────────────────
   return (
     <div style={S.app}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
         <div><div style={S.logo}>🏗 High Rise Interiors</div><span style={S.sub}>{form.id?"Edit Client":"New Client"}</span></div>
