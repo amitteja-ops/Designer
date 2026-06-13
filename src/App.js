@@ -482,7 +482,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   };
 
   const selected = customers.find(c => c.id === selectedId);
-  const TABS = ["personal","dimensions","materials","quotation","notes"];
+  const TABS = ["personal","dimensions","materials","quotation","notes","inventory"];
 
   // ── REPORT ───────────────────────────────────────────────────────────
   if (view==="report" && selected) {
@@ -1477,8 +1477,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       </div>
       <div style={S.main}>
         {/* Tabs */}
-        <div style={{ display:"flex",gap:6,marginBottom:24,background:"#F5EEEE",padding:5,borderRadius:12,width:"fit-content" }}>
-          {[["personal","👤 Client"],["dimensions","📐 Dimensions"],["materials","🔧 Materials"],["quotation","💰 Quotation"],["notes","📝 Notes"]].map(([k,l])=>(
+        <div style={{ display:"flex",gap:6,marginBottom:24,background:C.smoke,padding:5,borderRadius:3,width:"fit-content" }}>
+          {[["personal","👤 Client"],["dimensions","📐 Dimensions"],["materials","🔧 Materials"],["quotation","💰 Quotation"],["notes","📝 Notes"],["inventory","📦 Inventory"]].map(([k,l])=>(
             <button key={k} style={S.tab(activeTab===k)} onClick={()=>setActiveTab(k)}>{l}</button>
           ))}
         </div>
