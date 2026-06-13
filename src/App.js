@@ -388,29 +388,38 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     const outOfScope  = noteLines.filter(l=>/out of scope|not included|excluded|accessories|appliances|curtain|mesh|invisible|ac copper|bathroom tile/i.test(l));
     const discussions = noteLines.filter(l=>!scopeLines.includes(l)&&!outOfScope.includes(l));
     const RS = {
-      sTitle:{ fontSize:13,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:C.red,borderBottom:`2px solid ${C.red}`,paddingBottom:8,marginBottom:16 },
-      row:   { display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:`1px solid ${C.border}`,fontSize:14 },
-      payRow:{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.light,borderRadius:10,padding:"12px 18px",marginBottom:8,border:`1px solid ${C.border}` },
-      bullet:{ fontSize:14,lineHeight:2,paddingLeft:16 },
-      pill:  (bg,c)=>({ background:bg,color:c,padding:"3px 14px",borderRadius:20,fontSize:11,fontWeight:700 }),
+      sTitle:{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+               color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14,
+               fontFamily:"'DM Sans',sans-serif" },
+      row:   { display:"flex",justifyContent:"space-between",padding:"10px 0",
+               borderBottom:`1px solid ${C.line}`,fontSize:13,fontFamily:"'DM Sans',sans-serif" },
+      payRow:{ display:"flex",justifyContent:"space-between",alignItems:"center",
+               background:C.smoke,borderRadius:3,padding:"12px 18px",marginBottom:6,
+               border:`1px solid ${C.line}`,fontFamily:"'DM Sans',sans-serif" },
+      bullet:{ fontSize:13,lineHeight:2,paddingLeft:16,fontFamily:"'DM Sans',sans-serif" },
+      pill:  (bg,c)=>({ background:bg,color:c,padding:"3px 12px",borderRadius:2,
+                        fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",
+                        fontFamily:"'DM Sans',sans-serif" }),
     };
     return (
-      <div style={{ background:"#fff",minHeight:"100vh",fontFamily:"'Cormorant Garamond',Georgia,serif",color:C.dark,paddingBottom:60 }}>
-        <style>{`@media print{.np{display:none!important}}`}</style>
-        <div className="np" style={{ background:C.dark,padding:"12px 32px",display:"flex",gap:12,alignItems:"center" }}>
+      <div style={{ background:C.white,minHeight:"100vh",
+                    fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
+                    color:C.ink,paddingBottom:60 }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
+        <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
           <button onClick={()=>setView("detail")} style={{ background:"transparent",color:"#E0D0FF",border:"1px solid #FFAAAA",borderRadius:8,padding:"8px 18px",cursor:"pointer",fontFamily:"inherit",fontSize:12 }}>← Back</button>
           <button onClick={()=>window.print()} style={{ background:C.red,color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700 }}>🖨 Print / Save PDF</button>
         </div>
-        <div style={{ background:`linear-gradient(135deg,${C.red},#C0392B)`,padding:"28px 48px",marginBottom:36 }}>
+        <div style={{ background:C.ink,padding:"28px 48px",marginBottom:36,borderBottom:`3px solid ${C.teal}` }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
             <div>
-              <div style={{ color:"#fff",fontSize:26,fontWeight:700,letterSpacing:3,textTransform:"uppercase" }}>High Rise Interiors</div>
-              <div style={{ color:"#E0D0FF",fontSize:12,letterSpacing:4,marginTop:4 }}>Project Summary Report</div>
+              <div style={{ color:"#fff",fontSize:20,fontWeight:700,letterSpacing:4,textTransform:"uppercase",fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
+              <div style={{ color:C.teal,fontSize:10,letterSpacing:5,marginTop:6,textTransform:"uppercase" }}>Project Summary Report</div>
             </div>
-            <div style={{ textAlign:"right",color:"#E0D0FF",fontSize:12 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
+            <div style={{ textAlign:"right",color:C.muted,fontSize:11,letterSpacing:1 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
           </div>
         </div>
-        <div style={{ maxWidth:800,margin:"0 auto",padding:"0 48px" }}>
+        <div style={{ maxWidth:820,margin:"0 auto",padding:"0 48px" }}>
           {/* Client */}
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Client Information</div>
@@ -435,7 +444,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   const rd = selected.roomDetails?.[r] || {};
                   const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
                   return (
-                    <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.border}` }}>
+                    <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.line}` }}>
                       <div style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</div>
                       <div style={{ fontSize:13 }}>{rd.length||"—"}</div>
                       <div style={{ fontSize:13 }}>{rd.width||"—"}</div>
@@ -456,7 +465,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                       <div/><div/><div/>
                       <div style={{ fontWeight:700, fontSize:14, color:"#fff" }}>{totalArea.toFixed(0)} sq ft</div>
                     </div>
-                  ) : <div style={{ borderRadius:"0 0 10px 10px", border:`1px solid ${C.border}`, borderTop:"none" }}/>;
+                  ) : <div style={{ borderRadius:"0 0 10px 10px", border:`1px solid ${C.line}`, borderTop:"none" }}/>;
                 })()}
                 {/* Room photos */}
                 {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
@@ -469,7 +478,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                         <div key={r} style={{ marginBottom:12 }}>
                           <div style={{ fontSize:12, fontWeight:700, color:C.red, marginBottom:6 }}>🏠 {r}</div>
                           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                            {photos.map((p,i)=><img key={i} src={p} alt={r} style={{ width:100, height:100, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.border}` }}/>)}
+                            {photos.map((p,i)=><img key={i} src={p} alt={r} style={{ width:100, height:100, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.line}` }}/>)}
                           </div>
                         </div>
                       );
@@ -493,7 +502,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
             <div style={{ marginBottom:32 }}>
               <div style={RS.sTitle}>Room-wise Project Cost</div>
-              <div style={{ border:`1.5px solid ${C.border}`, borderRadius:12, overflow:"hidden" }}>
+              <div style={{ border:`1.5px solid ${C.line}`, borderRadius:12, overflow:"hidden" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", padding:"10px 16px", background:C.red }}>
                   <div style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase" }}>Room</div>
                   <div style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase", textAlign:"right" }}>Project Cost</div>
@@ -507,7 +516,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                   const roomTotal = Math.round(roomCost*(1+lp/100));
                   if (!roomTotal) return null;
                   return (
-                    <div key={room} style={{ display:"grid", gridTemplateColumns:"2fr 1fr", padding:"11px 16px", background:i%2===0?"#FFFAFA":C.light, borderTop:`1px solid ${C.border}` }}>
+                    <div key={room} style={{ display:"grid", gridTemplateColumns:"2fr 1fr", padding:"11px 16px", background:i%2===0?C.white:C.smoke, borderTop:`1px solid ${C.line}` }}>
                       <div style={{ fontSize:13, fontWeight:700, color:C.ink }}>🏠 {room}</div>
                       <div style={{ fontSize:13, fontWeight:700, color:C.ink, textAlign:"right" }}>{fmt(roomTotal)}</div>
                     </div>
@@ -522,7 +531,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     },0),0);
                   const total = Math.round(matCost*(1+lp/100));
                   return total>0?(
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, padding:"14px 16px", borderTop:`2px solid #6A0A0A` }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, padding:"14px 16px", borderTop:`2px solid ${C.teal}` }}>
                       <span style={{ color:"#fff", fontWeight:700, fontSize:14 }}>Total Estimated Project Cost</span>
                       <strong style={{ color:"#fff", fontSize:20 }}>{fmt(total)}</strong>
                     </div>
@@ -536,7 +545,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {outOfScope.length>0 && (
             <div style={{ marginBottom:32 }}>
               <div style={RS.sTitle}>Out of Scope</div>
-              <div style={{ background:C.light,borderRadius:12,padding:"16px 20px",border:`1px solid ${C.border}` }}>
+              <div style={{ background:"#FEF2F2",borderRadius:3,padding:"16px 20px",border:"1px solid #FECACA" }}>
                 {outOfScope.map((l,i)=><div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {l}</div>)}
               </div>
             </div>
@@ -551,7 +560,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               </div>
             )}
             {selected.rebateValue && (
-              <div style={{ background:"#F0FFF4", borderRadius:8, padding:"10px 14px", margin:"6px 0", border:"1px solid #BBF7D0" }}>
+              <div style={{ background:"#DCFCE7", borderRadius:3, padding:"10px 14px", margin:"6px 0", border:"1px solid #86EFAC" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                   <span style={{ color:"#166534", fontWeight:700 }}>
                     🎁 Rebate Applied {selected.couponCode && `(Code: ${selected.couponCode})`}
@@ -564,7 +573,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               </div>
             )}
             {selected.couponCode && (
-              <div style={{ background:"#F0FFF4", borderRadius:8, padding:"12px 16px", margin:"6px 0", border:"1px solid #BBF7D0" }}>
+              <div style={{ background:"#DCFCE7", borderRadius:3, padding:"12px 16px", margin:"6px 0", border:"1px solid #86EFAC" }}>
                 <div style={{ fontSize:12, fontWeight:700, color:"#166534", marginBottom:6 }}>🎁 YOUR REFERRAL CODE: <span style={{ fontSize:16, letterSpacing:3 }}>{selected.couponCode}</span></div>
                 <div style={{ fontSize:12, color:"#166534", lineHeight:1.8 }}>
                   <div>• Share this code with friends & family</div>
@@ -591,7 +600,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {discussions.length>0 && (
             <div style={{ marginBottom:32 }}>
               <div style={RS.sTitle}>Discussions & Notes</div>
-              <div style={{ background:"#FFFAFA",borderRadius:12,padding:"16px 20px",border:`1px solid ${C.border}` }}>
+              <div style={{ background:C.smoke,borderRadius:12,padding:"16px 20px",border:`1px solid ${C.line}` }}>
                 {discussions.map((l,i)=><div key={i} style={{ ...RS.bullet,marginBottom:4 }}>• {l}</div>)}
               </div>
             </div>
@@ -611,7 +620,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 <strong style={{ fontSize:16,color:C.ink }}>{selected.quotation ? fmt(Math.round(Number(selected.quotation)*p.pct/100)) : `${p.pct}%`}</strong>
               </div>
             ))}
-            <div style={{ background:"#FFFAFA",borderRadius:10,padding:"14px 18px",border:`1px solid ${C.border}`,fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
+            <div style={{ background:C.smoke,borderRadius:10,padding:"14px 18px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
               <div>• Payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
               <div>• Work commences only after advance payment (35%) is received</div>
               <div>• Each phase must be cleared before proceeding to next</div>
@@ -622,7 +631,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Disclaimers & Terms</div>
             <div style={{ background:"#FFFFF8",borderRadius:12,padding:"20px 24px",border:`1.5px solid #E8E0C0`,fontSize:13,lineHeight:2.1,color:"#4A4A2A" }}>
-              <div style={{ background:"#FFF0F0",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 14px",marginBottom:12,color:C.red,fontWeight:700 }}>
+              <div style={{ background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:3,padding:"10px 14px",marginBottom:12,color:C.rust,fontWeight:700 }}>
                 🚫 NO REFUND POLICY: All payments are strictly non-refundable once work has commenced.
               </div>
               <div>1. <strong>Draft Quotation:</strong> This is a draft and may vary based on final quantity and material selection.</div>
@@ -639,17 +648,17 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             <div style={{ borderTop:`2px solid ${C.dark}`,paddingTop:12 }}>
               <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Client Signature</div>
               <div style={{ fontSize:14,fontWeight:700 }}>{selected.name}</div>
-              <div style={{ marginTop:36,borderTop:"1px dashed #9A7070",paddingTop:8,fontSize:11,color:C.muted }}>Signature / Date</div>
+              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:C.muted }}>Signature / Date</div>
             </div>
             <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:12 }}>
               <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Authorised by</div>
-              <div style={{ fontSize:14,fontWeight:700,color:C.teal }}>High Rise Interiors</div>
+              <div style={{ fontSize:14,fontWeight:700,color:C.teal,fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
               <div style={{ fontSize:12,color:C.muted }}>Hyderabad, Telangana</div>
-              <div style={{ marginTop:36,borderTop:"1px dashed #9A7070",paddingTop:8,fontSize:11,color:C.muted }}>Signature / Stamp / Date</div>
+              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:C.muted }}>Signature / Stamp / Date</div>
             </div>
           </div>
           {/* Footer */}
-          <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:16,marginTop:24 }}>
+          <div style={{ borderTop:`2px solid ${C.line}`,paddingTop:16,marginTop:24 }}>
             <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted,marginBottom:6 }}>
               <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
               <span>{d}</span>
@@ -671,21 +680,28 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     const gst       = Math.round(total*0.18);
     const grand     = total+gst;
     const IV = {
-      sTitle:{ fontSize:13,fontWeight:700,letterSpacing:3,textTransform:"uppercase",color:C.red,borderBottom:`1.5px solid ${C.border}`,paddingBottom:6,marginBottom:14 },
-      tRow:  { display:"flex",justifyContent:"space-between",padding:"10px 14px",fontSize:13 },
-      pill:  (bg,c)=>({ background:bg,color:c,padding:"3px 14px",borderRadius:20,fontSize:11,fontWeight:700 }),
+      sTitle:{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+               color:C.teal,borderBottom:`1.5px solid ${C.line}`,paddingBottom:6,marginBottom:14,
+               fontFamily:"'DM Sans',sans-serif" },
+      tRow:  { display:"flex",justifyContent:"space-between",padding:"10px 14px",fontSize:13,
+               fontFamily:"'DM Sans',sans-serif" },
+      pill:  (bg,c)=>({ background:bg,color:c,padding:"3px 12px",borderRadius:2,
+                        fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",
+                        fontFamily:"'DM Sans',sans-serif" }),
     };
     return (
-      <div style={{ background:"#fff",minHeight:"100vh",fontFamily:"'Cormorant Garamond',Georgia,serif",color:C.dark,paddingBottom:60 }}>
-        <style>{`@media print{.np{display:none!important}}`}</style>
-        <div className="np" style={{ background:C.dark,padding:"12px 32px",display:"flex",gap:12,alignItems:"center" }}>
-          <button onClick={()=>setView("detail")} style={{ background:"transparent",color:"#E0D0FF",border:"1px solid #FFAAAA",borderRadius:8,padding:"8px 18px",cursor:"pointer",fontFamily:"inherit",fontSize:12 }}>← Back</button>
-          <button onClick={()=>window.print()} style={{ background:C.red,color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700 }}>🖨 Print / Save PDF</button>
-          <span style={{ color:"#9A7070",fontSize:12 }}>Tip: Choose "Save as PDF" in print dialog</span>
+      <div style={{ background:C.white,minHeight:"100vh",
+                    fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
+                    color:C.ink,paddingBottom:60 }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
+        <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
+          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+          <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
+          <span style={{ color:C.muted,fontSize:11,letterSpacing:1 }}>Tip: Save as PDF in print dialog</span>
         </div>
         <div style={{ maxWidth:820,margin:"0 auto",padding:"40px 48px" }}>
           {/* Header */}
-          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:36,paddingBottom:24,borderBottom:`3px solid ${C.red}` }}>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:36,paddingBottom:24,borderBottom:`3px solid ${C.teal}` }}>
             <div>
               <div style={{ fontSize:28,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase" }}>High Rise Interiors</div>
               <div style={{ fontSize:12,color:C.muted,marginTop:4,lineHeight:1.8 }}>Hyderabad, Telangana, India<br/>GSTIN: [Your GST Number]</div>
@@ -723,32 +739,32 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {(selected.rooms||[]).length>0 && (
             <div style={{ marginBottom:24 }}>
               <div style={IV.sTitle}>Scope — Rooms Covered</div>
-              <div style={{ display:"flex",flexWrap:"wrap",gap:8 }}>{selected.rooms.map(r=><span key={r} style={IV.pill(C.light,C.red)}>{r}</span>)}</div>
+              <div style={{ display:"flex",flexWrap:"wrap",gap:8 }}>{selected.rooms.map(r=><span key={r} style={IV.pill(C.tealL,C.teal)}>{r}</span>)}</div>
             </div>
           )}
           {/* Line Items */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Invoice Items</div>
-            <div style={{ border:`1.5px solid ${C.border}`,borderRadius:12,overflow:"hidden" }}>
+            <div style={{ border:`1.5px solid ${C.line}`,borderRadius:12,overflow:"hidden" }}>
               <div style={{ ...IV.tRow,background:C.red,color:"#fff",fontWeight:700,fontSize:12,letterSpacing:1 }}>
                 <span style={{ flex:3 }}>Description</span><span style={{ flex:1,textAlign:"right" }}>Amount (₹)</span>
               </div>
-              <div style={{ ...IV.tRow,background:"#FFFAFA",borderBottom:`1px solid ${C.border}` }}>
+              <div style={{ ...IV.tRow,background:C.smoke,borderBottom:`1px solid ${C.line}` }}>
                 <span style={{ flex:3,lineHeight:1.7 }}><strong>Interior Design & Execution Work</strong><br/><span style={{ fontSize:12,color:C.muted }}>{selected.projectType} — {selected.address}</span></span>
                 <span style={{ flex:1,textAlign:"right",fontWeight:600 }}>{fmt(total)||"As agreed"}</span>
               </div>
               {(selected.rooms||[]).map((r,i)=>(
-                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#fff":"#FFFAFA",borderBottom:`1px solid ${C.border}` }}>
+                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#fff":"#FFFAFA",borderBottom:`1px solid ${C.line}` }}>
                   <span style={{ flex:3,fontSize:12,color:"#4A2A2A",paddingLeft:16 }}>↳ {r}</span>
                   <span style={{ flex:1,textAlign:"right",fontSize:12,color:C.muted }}>Included</span>
                 </div>
               ))}
-              <div style={{ ...IV.tRow,background:C.light,borderTop:`1.5px solid ${C.border}` }}>
+              <div style={{ ...IV.tRow,background:C.smoke,borderTop:`1.5px solid ${C.line}` }}>
                 <span style={{ flex:3,color:C.muted }}>Subtotal (Before GST)</span>
                 <span style={{ flex:1,textAlign:"right" }}>{fmt(total)||"—"}</span>
               </div>
               {total>0 && (
-                <div style={{ ...IV.tRow,background:C.light,borderTop:`1px solid ${C.border}` }}>
+                <div style={{ ...IV.tRow,background:C.smoke,borderTop:`1px solid ${C.line}` }}>
                   <span style={{ flex:3,color:C.muted }}>GST @ 18%</span>
                   <span style={{ flex:1,textAlign:"right" }}>{fmt(gst)}</span>
                 </div>
@@ -762,14 +778,14 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* Payment Schedule */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Payment Schedule</div>
-            <div style={{ border:`1.5px solid ${C.border}`,borderRadius:12,overflow:"hidden" }}>
-              <div style={{ ...IV.tRow,background:C.red,color:"#fff",fontWeight:700,fontSize:12,letterSpacing:1 }}>
+            <div style={{ border:`1.5px solid ${C.line}`,borderRadius:12,overflow:"hidden" }}>
+              <div style={{ ...IV.tRow,background:C.ink,color:"#fff",fontWeight:700,fontSize:11,letterSpacing:1 }}>
                 <span style={{ flex:1 }}>Phase</span><span style={{ flex:2 }}>Milestone</span>
                 <span style={{ flex:1,textAlign:"center" }}>%</span><span style={{ flex:1,textAlign:"right" }}>Amount</span>
                 <span style={{ flex:1,textAlign:"right" }}>Status</span>
               </div>
               {PAYMENT_PHASES.map((p,i)=>(
-                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#FFFAFA":"#fff",borderTop:`1px solid ${C.border}` }}>
+                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#FFFAFA":"#fff",borderTop:`1px solid ${C.line}` }}>
                   <span style={{ flex:1,fontWeight:700,color:C.red,fontSize:12 }}>{p.day}</span>
                   <span style={{ flex:2,fontSize:12,color:"#4A2A2A" }}>{p.label}</span>
                   <span style={{ flex:1,textAlign:"center",fontSize:12 }}>{p.pct}%</span>
@@ -782,7 +798,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* Payment Terms */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Payment Terms</div>
-            <div style={{ background:"#FFFAFA",borderRadius:10,padding:"16px 20px",border:`1px solid ${C.border}`,fontSize:13,lineHeight:2,color:"#4A2A2A" }}>
+            <div style={{ background:C.smoke,borderRadius:10,padding:"16px 20px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A" }}>
               <div>• All payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
               <div>• Work commences only after <strong>advance payment (35%)</strong> is received</div>
               <div>• Each phase payment must be cleared before proceeding to next phase</div>
@@ -793,8 +809,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {/* No Refund + Disclaimers */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Terms, Conditions & Disclaimers</div>
-            <div style={{ background:"#FFFFF8",borderRadius:10,padding:"16px 20px",border:"1.5px solid #E8E0C0",fontSize:13,lineHeight:2,color:"#4A4A2A" }}>
-              <div style={{ background:"#FFF0F0",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:13,color:C.red,fontWeight:700 }}>
+            <div style={{ background:C.smoke,borderRadius:3,padding:"16px 20px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A4A2A" }}>
+              <div style={{ background:"#FFF0F0",border:`1px solid ${C.line}`,borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:13,color:C.red,fontWeight:700 }}>
                 🚫 NO REFUND POLICY: All payments made are strictly non-refundable. Once payment is made and work has commenced, no refunds will be issued under any circumstances.
               </div>
               <div>1. <strong>Cancellation:</strong> Amounts paid till date are forfeited upon cancellation after commencement.</div>
@@ -811,17 +827,17 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             <div style={{ borderTop:`2px solid ${C.dark}`,paddingTop:12 }}>
               <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Client Acceptance</div>
               <div style={{ fontSize:14,fontWeight:700 }}>{selected.name}</div>
-              <div style={{ marginTop:36,borderTop:"1px dashed #9A7070",paddingTop:8,fontSize:11,color:C.muted }}>Signature / Date</div>
+              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:C.muted }}>Signature / Date</div>
             </div>
             <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:12 }}>
               <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Authorised by</div>
-              <div style={{ fontSize:14,fontWeight:700,color:C.teal }}>High Rise Interiors</div>
+              <div style={{ fontSize:14,fontWeight:700,color:C.teal,fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
               <div style={{ fontSize:12,color:C.muted }}>Hyderabad, Telangana</div>
-              <div style={{ marginTop:36,borderTop:"1px dashed #9A7070",paddingTop:8,fontSize:11,color:C.muted }}>Signature / Stamp / Date</div>
+              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:C.muted }}>Signature / Stamp / Date</div>
             </div>
           </div>
           {/* Footer */}
-          <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:16,marginTop:24 }}>
+          <div style={{ borderTop:`2px solid ${C.line}`,paddingTop:16,marginTop:24 }}>
             <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted,marginBottom:6 }}>
               <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
               <span>{invNum} | {d}</span>
@@ -874,7 +890,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     const rd = selected.roomDetails?.[r] || {};
                     const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : null;
                     return (
-                      <div key={r} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}` }}>
+                      <div key={r} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}` }}>
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
                           <span style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</span>
                           {area && <span style={{ fontSize:12, color:C.muted }}>{rd.length} × {rd.width} ft = <strong>{area} sq ft</strong></span>}
@@ -883,7 +899,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                         {rd.notes && <div style={{ fontSize:12, color:C.dark }}>{rd.notes}</div>}
                         {(rd.photos||[]).length>0 && (
                           <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:8 }}>
-                            {rd.photos.map((p,i)=>(<img key={i} src={p} alt={r} style={{ width:80, height:80, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.border}` }}/>))}
+                            {rd.photos.map((p,i)=>(<img key={i} src={p} alt={r} style={{ width:80, height:80, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.line}` }}/>))}
                           </div>
                         )}
                       </div>
@@ -902,7 +918,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     return total + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
                   }, 0);
                   return (
-                    <div key={room} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}` }}>
+                    <div key={room} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}` }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                         <span style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {room}</span>
                         {roomCost > 0 && <span style={{ fontWeight:700, fontSize:13, color:C.red }}>{fmt(Math.round(roomCost))}</span>}
@@ -1004,7 +1020,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 {c.address && <div style={{ fontSize:12,color:"#B0A0A0",marginTop:2 }}>📍 {c.address}</div>}
               </div>
               <div style={{ display:"flex",gap:10,alignItems:"center",flexWrap:"wrap" }}>
-                {c.quotation && <span style={{ background:C.light,color:C.red,fontWeight:700,fontSize:13,padding:"4px 12px",borderRadius:20,border:`1px solid ${C.border}` }}>{fmt(c.quotation)}</span>}
+                {c.quotation && <span style={{ background:C.light,color:C.red,fontWeight:700,fontSize:13,padding:"4px 12px",borderRadius:20,border:`1px solid ${C.line}` }}>{fmt(c.quotation)}</span>}
                 <span style={S.badge(c.status)}>{c.status}</span>
                 <button style={{ ...S.btn("ghost"),padding:"6px 14px",fontSize:11 }} onClick={e=>{e.stopPropagation();openEdit(c);}}>Edit</button>
               </div>
@@ -1047,7 +1063,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           {activeTab==="personal" && (
             <div>
               {form.id && (
-                <div style={{ background:"#F5EEEE", borderRadius:10, padding:"10px 16px", marginBottom:16, display:"flex", alignItems:"center", gap:12, border:`1px solid ${C.border}` }}>
+                <div style={{ background:"#F5EEEE", borderRadius:10, padding:"10px 16px", marginBottom:16, display:"flex", alignItems:"center", gap:12, border:`1px solid ${C.line}` }}>
                   <span style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase" }}>Client ID</span>
                   <span style={{ fontSize:13, fontWeight:700, color:C.red, fontFamily:"monospace" }}>{form.id}</span>
                   <span style={{ fontSize:11, color:C.muted }}>(Read only — cannot be changed)</span>
@@ -1130,7 +1146,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 const area = rd.length && rd.width ? (parseFloat(rd.length) * parseFloat(rd.width)).toFixed(0) : null;
 
                 return (
-                  <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.border}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
+                  <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.line}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
                     {/* Room header */}
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
                       <div style={{ fontSize:15, fontWeight:700, color:C.ink }}>🏠 {room}</div>
@@ -1166,7 +1182,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                         {/* Photo previews */}
                         {(rd.photos||[]).map((photo, idx) => (
                           <div key={idx} style={{ position:"relative", width:100, height:100 }}>
-                            <img src={photo} alt={`${room} ${idx+1}`} style={{ width:100, height:100, objectFit:"cover", borderRadius:10, border:`1.5px solid ${C.border}` }}/>
+                            <img src={photo} alt={`${room} ${idx+1}`} style={{ width:100, height:100, objectFit:"cover", borderRadius:10, border:`1.5px solid ${C.line}` }}/>
                             <button
                               onClick={() => setRD("photos", (rd.photos||[]).filter((_,i)=>i!==idx))}
                               style={{ position:"absolute", top:-6, right:-6, background:C.red, color:"#fff", border:"none", borderRadius:"50%", width:20, height:20, cursor:"pointer", fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit" }}>✕</button>
@@ -1198,7 +1214,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
 
               {/* Total summary */}
               {form.rooms.length > 0 && (
-                <div style={{ background:C.light, borderRadius:12, padding:"16px 20px", border:`1px solid ${C.border}`, marginTop:8 }}>
+                <div style={{ background:C.light, borderRadius:12, padding:"16px 20px", border:`1px solid ${C.line}`, marginTop:8 }}>
                   <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Total Summary</div>
                   <div style={{ display:"flex", gap:32, flexWrap:"wrap" }}>
                     <div><span style={{ color:C.muted, fontSize:13 }}>Rooms: </span><strong>{form.rooms.length}</strong></div>
@@ -1254,9 +1270,9 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     }, 0);
 
                     return (
-                      <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.border}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
+                      <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.line}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
                         {/* Room header */}
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, paddingBottom:12, borderBottom:`1px solid ${C.border}` }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, paddingBottom:12, borderBottom:`1px solid ${C.line}` }}>
                           <div style={{ fontSize:15, fontWeight:700, color:C.ink }}>🏠 {room}</div>
                           {roomCost > 0 && <span style={{ background:C.red, color:"#fff", fontSize:13, fontWeight:700, padding:"4px 14px", borderRadius:20 }}>Est. {fmt(Math.round(roomCost))}</span>}
                         </div>
@@ -1269,7 +1285,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                           const lineTotal = selectedItem && sel.qty ? Math.round(parseFloat(sel.qty) * selectedItem.price) : null;
 
                           return (
-                            <div key={matType} style={{ marginBottom:14, background:"#FFFAFA", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}` }}>
+                            <div key={matType} style={{ marginBottom:14, background:C.smoke, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}` }}>
                               <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10, fontWeight:700 }}>{MATERIAL_LABELS[matType]}</div>
                               <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
                                 {/* Material selector */}
@@ -1344,7 +1360,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               <div style={S.sec}>Project Quotation (INR ₹)</div>
 
               {/* Configurable Labour % */}
-              <div style={{ display:"flex", alignItems:"center", gap:16, background:C.light, borderRadius:10, padding:"12px 18px", marginBottom:16, border:`1px solid ${C.border}` }}>
+              <div style={{ display:"flex", alignItems:"center", gap:16, background:C.light, borderRadius:10, padding:"12px 18px", marginBottom:16, border:`1px solid ${C.line}` }}>
                 <div style={{ fontSize:12, fontWeight:700, color:C.red, letterSpacing:1 }}>⚙ LABOUR COST %</div>
                 <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                   <input style={{ ...S.input, width:80, textAlign:"center", fontWeight:700 }} type="number" min="0" max="100"
@@ -1372,7 +1388,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 const labourMult = 1 + (form.labourPct != null ? form.labourPct : 50)/100;
                 const withLabour = Math.round(matCost * labourMult);
                 return matCost > 0 ? (
-                  <div style={{ background:C.light, borderRadius:12, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div style={{ background:C.light, borderRadius:12, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.line}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div>
                       <div style={{ fontSize:12, fontWeight:700, color:C.red, letterSpacing:1 }}>AUTO-CALCULATED FROM MATERIALS</div>
                       <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>Material cost {fmt(Math.round(matCost))} + Labour ({form.labourPct||50}%) = <strong style={{ color:C.teal }}>{fmt(withLabour)}</strong></div>
@@ -1400,7 +1416,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               </div>
 
               {/* Rebate & Coupon — two separate discounts */}
-              <div style={{ background:"#FFFAFA", borderRadius:12, padding:"18px 20px", border:`1px solid ${C.border}`, marginBottom:20 }}>
+              <div style={{ background:C.smoke, borderRadius:12, padding:"18px 20px", border:`1px solid ${C.line}`, marginBottom:20 }}>
                 <div style={S.sec}>Rebate & Coupon Discount</div>
 
                 {/* Row 1: Rebate */}
@@ -1497,7 +1513,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
 
                 {/* Live Summary */}
                 {form.previousQuotation && (
-                  <div style={{ background:"#fff", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.border}`, marginTop:4 }}>
+                  <div style={{ background:"#fff", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}`, marginTop:4 }}>
                     {(() => {
                       const base = parseFloat(form.previousQuotation||0);
                       const rebateAmt = form.rebateType==="percent"
@@ -1546,7 +1562,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                 <div>
                   <div style={S.sec}>Auto Payment Schedule</div>
                   {PAYMENT_PHASES.map((p,i)=>(
-                    <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.light,borderRadius:12,padding:"14px 18px",marginBottom:10,border:`1px solid ${C.border}` }}>
+                    <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.light,borderRadius:12,padding:"14px 18px",marginBottom:10,border:`1px solid ${C.line}` }}>
                       <div><div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.day} — {p.pct}% — {p.label}</div></div>
                       <div style={{ fontSize:18,fontWeight:700,color:C.teal }}>{fmt(Math.round(Number(form.quotation)*p.pct/100))}</div>
                     </div>
@@ -1570,7 +1586,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           )}
 
           {/* Footer Nav */}
-          <div style={{ display:"flex",justifyContent:"space-between",marginTop:28,paddingTop:20,borderTop:`1px solid ${C.border}` }}>
+          <div style={{ display:"flex",justifyContent:"space-between",marginTop:28,paddingTop:20,borderTop:`1px solid ${C.line}` }}>
             <button style={S.btn("ghost")} onClick={()=>{const i=TABS.indexOf(activeTab);if(i>0)setActiveTab(TABS[i-1]);}} disabled={activeTab===TABS[0]}>← Previous</button>
             {activeTab!==TABS[TABS.length-1]
               ? <button style={S.btn()} onClick={()=>{const i=TABS.indexOf(activeTab);setActiveTab(TABS[i+1]);}}>Next →</button>
