@@ -412,6 +412,96 @@ const S = {
   },
 };
 
+// ── Signature Pad Component ──────────────────────────────────────────
+function SignaturePad({ onSave, onClose, label }) {
+  const canvasRef = React.useRef(null);
+  const [drawing, setDrawing] = React.useState(false);
+  const [hasSignature, setHasSignature] = React.useState(false);
+
+  const getPos = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches?.[0] || e;
+    return {
+      x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+      y: (touch.clientY - rect.top)  * (canvas.height / rect.height),
+    };
+  };
+
+  const startDraw = (e) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const pos = getPos(e, canvas);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    setDrawing(true);
+    setHasSignature(true);
+  };
+
+  const draw = (e) => {
+    e.preventDefault();
+    if (!drawing) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const pos = getPos(e, canvas);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = C.ink;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+  };
+
+  const stopDraw = (e) => { e.preventDefault(); setDrawing(false); };
+
+  const clear = () => {
+    const canvas = canvasRef.current;
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
+  };
+
+  const save = () => {
+    if (!hasSignature) return;
+    const dataUrl = canvasRef.current.toDataURL("image/png");
+    onSave(dataUrl);
+  };
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(15,25,35,0.85)", zIndex:9999,
+      display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+      <div style={{ background:C.white, borderRadius:4, padding:28, width:"100%", maxWidth:540,
+        boxShadow:"0 24px 60px rgba(0,0,0,0.4)" }}>
+        <div style={{ fontSize:10, fontWeight:700, letterSpacing:3, color:C.teal,
+          textTransform:"uppercase", marginBottom:6 }}>Sign Here</div>
+        <div style={{ fontSize:13, color:C.muted, marginBottom:16 }}>{label}</div>
+
+        {/* Canvas */}
+        <div style={{ border:`2px solid ${C.teal}`, borderRadius:3, background:"#FAFAFA",
+          marginBottom:16, cursor:"crosshair", touchAction:"none" }}>
+          <canvas ref={canvasRef} width={480} height={180}
+            style={{ display:"block", width:"100%", height:180 }}
+            onMouseDown={startDraw} onMouseMove={draw} onMouseUp={stopDraw} onMouseLeave={stopDraw}
+            onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={stopDraw}/>
+        </div>
+
+        <div style={{ borderTop:`1px solid ${C.line}`, paddingTop:12, marginBottom:16,
+          fontSize:11, color:C.muted, textAlign:"center" }}>
+          Draw your signature above using your finger or stylus
+        </div>
+
+        <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
+          <button style={S.btn("ghost")} onClick={clear}>Clear</button>
+          <button style={S.btn("ghost")} onClick={onClose}>Cancel</button>
+          <button style={{ ...S.btn(), opacity:hasSignature?1:0.4 }}
+            onClick={save} disabled={!hasSignature}>
+            ✓ Save Signature
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Toast({ msg, type }) {
   const bg = { success:C.green, error:C.rust, info:C.teal, warning:C.amber }[type]||C.teal;
   return (
@@ -642,8 +732,30 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                     color:C.ink,paddingBottom:60 }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
         <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} style={{ background:"transparent",color:"#E0D0FF",border:"1px solid #FFAAAA",borderRadius:8,padding:"8px 18px",cursor:"pointer",fontFamily:"inherit",fontSize:12 }}>← Back</button>
-          <button onClick={()=>window.print()} style={{ background:C.red,color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700 }}>🖨 Print / Save PDF</button>
+          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+          <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
+          <button onClick={()=>{
+            const subject = encodeURIComponent(`High Rise Interiors — Project Report for ${selected.name}`);
+            const body = encodeURIComponent(`Dear ${selected.name},
+
+Please find your project summary report attached.
+
+Project: ${selected.projectType} at ${selected.address||"your location"}
+Quotation: ${selected.quotation?"₹"+Number(selected.quotation).toLocaleString("en-IN"):"TBD"}
+
+Kindly review and sign.
+
+Warm regards,
+High Rise Interiors
+Hyderabad`);
+            window.location.href = `mailto:${selected.email||""}?subject=${subject}&body=${body}`;
+          }} style={S.btn("dark")}>📧 Email Client</button>
+          <span style={{ color:C.muted,fontSize:11,marginLeft:"auto" }}>
+            {signatures.client&&signatures.hri?"✓ Both signed — ready to print"
+              :signatures.client?"Client signed — awaiting HRI"
+              :signatures.hri?"HRI signed — awaiting client"
+              :"Sign below before printing"}
+          </span>
         </div>
         <div style={{ background:C.ink,padding:"28px 48px",marginBottom:36,borderBottom:`3px solid ${C.teal}` }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
@@ -757,46 +869,69 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             )}
           </div>
 
-          {/* Room-wise Project Cost — no material rates shown to customer */}
+          {/* Room-wise Materials & Cost — show brand/qty, hide rates */}
           {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
             <div style={{ marginBottom:32 }}>
-              <div style={RS.sTitle}>Room-wise Project Cost</div>
-              <div style={{ border:`1.5px solid ${C.line}`, borderRadius:12, overflow:"hidden" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", padding:"10px 16px", background:C.red }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase" }}>Room</div>
-                  <div style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase", textAlign:"right" }}>Project Cost</div>
-                </div>
-                {Object.entries(selected.roomMaterials).map(([room, mats], i) => {
-                  const roomCost = Object.entries(mats).filter(([,v])=>v?.name).reduce((t,[matType,sel])=>{
-                    const item = getCatalog(matType).find(m=>m.name===sel.name);
-                    return t + (item&&sel.qty ? parseFloat(sel.qty)*item.price : 0);
-                  },0);
-                  const lp = selected.labourPct != null ? selected.labourPct : 50;
-                  const roomTotal = Math.round(roomCost*(1+lp/100));
-                  if (!roomTotal) return null;
-                  return (
-                    <div key={room} style={{ display:"grid", gridTemplateColumns:"2fr 1fr", padding:"11px 16px", background:i%2===0?C.white:C.smoke, borderTop:`1px solid ${C.line}` }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:C.ink }}>🏠 {room}</div>
-                      <div style={{ fontSize:13, fontWeight:700, color:C.ink, textAlign:"right" }}>{fmt(roomTotal)}</div>
+              <div style={RS.sTitle}>Material Specifications by Room</div>
+              {Object.entries(selected.roomMaterials).map(([room, mats], ri) => {
+                const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
+                if (!matEntries.length) return null;
+                const lp = selected.labourPct != null ? selected.labourPct : 50;
+                const roomCost = matEntries.reduce((t,[matType,sel])=>{
+                  const item = getCatalog(matType).find(m=>m.name===sel.name);
+                  return t+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+                },0);
+                const roomTotal = Math.round(roomCost*(1+lp/100));
+                return (
+                  <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                    {/* Room header */}
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                      background:C.ink, padding:"10px 16px" }}>
+                      <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
+                      {roomTotal>0 && <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{fmt(roomTotal)}</span>}
                     </div>
-                  );
-                })}
-                {(() => {
-                  const lp = selected.labourPct != null ? selected.labourPct : 50;
-                  const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
-                    t+Object.entries(mats).reduce((rt,[matType,sel])=>{
+                    {/* Column headers */}
+                    <div style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
+                      padding:"6px 14px", background:"#2A3A4A",
+                      fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
+                      <span>Category</span><span>Brand / Specification</span><span>Quantity</span>
+                    </div>
+                    {/* Material rows — brand + qty only, no rates */}
+                    {matEntries.map(([matType, sel], i) => {
                       const item = getCatalog(matType).find(m=>m.name===sel.name);
-                      return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
-                    },0),0);
-                  const total = Math.round(matCost*(1+lp/100));
-                  return total>0?(
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", background:C.red, padding:"14px 16px", borderTop:`2px solid ${C.teal}` }}>
-                      <span style={{ color:"#fff", fontWeight:700, fontSize:14 }}>Total Estimated Project Cost</span>
-                      <strong style={{ color:"#fff", fontSize:20 }}>{fmt(total)}</strong>
-                    </div>
-                  ):null;
-                })()}
-              </div>
+                      return (
+                        <div key={matType} style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
+                          padding:"9px 14px", background:i%2===0?C.white:C.smoke,
+                          borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
+                          <div style={{ fontSize:11, color:C.muted, fontWeight:700,
+                            textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
+                          <div style={{ fontSize:12, fontWeight:600, color:C.ink }}>{sel.name}</div>
+                          <div style={{ fontSize:12, color:C.muted }}>
+                            {sel.qty} {item?.unit||""}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+              {/* Grand total */}
+              {(() => {
+                const lp = selected.labourPct != null ? selected.labourPct : 50;
+                const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
+                  t+Object.entries(mats).reduce((rt,[matType,sel])=>{
+                    const item = getCatalog(matType).find(m=>m.name===sel.name);
+                    return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+                  },0),0);
+                const total = Math.round(matCost*(1+lp/100));
+                return total>0?(
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                    background:C.teal, padding:"14px 20px", borderRadius:3, marginTop:4 }}>
+                    <span style={{ color:"#fff", fontWeight:700, fontSize:14 }}>Total Estimated Project Cost</span>
+                    <strong style={{ color:"#fff", fontSize:20 }}>{fmt(total)}</strong>
+                  </div>
+                ):null;
+              })()}
             </div>
           )}
 
@@ -903,18 +1038,59 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
               <div>7. <strong>Dispute Resolution:</strong> Subject to jurisdiction of Hyderabad courts only.</div>
             </div>
           </div>
-          {/* Signature */}
+          {/* Sign-on-Screen Pad */}
+          {showSigPad && (
+            <SignaturePad
+              label={showSigPad==="client"?`${selected.name} — Client Signature`:"High Rise Interiors — Authorised Signatory"}
+              onSave={dataUrl=>{setSignatures(s=>({...s,[showSigPad]:dataUrl}));setShowSigPad(null);}}
+              onClose={()=>setShowSigPad(null)}
+            />
+          )}
+          {/* Signature blocks */}
           <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:32 }}>
-            <div style={{ borderTop:`2px solid ${C.dark}`,paddingTop:12 }}>
-              <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Client Signature</div>
-              <div style={{ fontSize:14,fontWeight:700 }}>{selected.name}</div>
-              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:C.muted }}>Signature / Date</div>
+            <div style={{ borderTop:`2px solid ${C.ink}`,paddingTop:12 }}>
+              <div style={{ fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Client Signature</div>
+              <div style={{ fontSize:14,fontWeight:700,marginBottom:12 }}>{selected.name}</div>
+              {signatures.client ? (
+                <div>
+                  <img src={signatures.client} alt="sig"
+                    style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"#FAFAFA",display:"block" }}/>
+                  <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
+                  <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
+                    onClick={()=>setSignatures(s=>({...s,client:null}))}>✕ Clear</button>
+                </div>
+              ):(
+                <div>
+                  <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
+                    display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:C.smoke }}>
+                    <span style={{ fontSize:11,color:C.muted }}>Tap to sign</span>
+                  </div>
+                  <button className="no-print" style={{ ...S.btn(),fontSize:11,padding:"7px 16px" }}
+                    onClick={()=>setShowSigPad("client")}>✍ Sign Here</button>
+                </div>
+              )}
             </div>
-            <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:12 }}>
-              <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Authorised by</div>
-              <div style={{ fontSize:14,fontWeight:700,color:C.teal,fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
-              <div style={{ fontSize:12,color:C.muted }}>Hyderabad, Telangana</div>
-              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:C.muted }}>Signature / Stamp / Date</div>
+            <div style={{ borderTop:`2px solid ${C.teal}`,paddingTop:12 }}>
+              <div style={{ fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Authorised by</div>
+              <div style={{ fontSize:14,fontWeight:700,color:C.teal,marginBottom:12 }}>High Rise Interiors</div>
+              {signatures.hri ? (
+                <div>
+                  <img src={signatures.hri} alt="sig"
+                    style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"#FAFAFA",display:"block" }}/>
+                  <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
+                  <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
+                    onClick={()=>setSignatures(s=>({...s,hri:null}))}>✕ Clear</button>
+                </div>
+              ):(
+                <div>
+                  <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
+                    display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:C.smoke }}>
+                    <span style={{ fontSize:11,color:C.muted }}>Tap to sign</span>
+                  </div>
+                  <button className="no-print" style={{ ...S.btn("ghost"),fontSize:11,padding:"7px 16px" }}
+                    onClick={()=>setShowSigPad("hri")}>✍ Sign Here</button>
+                </div>
+              )}
             </div>
           </div>
           {/* Footer */}
