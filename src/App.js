@@ -1009,8 +1009,14 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const showToast = (msg, type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null),4000); };
 
   const getToken = () => {
-    try { return JSON.parse(localStorage.getItem("crm_session")||"{}").token || token; }
-    catch { return token; }
+    try {
+      const stored = localStorage.getItem("crm_session");
+      if (stored) {
+        const s = JSON.parse(stored);
+        if (s?.token) return s.token;
+      }
+      return token || null;
+    } catch { return token || null; }
   };
 
   const safeCall = useCallback(async (fn) => {
@@ -1028,12 +1034,16 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
+      const tok = getToken();
+      if (!tok) throw new Error("No session token — please log in again");
       const rows = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc`, "GET", null, t));
       setCustomers((rows||[]).map(fromRow));
       setConnected(true);
     } catch(e) {
       setConnected(false);
-      showToast("Load error: " + e.message, "error");
+      const msg = e.message || "Unknown error";
+      showToast(`Load error: ${msg}`, "error");
+      console.error("fetchCustomers error:", e);
     } finally { setLoading(false); }
   }, [safeCall]);
 

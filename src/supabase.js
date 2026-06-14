@@ -1,6 +1,6 @@
 const SUPABASE_URL = "https://utctflrqhjzxhzyuhsnn.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY";
-const TABLE = "customers";
+export const TABLE = "customers";
 
 // ── Auth ──────────────────────────────────────────────────────────────
 export const signUp = async (email, password) => {
@@ -148,61 +148,53 @@ export const toRow = (f) => {
 // ── Map Supabase row → form (ALL fields) ─────────────────────────────
 export const fromRow = (r) => {
   const form = {
-    id:               r.id != null ? r.id : null,  // primary key — must not be null for updates
-    name:             r.name              || "",
-    email:            r.email             || "",
-    phone:            r.phone             || "",
-    address:          r.address           || "",
-    status:           r.status            || "Lead",
-    projectType:      r.project_type      || "Residential",
-    budget:           r.budget            || "",
-    timeline:         r.timeline          || "",
-    rooms:            Array.isArray(r.rooms) ? r.rooms : (r.rooms ? JSON.parse(r.rooms) : []),
+    id:                 r.id != null ? r.id : null,
+    name:               r.name               || "",
+    email:              r.email              || "",
+    phone:              r.phone              || "",
+    address:            r.address            || "",
+    status:             r.status             || "Lead",
+    projectType:        r.project_type       || "Residential",
+    budget:             r.budget             || "",
+    timeline:           r.timeline           || "",
+    startDate:          r.start_date         || "",
+    rooms:              Array.isArray(r.rooms) ? r.rooms : (r.rooms ? JSON.parse(r.rooms) : []),
     dimensions: {
-      length:         r.dim_length        || "",
-      width:          r.dim_width         || "",
-      height:         r.dim_height        || "",
+      length:           r.dim_length  != null ? String(r.dim_length)  : "",
+      width:            r.dim_width   != null ? String(r.dim_width)   : "",
+      height:           r.dim_height  != null ? String(r.dim_height)  : "",
     },
-    style:            r.style             || "",
-    palette:          r.palette ? (typeof r.palette === "string" ? JSON.parse(r.palette) : r.palette) : null,
-    notes:            r.notes             || "",
-    quotation:        r.quotation         ? String(r.quotation)         : "",
-    previousQuotation:r.previous_quotation? String(r.previous_quotation): "",
-    revisedQuotation: r.revised_quotation ? String(r.revised_quotation) : "",
-    startDate:        r.start_date        || "",
-    plywood:          r.plywood           || "",
-    laminate:         r.laminate          || "",
-    hardware:         r.hardware          || "",
-    glass:            r.glass             || "",
-    ceiling:          r.ceiling           || "",
-    lights:           r.lights            || "",
-    handles:          r.handles           || "",
-    roomMaterials:    r.room_materials
-                        ? (typeof r.room_materials === "string" ? JSON.parse(r.room_materials) : r.room_materials)
-                        : {},
-    audit_log:          f.auditLog && f.auditLog.length > 0
-                        ? JSON.stringify(f.auditLog.map(e=>({
-                            // Strip signature image data to keep DB size small
-                            // Store only metadata: signed=true, not the actual image
-                            ...e,
-                            signatures: e.signatures
-                              ? { client: !!e.signatures.client, hri: !!e.signatures.hri }
-                              : undefined
-                          })))
-                        : null,
-  inventory:          r.inventory ? (typeof r.inventory==="string" ? JSON.parse(r.inventory) : r.inventory) : {},
+    style:              r.style              || "",
+    notes:              r.notes              || "",
+    quotation:          r.quotation          != null ? String(r.quotation)          : "",
+    previousQuotation:  r.previous_quotation != null ? String(r.previous_quotation) : "",
+    revisedQuotation:   r.revised_quotation  != null ? String(r.revised_quotation)  : "",
+    plywood:            r.plywood            || "",
+    laminate:           r.laminate           || "",
+    hardware:           r.hardware           || "",
+    glass:              r.glass              || "",
+    ceiling:            r.ceiling            || "",
+    lights:             r.lights             || "",
+    handles:            r.handles            || "",
+    labourPct:          r.labour_pct         != null ? Number(r.labour_pct) : 50,
+    rebateType:         r.rebate_type        || "amount",
+    rebateValue:        r.rebate_value       != null ? String(r.rebate_value) : "",
+    couponApplied:      r.coupon_applied     || false,
     referralCode:       r.referral_code      || "",
     appliedReferralCode:r.applied_referral   || "",
     referralDiscount:   r.referral_discount  || false,
-    labourPct:        r.labour_pct     != null ? Number(r.labour_pct) : 50,
-    rebateType:       r.rebate_type        || "amount",
-    rebateValue:      r.rebate_value  != null ? String(r.rebate_value) : "",
-
-    roomDetails:      r.room_details
-                        ? (typeof r.room_details === "string" ? JSON.parse(r.room_details) : r.room_details)
-                        : {},
+    roomMaterials:      r.room_materials
+                          ? (typeof r.room_materials === "string" ? JSON.parse(r.room_materials) : r.room_materials)
+                          : {},
+    roomDetails:        r.room_details
+                          ? (typeof r.room_details   === "string" ? JSON.parse(r.room_details)   : r.room_details)
+                          : {},
+    inventory:          r.inventory
+                          ? (typeof r.inventory      === "string" ? JSON.parse(r.inventory)      : r.inventory)
+                          : {},
+    auditLog:           r.audit_log
+                          ? (typeof r.audit_log      === "string" ? JSON.parse(r.audit_log)      : r.audit_log)
+                          : [],
   };
   return form;
-};
-
-export { TABLE };
+}

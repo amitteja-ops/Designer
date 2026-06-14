@@ -82,13 +82,16 @@ export default function Root() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
-  const handleLogin = (token, user, refreshToken, expiresIn) => {
-    const s = {
-      token,
-      user,
-      refreshToken: refreshToken || null,
-      expiresAt: Date.now() + ((expiresIn || 3600) * 1000),
-    };
+  const handleLogin = (sessionOrToken, user, refreshToken, expiresIn) => {
+    // Accept either a session object OR individual params
+    const s = (sessionOrToken && typeof sessionOrToken === "object" && sessionOrToken.token)
+      ? sessionOrToken  // Auth.js passes full session object
+      : {
+          token:        sessionOrToken,
+          user:         user,
+          refreshToken: refreshToken || null,
+          expiresAt:    Date.now() + ((expiresIn || 3600) * 1000),
+        };
     applySession(s);
   };
 
@@ -114,9 +117,9 @@ export default function Root() {
 
   // ── Loading screen ────────────────────────────────────────────────
   if (checking) return (
-    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#2C1F0E,#8B6F47)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
-      <div style={{ width:40, height:40, border:"3px solid rgba(255,255,255,0.3)", borderTop:"3px solid #F5E6D3", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
-      <div style={{ color:"#C9A882", fontSize:12, letterSpacing:3, fontFamily:"Georgia,serif" }}>LOADING</div>
+    <div style={{ minHeight:"100vh", background:"#0F1923", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16, fontFamily:"'DM Sans',system-ui,sans-serif" }}>
+      <div style={{ width:36, height:36, border:"2px solid rgba(26,82,118,0.3)", borderTop:"2px solid #1A5276", borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
+      <div style={{ color:"#1A5276", fontSize:10, letterSpacing:4, textTransform:"uppercase" }}>Loading</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
