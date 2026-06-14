@@ -1177,7 +1177,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     const quoteRef = `HRI-Q-${String(client.id||"XXXX").slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`;
 
     const subject = encodeURIComponent(
-      `Welcome to High Rise Interiors — Quotation ${quoteRef}`
+      `Welcome to High Rise Interiors — ${docTerm} ${quoteRef}`
     );
 
     const body = encodeURIComponent(
@@ -1206,7 +1206,7 @@ Hyderabad, Telangana`
     // Log email sent in audit trail
     const emailEntry = makeEntry(
       "note",
-      `Welcome email sent to ${client.email} — Quotation ${quoteRef} valid till ${validDate}`,
+      `Welcome email sent to ${client.email} — ${docTerm} ${quoteRef} valid till ${validDate}`,
       { quotation: client.quotation, status: client.status, quoteRef, validTill: validDate }
     );
     const updatedLog = [...(client.auditLog||[]), emailEntry];
@@ -1219,7 +1219,8 @@ Hyderabad, Telangana`
   // Triggered automatically whenever client status changes
   const statusEmailAgent = async (client, oldStatus, newStatus) => {
     if (!client.email) return;
-    const quoteRef = `HRI-Q-${String(client.id||"").slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`;
+    const refPrefix = (!client.status||client.status==="Lead") ? "HRI-Q" : "HRI-O";
+    const quoteRef  = `${refPrefix}-${String(client.id||"").slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`;
     const quotation = client.quotation ? `₹${Number(client.quotation).toLocaleString("en-IN")}` : "As discussed";
     const today = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
     const validTill = new Date(); validTill.setDate(validTill.getDate()+3);
@@ -1252,7 +1253,7 @@ No markdown, no backticks, just raw JSON.`,
 Name: ${client.name}
 Project: ${client.projectType||"Residential"} interior design
 Address: ${client.address||"Hyderabad"}
-Quotation Ref: ${quoteRef}
+${docTerm} Ref: ${quoteRef}
 Total Value: ${quotation}
 Status changed: ${oldStatus} → ${newStatus}
 Today: ${today}
@@ -1284,7 +1285,7 @@ Write the email for status: ${newStatus}`
 
 Thank you for your interest in High Rise Interiors.
 
-Quotation Ref: ${quoteRef}
+${docTerm} Ref: ${quoteRef}
 Value: ${quotation}
 
 ⚠️ This quotation is valid until ${validDate}. Please confirm at the earliest to lock in the pricing.
@@ -1300,7 +1301,7 @@ High Rise Interiors Team`
 
 Welcome aboard! Your project is now confirmed.
 
-Quotation Ref: ${quoteRef}
+${docTerm} Ref: ${quoteRef}
 Value: ${quotation}
 
 To commence work, please make the advance payment (35%). Our team will contact you within 48 hours to schedule the kickoff.
@@ -1316,7 +1317,7 @@ High Rise Interiors Team`
 
 Your interior project is in progress. Our team is working diligently to deliver the best results.
 
-Quotation Ref: ${quoteRef}
+${docTerm} Ref: ${quoteRef}
 
 For any queries or to schedule a site visit, please feel free to reach out.
 
@@ -1329,7 +1330,7 @@ High Rise Interiors Team`
 
 Congratulations! Your project is now complete. It has been a pleasure working with you.
 
-Quotation Ref: ${quoteRef}
+${docTerm} Ref: ${quoteRef}
 
 We would love to hear your feedback. A referral from you would mean the world to us — your referral code is: ${client.referralCode||"Contact us for your code"}.
 
@@ -1435,10 +1436,12 @@ High Rise Interiors Team`
       let auditEntry;
       if (!formToSave.id) {
         // New client
-        auditEntry = makeEntry("created", `Client created — ${formToSave.name}`, {
+        const newRef = `HRI-Q-${String(Date.now()).slice(-6)}-${new Date().getFullYear()}`;
+        auditEntry = makeEntry("created", `Client created — ${formToSave.name} · Ref: ${newRef}`, {
           status: formToSave.status,
           quotation: formToSave.quotation,
           rooms: formToSave.rooms,
+          ref: newRef,
         });
       } else {
         // Existing — diff changes
@@ -1451,11 +1454,13 @@ High Rise Interiors Team`
             : changes.some(c=>["Plywood","Laminate","Hardware","Glass","Ceiling","Lights","Handles","added","qty"].some(m=>c.includes(m))) ? "materials"
             : changes.some(c=>c.includes("Inventory")) ? "inventory"
             : "updated";
-          auditEntry = makeEntry(type, `Updated: ${changes.slice(0,3).join(" · ")+(changes.length>3?` +${changes.length-3} more`:"")}`, {
-            status: formToSave.status,
-            quotation: formToSave.quotation,
-            changes,
-          });
+          const updRef = formToSave.id
+            ? `${(!formToSave.status||formToSave.status==="Lead")?"HRI-Q":"HRI-O"}-${String(formToSave.id).slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`
+            : "";
+          auditEntry = makeEntry(type,
+            `Updated: ${changes.slice(0,3).join(" · ")+(changes.length>3?` +${changes.length-3} more`:"")}${updRef?` · Ref: ${updRef}`:""}`,
+            { status: formToSave.status, quotation: formToSave.quotation, changes, ref: updRef }
+          );
         }
       }
 
@@ -2435,10 +2440,11 @@ High Rise Interiors Team`
                             : "Unsigned at print time"}
                         </div>
                       )}
-                      {entry.snapshot?.quotation && (
-                        <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>
-                          Quotation: <strong style={{ color:C.teal }}>{fmt(entry.snapshot.quotation)}</strong>
-                          {entry.snapshot.status && <span style={{ marginLeft:8, ...S.badge(entry.snapshot.status), fontSize:9 }}>{entry.snapshot.status}</span>}
+                      {(entry.snapshot?.quotation || entry.snapshot?.ref) && (
+                        <div style={{ fontSize:11, color:C.muted, marginTop:4, display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
+                          {entry.snapshot.ref && <span style={{ background:C.smoke, color:C.teal, padding:"1px 8px", borderRadius:2, fontWeight:700, fontSize:10, letterSpacing:1 }}>{entry.snapshot.ref}</span>}
+                          {entry.snapshot.quotation && <span>{getDocTerm(entry.snapshot.status)}: <strong style={{ color:C.teal }}>{fmt(entry.snapshot.quotation)}</strong></span>}
+                          {entry.snapshot.status && <span style={{ ...S.badge(entry.snapshot.status), fontSize:9 }}>{entry.snapshot.status}</span>}
                         </div>
                       )}
                     </div>
