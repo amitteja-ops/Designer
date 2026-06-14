@@ -1272,46 +1272,15 @@ Hyderabad, Telangana`
     let emailSubject = "";
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      // Call Vercel serverless proxy
+      const res = await fetch("/api/compose-email", {
         method:"POST",
-        headers:{ "Content-Type":"application/json", "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" },
-        body: JSON.stringify({
-          model:"claude-sonnet-4-6",
-          max_tokens:1000,
-          system:`You are the email agent for High Rise Interiors, a premium interior design firm in Hyderabad, India.
-Write professional, warm, concise client emails.
-Always include: client name, quotation reference, key action required.
-Never include pricing breakdowns — attach report separately.
-Keep emails under 150 words. Sign off as "High Rise Interiors Team".
-Respond with JSON only: { "subject": "...", "body": "..." }
-No markdown, no backticks, just raw JSON.`,
-          messages:[{
-            role:"user",
-            content:`Write a status update email for this client:
-
-Name: ${client.name}
-Project: ${client.projectType||"Residential"} interior design
-Address: ${client.address||"Hyderabad"}
-${docTerm} Ref: ${quoteRef}
-Total Value: ${quotation}
-Status changed: ${oldStatus} → ${newStatus}
-Today: ${today}
-
-Email context by status:
-- Lead: First contact, quotation valid till ${validDate} (3 days), ask to confirm
-- Active: Project confirmed, welcome, advance payment (35%) needed to start
-- In Progress: Work started, share progress update, next payment reminder
-- Completed: Work done, thank you, request review/referral
-- On Hold: Acknowledge hold, reassure, keep in touch
-
-Write the email for status: ${newStatus}`
-          }]
-        })
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ client, oldStatus, newStatus, docTerm, quoteRef, quotation, validDate, today })
       });
-      const data = await res.json();
-      const text = data.content?.[0]?.text || "";
-      const clean = text.replace(/```json|```/g,"").trim();
-      const parsed = JSON.parse(clean);
+      if (!res.ok) throw new Error(`Proxy ${res.status}`);
+      const parsed = await res.json();
+      if (parsed.error) throw new Error(parsed.error);
       emailSubject = parsed.subject;
       emailBody = parsed.body;
     } catch(e) {
