@@ -315,6 +315,8 @@ const EMPTY = {
   referralDiscount:false,  // whether the applied code gives 5% discount
 };
 
+const SUPABASE_URL = "https://utctflrqhjzxhzyuhsnn.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY";
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
 
 // ── Audit log helpers ─────────────────────────────────────────────────
@@ -334,7 +336,28 @@ const makeEntry = (type, summary, snapshot={}, user="", signatures={}) => ({
   signatures, // { client: dataUrl, hri: dataUrl } if signed
 });
 
-// Diff two form states — return human-readable list of changes
+
+// ── Save a single audit entry to DB immediately (fire and forget) ────
+const saveAuditEntry = async (clientId, existingLog, entry) => {
+  try {
+    const tok = JSON.parse(localStorage.getItem("crm_session")||"{}").token;
+    if (!tok || !clientId) return;
+    const updatedLog = [...(existingLog||[]), entry];
+    await fetch(`https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${clientId}`, {
+      method:"PATCH",
+      headers:{
+        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY",
+        "Authorization": `Bearer ${tok}`,
+        "Content-Type":"application/json",
+        "Prefer":"return=minimal"
+      },
+      body: JSON.stringify({ audit_log: JSON.stringify(updatedLog) })
+    });
+    return updatedLog;
+  } catch(e) { console.warn("Audit save failed:", e); return existingLog; }
+};
+
+// Diff two form states — return human-readable list of ALL changes
 const diffForm = (oldF, newF) => {
   const LABELS = {
     name:"Name", phone:"Phone", email:"Email", address:"Address",
@@ -343,22 +366,62 @@ const diffForm = (oldF, newF) => {
     quotation:"Final Quotation", previousQuotation:"Previous Quotation",
     revisedQuotation:"Revised Quotation", labourPct:"Labour %",
     rebateType:"Rebate Type", rebateValue:"Rebate Value",
+    couponCode:"Coupon Code", appliedReferralCode:"Referral Code Applied",
     notes:"Notes", plywood:"Plywood", laminate:"Laminate",
     hardware:"Hardware", glass:"Glass", ceiling:"Ceiling",
     lights:"Lights", handles:"Handles",
   };
   const changes = [];
+
+  // Simple field changes
   Object.keys(LABELS).forEach(k => {
     const ov = String(oldF[k]||""), nv = String(newF[k]||"");
     if (ov !== nv) {
-      const label = LABELS[k];
-      if (k==="notes") changes.push(`${label} updated`);
-      else changes.push(`${label}: "${ov||"—"}" → "${nv||"—"}"`);
+      if (k==="notes") changes.push("Notes updated");
+      else changes.push(`${LABELS[k]}: "${ov||"—"}" → "${nv||"—"}"`);
     }
   });
-  // Room changes
-  const oldR = (oldF.rooms||[]).join(","), newR = (newF.rooms||[]).join(",");
-  if (oldR !== newR) changes.push(`Rooms updated`);
+
+  // Rooms
+  const oldR = JSON.stringify((oldF.rooms||[]).sort());
+  const newR = JSON.stringify((newF.rooms||[]).sort());
+  if (oldR !== newR) {
+    const added   = (newF.rooms||[]).filter(r=>!(oldF.rooms||[]).includes(r));
+    const removed = (oldF.rooms||[]).filter(r=>!(newF.rooms||[]).includes(r));
+    if (added.length)   changes.push(`Rooms added: ${added.join(", ")}`);
+    if (removed.length) changes.push(`Rooms removed: ${removed.join(", ")}`);
+  }
+
+  // Room dimensions
+  const oldRD = JSON.stringify(oldF.roomDetails||{});
+  const newRD = JSON.stringify(newF.roomDetails||{});
+  if (oldRD !== newRD) {
+    Object.keys(newF.roomDetails||{}).forEach(room => {
+      const o = oldF.roomDetails?.[room]||{};
+      const n = newF.roomDetails?.[room]||{};
+      if (o.length!==n.length||o.width!==n.width||o.height!==n.height)
+        changes.push(`${room} dimensions updated (${n.length||"?"}×${n.width||"?"}×${n.height||"?"}ft)`);
+    });
+  }
+
+  // Materials
+  const oldRM = JSON.stringify(oldF.roomMaterials||{});
+  const newRM = JSON.stringify(newF.roomMaterials||{});
+  if (oldRM !== newRM) {
+    Object.keys(newF.roomMaterials||{}).forEach(room => {
+      const o = oldF.roomMaterials?.[room]||{};
+      const n = newF.roomMaterials?.[room]||{};
+      Object.keys(n).forEach(matType => {
+        const ov = o[matType], nv = n[matType];
+        if (JSON.stringify(ov)!==JSON.stringify(nv)) {
+          if (!ov?.name && nv?.name) changes.push(`${room} — ${MATERIAL_LABELS[matType]||matType}: added ${nv.name}`);
+          else if (ov?.name!==nv?.name) changes.push(`${room} — ${MATERIAL_LABELS[matType]||matType}: ${ov?.name||"—"} → ${nv?.name||"—"}`);
+          else if (ov?.qty!==nv?.qty) changes.push(`${room} — ${MATERIAL_LABELS[matType]||matType} qty: ${ov?.qty||"0"} → ${nv?.qty||"0"}`);
+        }
+      });
+    });
+  }
+
   return changes;
 };
 
@@ -589,7 +652,12 @@ function Select({ value, onChange, options, placeholder }) {
 // ── CLIENT REPORT (standalone component so hooks work) ───────────────
 function ClientReport({ selected, setView, customers }) {
   const [showSigPad, setShowSigPad] = React.useState(null);
-  const [signatures, setSignatures] = React.useState({});
+  // Load saved signatures from last audit log entry that has them
+  const lastSigEntry = [...(selected.auditLog||[])].reverse().find(e=>e.type==="signed"&&(e.signatures?.clientImg||e.signatures?.hriImg));
+  const [signatures, setSignatures] = React.useState({
+    client: lastSigEntry?.signatures?.clientImg || null,
+    hri:    lastSigEntry?.signatures?.hriImg    || null,
+  });
   const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
   const noteLines   = (selected.notes||"").split("\n").filter(l=>l.trim());
   const scopeLines  = noteLines.filter(l=>/drawing|living|bedroom|kitchen|ceiling|pooja|wardrobe|unit|partition|entrance|balcony|bathroom/i.test(l));
@@ -925,7 +993,38 @@ Hyderabad`);
         {showSigPad && (
           <SignaturePad
             label={showSigPad==="client"?`${selected.name} — Client Signature`:"High Rise Interiors — Authorised Signatory"}
-            onSave={dataUrl=>{setSignatures(s=>({...s,[showSigPad]:dataUrl}));setShowSigPad(null);}}
+            onSave={async dataUrl=>{
+              const newSigs = {...signatures, [showSigPad]: dataUrl};
+              setSignatures(newSigs);
+              setShowSigPad(null);
+              // Build audit entry with actual image data for persistence
+              const sigEntry = makeEntry(
+                "signed",
+                `${showSigPad==="client"?selected.name:"High Rise Interiors"} signed the report`,
+                { quotation: selected.quotation, status: selected.status },
+                showSigPad==="client" ? selected.name : "High Rise Interiors",
+                {
+                  clientImg: showSigPad==="client" ? dataUrl : (signatures.client||null),
+                  hriImg:    showSigPad==="hri"    ? dataUrl : (signatures.hri||null),
+                  client:    showSigPad==="client" ? true : !!signatures.client,
+                  hri:       showSigPad==="hri"    ? true : !!signatures.hri,
+                }
+              );
+              const updatedLog = [...(selected.auditLog||[]), sigEntry];
+              try {
+                const tok = JSON.parse(localStorage.getItem("crm_session")||"{}").token;
+                await fetch(`https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${selected.id}`, {
+                  method:"PATCH",
+                  headers:{
+                    "apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY",
+                    "Authorization":`Bearer ${tok}`,
+                    "Content-Type":"application/json",
+                    "Prefer":"return=minimal"
+                  },
+                  body: JSON.stringify({ audit_log: JSON.stringify(updatedLog) })
+                });
+              } catch(e) { console.warn("Signature save failed:", e); }
+            }}
             onClose={()=>setShowSigPad(null)}
           />
         )}
@@ -1125,9 +1224,11 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
         const changes = existingClient ? diffForm(existingClient, formToSave) : [];
         if (changes.length > 0) {
           // Group change type
-          const type = changes.some(c=>c.includes("Status")) ? "status"
-            : changes.some(c=>c.includes("Quotation")||c.includes("Labour")||c.includes("Rebate")) ? "quotation"
-            : changes.some(c=>["Plywood","Laminate","Hardware","Glass","Ceiling","Lights","Handles"].some(m=>c.includes(m))) ? "materials"
+          const type = changes.some(c=>c.startsWith("Status:")) ? "status"
+            : changes.some(c=>c.includes("Quotation")||c.includes("Labour %")||c.includes("Rebate")) ? "quotation"
+            : changes.some(c=>c.includes("dimensions")) ? "updated"
+            : changes.some(c=>["Plywood","Laminate","Hardware","Glass","Ceiling","Lights","Handles","added","qty"].some(m=>c.includes(m))) ? "materials"
+            : changes.some(c=>c.includes("Inventory")) ? "inventory"
             : "updated";
           auditEntry = makeEntry(type, `Updated: ${changes.slice(0,3).join(" · ")+(changes.length>3?` +${changes.length-3} more`:"")}`, {
             status: formToSave.status,
@@ -2069,9 +2170,28 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                         </div>
                       )}
                       {isSign && (
-                        <div style={{ marginTop:6, display:"flex", gap:8, flexWrap:"wrap" }}>
-                          {entry.signatures?.client && <span style={{ background:"#DCFCE7", color:"#166534", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ Client signed</span>}
-                          {entry.signatures?.hri    && <span style={{ background:C.tealL, color:C.teal, fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ HRI signed</span>}
+                        <div style={{ marginTop:8 }}>
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
+                            {entry.signatures?.client && <span style={{ background:"#DCFCE7", color:"#166534", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ Client signed</span>}
+                            {entry.signatures?.hri    && <span style={{ background:C.tealL, color:C.teal, fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ HRI signed</span>}
+                          </div>
+                          {/* Show signature images from audit log */}
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                            {entry.signatures?.clientImg && (
+                              <div>
+                                <div style={{ fontSize:9, color:C.muted, marginBottom:2 }}>{selected.name}</div>
+                                <img src={entry.signatures.clientImg} alt="Client sig"
+                                  style={{ height:48, border:`1px solid ${C.line}`, borderRadius:3, background:"#FAFAFA" }}/>
+                              </div>
+                            )}
+                            {entry.signatures?.hriImg && (
+                              <div>
+                                <div style={{ fontSize:9, color:C.muted, marginBottom:2 }}>High Rise Interiors</div>
+                                <img src={entry.signatures.hriImg} alt="HRI sig"
+                                  style={{ height:48, border:`1px solid ${C.line}`, borderRadius:3, background:"#FAFAFA" }}/>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                       {isPrint && (
@@ -2912,15 +3032,30 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                             setForm(f => {
                               const current = f.inventory?.[invKey] || {status:"Pending"};
                               const updated = { ...current, status: next };
-                              // Clear dates for any stage ABOVE the new status
                               if (nextIdx < 1) { delete updated.orderedDate;   }
                               if (nextIdx < 2) { delete updated.deliveredDate; }
                               if (nextIdx < 3) { delete updated.installedDate; }
-                              // Stamp date for the new status
                               if (next==="Ordered")   updated.orderedDate   = now;
                               if (next==="Delivered") updated.deliveredDate = now;
                               if (next==="Installed") updated.installedDate = now;
-                              return { ...f, inventory: { ...(f.inventory||{}), [invKey]: updated } };
+                              const newInv = { ...(f.inventory||{}), [invKey]: updated };
+                              // Log inventory change to DB immediately
+                              const entry = makeEntry(
+                                "inventory",
+                                `Inventory: ${sel.name} (${room}) → ${next}`,
+                                { status: f.status, quotation: f.quotation, invStatus: next, material: sel.name, room }
+                              );
+                              const currentLog = f.auditLog||[];
+                              saveAuditEntry(f.id, currentLog, entry).then(newLog => {
+                                if (newLog) {
+                                  setForm(prev => ({ ...prev, auditLog: newLog }));
+                                  // Also update customers list so detail view shows updated log
+                                  setCustomers(prev => prev.map(c =>
+                                    c.id===f.id ? { ...c, auditLog: newLog, inventory: { ...(c.inventory||{}), [invKey]: {...(f.inventory?.[invKey]||{}), status: next } } } : c
+                                  ));
+                                }
+                              });
+                              return { ...f, inventory: newInv };
                             });
                           };
                           const item = getCatalog(matType).find(m=>m.name===sel.name);
