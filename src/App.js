@@ -1271,22 +1271,8 @@ Hyderabad, Telangana`
     let emailBody = "";
     let emailSubject = "";
 
-    try {
-      // Call Vercel serverless proxy
-      const res = await fetch("/api/compose-email", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ client, oldStatus, newStatus, docTerm, quoteRef, quotation, validDate, today })
-      });
-      if (!res.ok) throw new Error(`Proxy ${res.status}`);
-      const parsed = await res.json();
-      if (parsed.error) throw new Error(parsed.error);
-      emailSubject = parsed.subject;
-      emailBody = parsed.body;
-    } catch(e) {
-      // Fallback if AI fails — use template
-      console.warn("AI agent failed, using template:", e.message||e);
-      showToast("🤖 AI unavailable — using template email", "info");
+    // Smart templates based on status
+    {
       const templates = {
         Lead: {
           subject: `High Rise Interiors — Your Quotation ${quoteRef} (Valid till ${validDate})`,
