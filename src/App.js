@@ -946,7 +946,6 @@ Hyderabad`);
   }
 
 
-}
 
 export default function App({ token, user, onLogout, onSessionExpired }) {
   const [customers,    setCustomers]    = useState([]);
