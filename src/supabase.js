@@ -107,21 +107,19 @@ export const toRow = (f) => {
     ceiling:            f.ceiling            || null,
     lights:             f.lights             || null,
     handles:            f.handles            || null,
-  room_materials:     f.roomMaterials && Object.keys(f.roomMaterials).length > 0
-                        ? JSON.stringify(f.roomMaterials)
-                        : null,
-  audit_log:          f.auditLog && f.auditLog.length > 0
-                        ? JSON.stringify(f.auditLog.map(e=>({
-                            // Strip signature image data to keep DB size small
-                            // Store only metadata: signed=true, not the actual image
-                            ...e,
-                            signatures: e.signatures
-                              ? { client: !!e.signatures.client, hri: !!e.signatures.hri }
-                              : undefined
-                          })))
-                        : null,
-  inventory:          f.inventory && Object.keys(f.inventory).length > 0 ? JSON.stringify(f.inventory) : null,
-  referral_code:      f.referralCode       || null,
+    room_materials:     f.roomMaterials && Object.keys(f.roomMaterials).length > 0
+                          ? JSON.stringify(f.roomMaterials)
+                          : null,
+    audit_log:          f.auditLog && f.auditLog.length > 0
+                          ? JSON.stringify(f.auditLog.map(e=>({
+                              ...e,
+                              signatures: e.signatures
+                                ? { client: !!e.signatures.client, hri: !!e.signatures.hri }
+                                : undefined
+                            })))
+                          : null,
+    inventory:          f.inventory && Object.keys(f.inventory).length > 0 ? JSON.stringify(f.inventory) : null,
+    referral_code:      f.referralCode       || null,
   applied_referral:   f.appliedReferralCode|| null,
   referral_discount:  f.referralDiscount   || false,
   labour_pct:         f.labourPct          != null ? Number(f.labourPct) : 50,
