@@ -308,6 +308,7 @@ const EMPTY = {
   roomDetails:{},
   roomMaterials:{},
   rebateType:"amount", rebateValue:"", labourPct:50,
+  auditLog:[],              // [{ts, type, user, summary, snapshot, signatures}]
   inventory:{},             // per-material status: { key: {status, orderedDate, deliveredDate, notes} }
   referralCode:"",         // this client's own permanent referral code
   appliedReferralCode:"",  // referral code from another customer applied to this project
@@ -315,6 +316,51 @@ const EMPTY = {
 };
 
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
+
+// ── Audit log helpers ─────────────────────────────────────────────────
+const AUDIT_ICONS = {
+  created:    "🆕", updated:   "✏️",  status:    "🔄",
+  report:     "📄", signed:    "✍️",  invoice:   "🧾",
+  quotation:  "💰", materials: "🔧",  inventory: "📦",
+  internal:   "🔧", note:      "📝",
+};
+
+const makeEntry = (type, summary, snapshot={}, user="", signatures={}) => ({
+  ts:         new Date().toISOString(),
+  type,
+  user,
+  summary,
+  snapshot,   // key values at this point in time
+  signatures, // { client: dataUrl, hri: dataUrl } if signed
+});
+
+// Diff two form states — return human-readable list of changes
+const diffForm = (oldF, newF) => {
+  const LABELS = {
+    name:"Name", phone:"Phone", email:"Email", address:"Address",
+    status:"Status", projectType:"Project Type", budget:"Budget",
+    timeline:"Duration", startDate:"Start Date", style:"Style",
+    quotation:"Final Quotation", previousQuotation:"Previous Quotation",
+    revisedQuotation:"Revised Quotation", labourPct:"Labour %",
+    rebateType:"Rebate Type", rebateValue:"Rebate Value",
+    notes:"Notes", plywood:"Plywood", laminate:"Laminate",
+    hardware:"Hardware", glass:"Glass", ceiling:"Ceiling",
+    lights:"Lights", handles:"Handles",
+  };
+  const changes = [];
+  Object.keys(LABELS).forEach(k => {
+    const ov = String(oldF[k]||""), nv = String(newF[k]||"");
+    if (ov !== nv) {
+      const label = LABELS[k];
+      if (k==="notes") changes.push(`${label} updated`);
+      else changes.push(`${label}: "${ov||"—"}" → "${nv||"—"}"`);
+    }
+  });
+  // Room changes
+  const oldR = (oldF.rooms||[]).join(","), newR = (newF.rooms||[]).join(",");
+  if (oldR !== newR) changes.push(`Rooms updated`);
+  return changes;
+};
 
 // Generate permanent referral code: HRI + 2 deterministic letters from ID + client ID
 // Deterministic — same ID always produces same code, no Math.random()
@@ -1028,6 +1074,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       roomMaterials:     c.roomMaterials     || {},
       rebateType:        c.rebateType        || "amount",
       rebateValue:       c.rebateValue       || "",
+      auditLog:            c.auditLog            || [],
       inventory:           c.inventory           || {},
       referralCode:        c.referralCode        || "",
       appliedReferralCode: c.appliedReferralCode || "",
@@ -1048,20 +1095,49 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     if (!form.name.trim()) { showToast("Client name is required", "error"); return; }
     setSaving(true);
     try {
-      // For existing clients — preserve existing referral code, never regenerate
       const formToSave = {...form};
       if (!formToSave.id) {
-        // New client — will generate code after we get the real ID back
         formToSave.referralCode = "";
       }
-      // Existing client — referralCode stays exactly as loaded, no change
+
+      // ── Build audit entry ──────────────────────────────────────────
+      const existingClient = customers.find(c => c.id === form.id);
+      let auditEntry;
+      if (!formToSave.id) {
+        // New client
+        auditEntry = makeEntry("created", `Client created — ${formToSave.name}`, {
+          status: formToSave.status,
+          quotation: formToSave.quotation,
+          rooms: formToSave.rooms,
+        });
+      } else {
+        // Existing — diff changes
+        const changes = existingClient ? diffForm(existingClient, formToSave) : [];
+        if (changes.length > 0) {
+          // Group change type
+          const type = changes.some(c=>c.includes("Status")) ? "status"
+            : changes.some(c=>c.includes("Quotation")||c.includes("Labour")||c.includes("Rebate")) ? "quotation"
+            : changes.some(c=>["Plywood","Laminate","Hardware","Glass","Ceiling","Lights","Handles"].some(m=>c.includes(m))) ? "materials"
+            : "updated";
+          auditEntry = makeEntry(type, `Updated: ${changes.slice(0,3).join(" · ")+(changes.length>3?` +${changes.length-3} more`:"")}`, {
+            status: formToSave.status,
+            quotation: formToSave.quotation,
+            changes,
+          });
+        }
+      }
+
+      // Append audit entry to log
+      if (auditEntry) {
+        formToSave.auditLog = [...(formToSave.auditLog||[]), auditEntry];
+      }
+
       const row = toRow(formToSave);
       if (formToSave.id) {
         await safeCall(t => sb(`${TABLE}?id=eq.${formToSave.id}`, "PATCH", row, t));
         showToast("✓ Client updated");
       } else {
         const result = await safeCall(t => sb(TABLE, "POST", row, t));
-        // Generate permanent code using the real DB id
         if (result && result[0]?.id) {
           const realCode = genReferralCode(result[0].id);
           await safeCall(t => sb(`${TABLE}?id=eq.${result[0].id}`, "PATCH", { referral_code: realCode }, t));
@@ -1412,6 +1488,248 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     );
   }
 
+
+  // ── VENDOR ORDER REPORT ──────────────────────────────────────────────
+  if (view==="vendor" && selected) {
+    const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+    const orderNum = `HRI-PO-${String(selected.id).slice(-4).padStart(4,"0")}-${new Date().getFullYear()}`;
+
+    // Build consolidated material list linked to inventory status
+    const orderItems = [];
+    Object.entries(selected.roomMaterials||{}).forEach(([room, mats]) => {
+      Object.entries(mats).forEach(([matType, sel]) => {
+        if (!sel?.name || !sel?.qty) return;
+        const item    = getCatalog(matType).find(m=>m.name===sel.name);
+        const invKey  = `${room}__${sel.name}`;
+        const invStat = selected.inventory?.[invKey] || { status:"Pending" };
+        const key     = `${matType}||${sel.name}`;
+        const existing = orderItems.find(o=>o.key===key);
+        if (existing) {
+          existing.qty     += parseFloat(sel.qty);
+          existing.rooms.push(room);
+          // If any room shows Pending/Ordered keep that status
+          if (invStat.status==="Pending") existing.status = "Pending";
+          else if (invStat.status==="Ordered" && existing.status!=="Pending") existing.status = "Ordered";
+        } else {
+          orderItems.push({
+            key, matType, name:sel.name,
+            qty:     parseFloat(sel.qty),
+            unit:    item?.unit||"",
+            rooms:   [room],
+            status:  invStat.status||"Pending",
+            orderedDate:   invStat.orderedDate,
+            deliveredDate: invStat.deliveredDate,
+            installedDate: invStat.installedDate,
+            notes:   invStat.notes||"",
+          });
+        }
+      });
+    });
+
+    // Group by status
+    const pending   = orderItems.filter(o=>o.status==="Pending");
+    const ordered   = orderItems.filter(o=>o.status==="Ordered");
+    const delivered = orderItems.filter(o=>o.status==="Delivered");
+    const installed = orderItems.filter(o=>o.status==="Installed");
+
+    const VR = {
+      page:  { background:"#fff", minHeight:"100vh", fontFamily:"'DM Sans',system-ui,sans-serif", color:"#0F1923", paddingBottom:60 },
+      body:  { maxWidth:920, margin:"0 auto", padding:"32px 48px" },
+      sec:   { fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase",
+               color:C.teal, borderBottom:`2px solid ${C.teal}`, paddingBottom:6, marginBottom:14, marginTop:28 },
+      th:    (bg="#0F1923") => ({ padding:"8px 12px", fontSize:9, fontWeight:700, letterSpacing:1.5,
+               textTransform:"uppercase", background:bg, color:"#fff" }),
+      td:    (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?"#fff":"#F5F1EA",
+               borderBottom:`1px solid ${C.line}`, verticalAlign:"top" }),
+      badge: (s) => {
+        const m = { Pending:{bg:"#FEF3C7",c:"#92400E"}, Ordered:{bg:"#DBEAFE",c:"#1E40AF"},
+                    Delivered:{bg:"#D1FAE5",c:"#065F46"}, Installed:{bg:"#EDE9FE",c:"#4C1D95"} };
+        const x = m[s]||m.Pending;
+        return { background:x.bg, color:x.c, padding:"2px 8px", borderRadius:2,
+                 fontSize:9, fontWeight:700, letterSpacing:1, textTransform:"uppercase" };
+      },
+    };
+
+    const MatTable = ({ items, title, color="#0F1923" }) => {
+      if (!items.length) return null;
+      return (
+        <div style={{ marginBottom:20 }}>
+          <div style={{ background:color, padding:"10px 14px", borderRadius:"3px 3px 0 0",
+            display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>{title}</span>
+            <span style={{ color:"rgba(255,255,255,0.7)", fontSize:11 }}>{items.length} item{items.length!==1?"s":""}</span>
+          </div>
+          <div style={{ border:`1px solid ${C.line}`, borderTop:"none", borderRadius:"0 0 3px 3px", overflow:"hidden" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr 1fr 2fr 2fr" }}>
+              {["Category","Brand / Material","Qty","Unit","Rooms","Dates / Notes"].map(h=>(
+                <div key={h} style={VR.th(color==="0F1923"?"#2A3A4A":color)}>{h}</div>
+              ))}
+            </div>
+            {items.map((o,i)=>(
+              <div key={o.key} style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr 1fr 2fr 2fr" }}>
+                <div style={VR.td(i)}>
+                  <span style={{ background:C.tealL, color:C.teal, padding:"2px 6px", borderRadius:2, fontSize:9, fontWeight:700 }}>
+                    {MATERIAL_LABELS[o.matType]||o.matType}
+                  </span>
+                </div>
+                <div style={{ ...VR.td(i), fontWeight:600 }}>{o.name}</div>
+                <div style={{ ...VR.td(i), fontWeight:700, color:C.teal }}>{o.qty.toFixed(1)}</div>
+                <div style={VR.td(i)}>{o.unit}</div>
+                <div style={{ ...VR.td(i), fontSize:11, color:C.muted }}>
+                  {[...new Set(o.rooms)].join(", ")}
+                </div>
+                <div style={{ ...VR.td(i), fontSize:10, color:C.muted, lineHeight:1.8 }}>
+                  {o.orderedDate   && <div>📦 Ord: {o.orderedDate}</div>}
+                  {o.deliveredDate && <div>🚚 Del: {o.deliveredDate}</div>}
+                  {o.installedDate && <div>✅ Ins: {o.installedDate}</div>}
+                  {o.notes         && <div style={{ color:C.ink }}>💬 {o.notes}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <div style={VR.page}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
+
+        {/* Toolbar */}
+        <div className="np" style={{ background:C.ink, padding:"12px 36px", display:"flex", gap:12,
+          alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
+          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+          <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
+          <span style={{ background:"#FDE68A", color:"#5C3A00", padding:"3px 10px", borderRadius:2,
+            fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>
+            🔒 INTERNAL — Vendor Purchase Order
+          </span>
+          <div style={{ marginLeft:"auto", display:"flex", gap:12, fontSize:11, color:C.muted }}>
+            <span>🔴 {pending.length} Pending</span>
+            <span>🔵 {ordered.length} Ordered</span>
+            <span>🟢 {delivered.length} Delivered</span>
+            <span>🟣 {installed.length} Installed</span>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div style={{ background:C.ink, padding:"24px 48px", borderBottom:`3px solid ${C.teal}` }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
+            <div>
+              <div style={{ color:"#fff", fontSize:18, fontWeight:700, letterSpacing:4, textTransform:"uppercase" }}>High Rise Interiors</div>
+              <div style={{ color:C.teal, fontSize:10, letterSpacing:5, marginTop:6, textTransform:"uppercase" }}>Vendor Purchase Order</div>
+            </div>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ color:"#fff", fontSize:16, fontWeight:700 }}>{orderNum}</div>
+              <div style={{ color:C.muted, fontSize:11, marginTop:4 }}>{d}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={VR.body}>
+
+          {/* Project summary */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, background:C.smoke,
+            borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, marginBottom:8 }}>
+            <div>
+              <div style={{ fontSize:10, color:C.muted, letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Client</div>
+              <div style={{ fontSize:15, fontWeight:700 }}>{selected.name}</div>
+              <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>{selected.address}</div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+              {[["Project",selected.projectType],["Style",selected.style],["Start",selected.startDate],["Duration",selected.timeline]].filter(([,v])=>v).map(([l,v])=>(
+                <div key={l}><div style={{ fontSize:9, color:C.muted, letterSpacing:1, textTransform:"uppercase" }}>{l}</div><div style={{ fontSize:12, fontWeight:600 }}>{v}</div></div>
+              ))}
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          {orderItems.length > 0 && (
+            <div style={{ marginBottom:16 }}>
+              <div style={{ display:"flex", height:6, borderRadius:3, overflow:"hidden", background:C.line, marginBottom:8 }}>
+                {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#F59E0B"]].map(([s,col])=>
+                  orderItems.filter(o=>o.status===s).length > 0
+                    ? <div key={s} style={{ flex:orderItems.filter(o=>o.status===s).length, background:col }}/> : null
+                )}
+              </div>
+              <div style={{ display:"flex", gap:16, fontSize:11, color:C.muted }}>
+                {[["Pending","#FEF3C7","#92400E"],["Ordered","#DBEAFE","#1E40AF"],["Delivered","#D1FAE5","#065F46"],["Installed","#EDE9FE","#4C1D95"]].map(([s,bg,c])=>(
+                  <div key={s}><span style={{ background:bg,color:c,padding:"2px 8px",borderRadius:2,fontSize:10,fontWeight:700 }}>{orderItems.filter(o=>o.status===s).length}</span> {s}</div>
+                ))}
+                <span style={{ marginLeft:"auto", fontWeight:700 }}>{installed.length}/{orderItems.length} Complete</span>
+              </div>
+            </div>
+          )}
+
+          {/* ── PENDING — needs ordering ── */}
+          {pending.length > 0 && (
+            <>
+              <div style={VR.sec}>🔴 To Order — Pending ({pending.length} items)</div>
+              <MatTable items={pending} title="Items to Order Immediately" color="#92400E"/>
+            </>
+          )}
+
+          {/* ── ORDERED — awaiting delivery ── */}
+          {ordered.length > 0 && (
+            <>
+              <div style={VR.sec}>🔵 Ordered — Awaiting Delivery ({ordered.length} items)</div>
+              <MatTable items={ordered} title="Items Ordered — Follow Up for Delivery" color="#1E40AF"/>
+            </>
+          )}
+
+          {/* ── DELIVERED — ready to install ── */}
+          {delivered.length > 0 && (
+            <>
+              <div style={VR.sec}>🟢 Delivered — Ready to Install ({delivered.length} items)</div>
+              <MatTable items={delivered} title="Items on Site — Schedule Installation" color="#065F46"/>
+            </>
+          )}
+
+          {/* ── INSTALLED — complete ── */}
+          {installed.length > 0 && (
+            <>
+              <div style={VR.sec}>🟣 Installed — Complete ({installed.length} items)</div>
+              <MatTable items={installed} title="Completed Items" color="#4C1D95"/>
+            </>
+          )}
+
+          {orderItems.length === 0 && (
+            <div style={{ textAlign:"center", padding:48, color:C.muted }}>
+              No materials added yet — add materials in the Materials tab first
+            </div>
+          )}
+
+          {/* Vendor sign-off */}
+          {pending.length > 0 && (
+            <>
+              <div style={VR.sec}>Order Confirmation</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:32, marginTop:8 }}>
+                <div style={{ borderTop:`2px solid ${C.ink}`, paddingTop:12 }}>
+                  <div style={{ fontSize:10, color:C.muted, letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Prepared by</div>
+                  <div style={{ fontSize:13, fontWeight:700 }}>High Rise Interiors</div>
+                  <div style={{ marginTop:40, borderTop:`1px solid ${C.line}`, paddingTop:8, fontSize:10, color:C.muted }}>Signature / Date</div>
+                </div>
+                <div style={{ borderTop:`2px solid ${C.teal}`, paddingTop:12 }}>
+                  <div style={{ fontSize:10, color:C.muted, letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Vendor Acknowledgement</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.teal }}>Vendor Name: _______________</div>
+                  <div style={{ marginTop:40, borderTop:`1px solid ${C.line}`, paddingTop:8, fontSize:10, color:C.muted }}>Signature / Stamp / Date</div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Footer */}
+          <div style={{ borderTop:`2px solid ${C.line}`, paddingTop:16, marginTop:32, display:"flex",
+            justifyContent:"space-between", fontSize:10, color:C.muted }}>
+            <span>High Rise Interiors — Vendor Purchase Order</span>
+            <span>{orderNum} | {d} | Powered by Genovatech IT Services Pvt. Ltd.</span>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
   // ── INVOICE ───────────────────────────────────────────────────────────
   if (view==="invoice" && selected) {
     const d         = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
@@ -1602,6 +1920,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           <button style={S.btn("dark")} onClick={()=>setView("list")}>← Back</button>
           <button style={S.btn("dark")} onClick={()=>setView("report")}>📄 Client Report</button>
           <button style={S.btn("dark")} onClick={()=>setView("internal")}>🔧 Internal Report</button>
+          <button style={S.btn("dark")} onClick={()=>setView("vendor")}>🛒 Vendor Order</button>
           <button style={S.btn("dark")} onClick={()=>setView("invoice")}>🧾 Invoice</button>
           <button style={S.btn()} onClick={()=>openEdit(selected)}>Edit</button>
         </div>
@@ -1700,7 +2019,74 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
             )}
           </div>
         </div>
-        <button style={{ ...S.btn("danger"),marginTop:20 }} onClick={()=>deleteCustomer(selected.id)}>Delete Client</button>
+        {/* ── Audit Trail Timeline ── */}
+        <div style={{ ...S.card, marginTop:20 }}>
+          <div style={S.sec}>Audit Trail</div>
+          {(selected.auditLog||[]).length === 0 ? (
+            <div style={{ textAlign:"center", color:C.muted, fontSize:13, padding:"12px 0" }}>
+              No activity logged yet — edits and report prints will appear here
+            </div>
+          ) : (
+            <div style={{ position:"relative" }}>
+              <div style={{ position:"absolute", left:15, top:8, bottom:8, width:2, background:C.line }}/>
+              {[...(selected.auditLog||[])].reverse().map((entry, i) => {
+                const dt   = new Date(entry.ts);
+                const date = dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+                const time = dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+                const icon = AUDIT_ICONS[entry.type]||"📋";
+                const isSign  = entry.type==="signed";
+                const isPrint = entry.type==="report";
+                return (
+                  <div key={i} style={{ display:"flex", gap:16, marginBottom:20, position:"relative" }}>
+                    <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, zIndex:1,
+                      background: isSign?"#DCFCE7":isPrint?C.tealL:C.smoke,
+                      border:`2px solid ${isSign?"#86EFAC":isPrint?C.teal:C.line}`,
+                      display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
+                      {icon}
+                    </div>
+                    <div style={{ flex:1, paddingTop:4 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:C.ink }}>{entry.summary}</div>
+                        <div style={{ fontSize:10, color:C.muted, textAlign:"right", marginLeft:12, flexShrink:0 }}>
+                          <div>{date}</div><div>{time}</div>
+                        </div>
+                      </div>
+                      {entry.snapshot?.changes?.length > 0 && (
+                        <div style={{ marginTop:6, background:C.smoke, borderRadius:3, padding:"8px 12px", border:`1px solid ${C.line}` }}>
+                          {entry.snapshot.changes.map((c,j)=>(
+                            <div key={j} style={{ fontSize:11, color:C.muted, lineHeight:1.8 }}>• {c}</div>
+                          ))}
+                        </div>
+                      )}
+                      {isSign && (
+                        <div style={{ marginTop:6, display:"flex", gap:8, flexWrap:"wrap" }}>
+                          {entry.signatures?.client && <span style={{ background:"#DCFCE7", color:"#166534", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ Client signed</span>}
+                          {entry.signatures?.hri    && <span style={{ background:C.tealL, color:C.teal, fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ HRI signed</span>}
+                        </div>
+                      )}
+                      {isPrint && (
+                        <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>
+                          {entry.snapshot?.sigClient && entry.snapshot?.sigHRI ? "✓ Both signatures captured"
+                            : entry.snapshot?.sigClient ? "Client signed only"
+                            : entry.snapshot?.sigHRI   ? "HRI signed only"
+                            : "Unsigned at print time"}
+                        </div>
+                      )}
+                      {entry.snapshot?.quotation && (
+                        <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>
+                          Quotation: <strong style={{ color:C.teal }}>{fmt(entry.snapshot.quotation)}</strong>
+                          {entry.snapshot.status && <span style={{ marginLeft:8, ...S.badge(entry.snapshot.status), fontSize:9 }}>{entry.snapshot.status}</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <button style={{ ...S.btn("danger"),marginTop:16 }} onClick={()=>deleteCustomer(selected.id)}>Delete Client</button>
       </div>
     </div>
   );
