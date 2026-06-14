@@ -1157,7 +1157,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const [toast,        setToast]        = useState(null);
   const [connected,    setConnected]    = useState(false);
 
-  const showToast = (msg, type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null),4000); };
+  const showToast = (msg, type="success", duration=4000) => { setToast({msg,type}); setTimeout(()=>setToast(null),duration); };
 
   const getToken = () => {
     try {
@@ -1380,7 +1380,7 @@ High Rise Interiors Team`
     setCustomers(prev => prev.map(c =>
       c.id===client.id ? {...c, auditLog:[...(c.auditLog||[]), emailEntry]} : c
     ));
-    showToast(`📧 ${newStatus} email ready — attach PDF report before sending`, "success");
+    showToast(`📧 ${newStatus} email ready — attach PDF report before sending`, "success", 6000);
   };
 
   const openEdit = (c) => {
@@ -1482,34 +1482,43 @@ High Rise Interiors Team`
       }
 
       const row = toRow(formToSave);
+      const statusChanged = existingClient && existingClient.status !== formToSave.status;
+
       if (formToSave.id) {
         await safeCall(t => sb(`${TABLE}?id=eq.${formToSave.id}`, "PATCH", row, t));
-        showToast("✓ Client updated");
-        // Trigger status email agent if status changed
-        if (existingClient && existingClient.status !== formToSave.status) {
+        await fetchCustomers();
+        showToast("✓ Client updated", "success");
+
+        if (statusChanged) {
+          // Show status change toast then trigger agent
+          showToast(`🔄 Status changed to ${formToSave.status} — composing email…`, "info");
+          setView("list");
           setTimeout(() => {
             statusEmailAgent(formToSave, existingClient.status, formToSave.status);
-          }, 800);
+          }, 600);
+        } else {
+          setView("list");
         }
+
       } else {
         const result = await safeCall(t => sb(TABLE, "POST", row, t));
+        let savedClient = {...formToSave};
         if (result && result[0]?.id) {
           const realCode = genReferralCode(result[0].id);
           await safeCall(t => sb(`${TABLE}?id=eq.${result[0].id}`, "PATCH", { referral_code: realCode }, t));
+          savedClient = { ...formToSave, id: result[0].id, referralCode: realCode };
         }
-        showToast("✓ Client saved");
-        // Auto-trigger Lead email after new client is saved
-        // Fetch updated customers to get real ID first
+        await fetchCustomers();
+        showToast("✓ Client saved", "success");
+        setView("list");
+
         if (formToSave.email) {
-          setTimeout(async () => {
-            const updated = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc&limit=1`, "GET", null, t));
-            const newClient = updated?.[0] ? fromRow(updated[0]) : {...formToSave};
-            statusEmailAgent(newClient, "New", "Lead");
-          }, 1200);
+          showToast("📧 Composing welcome email…", "info");
+          setTimeout(() => {
+            statusEmailAgent(savedClient, "New", "Lead");
+          }, 600);
         }
       }
-      await fetchCustomers();
-      setView("list");
     } catch(e) { showToast("Save failed: " + e.message, "error"); }
     finally { setSaving(false); }
   };
