@@ -653,195 +653,297 @@ function Select({ value, onChange, options, placeholder }) {
 }
 
 
-// ── 3D Room Embed using Three.js CDN ─────────────────────────────────
-function Room3DEmbed({ length: L=5, width: W=4, height: H=2.8, roomType="Living Room", rooms=[], roomDetails={} }) {
-  const mountRef  = useRef(null);
-  const stateRef  = useRef({ theta:0.6, phi:0.8, radius:Math.max(L,W)*1.4+3, dragging:false, lx:0, ly:0 });
-  const sceneRef  = useRef(null);
-  const camRef    = useRef(null);
-  const rendRef   = useRef(null);
-  const frameRef  = useRef(null);
-  const [wall,  setWall]  = useState("#F5F5F0");
-  const [floor, setFloor] = useState("#8B6340");
+// ── 3D Room Embed ────────────────────────────────────────────────────
+function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Room", rooms=[], roomDetails={} }) {
+  const mountRef   = useRef(null);
+  const rendererRef= useRef(null);
+  const sceneRef   = useRef(null);
+  const cameraRef  = useRef(null);
+  const frameRef   = useRef(null);
+  const dragRef    = useRef({ active:false, x:0, y:0, theta:0.8, phi:0.7 });
   const [activeRoom, setActiveRoom] = useState(roomType);
+  const [wall,  setWall]  = useState('#F0EDE8');
+  const [floor, setFloor] = useState('#8B6340');
+  const [status, setStatus] = useState('Loading 3D engine…');
 
-  const rd = roomDetails[activeRoom]||{};
-  const RL = parseFloat(rd.length||L);
-  const RW = parseFloat(rd.width||W);
-  const RH = parseFloat(rd.height||H);
-
-  const updateCam = useCallback(() => {
-    if (!camRef.current) return;
-    const { theta, phi, radius } = stateRef.current;
-    camRef.current.position.set(
-      radius*Math.sin(phi)*Math.sin(theta),
-      radius*Math.cos(phi),
-      radius*Math.sin(phi)*Math.cos(theta)
-    );
-    camRef.current.lookAt(0, RH/2, 0);
-  }, [RH]);
+  const rd = roomDetails[activeRoom] || {};
+  const RL = Math.max(1, parseFloat(rd.length || L));
+  const RW = Math.max(1, parseFloat(rd.width  || W));
+  const RH = Math.max(1, parseFloat(rd.height || H));
 
   useEffect(() => {
-    const el = mountRef.current; if (!el) return;
+    const mount = mountRef.current;
+    if (!mount) return;
 
-    // Wait for Three.js CDN to load (retry up to 3 seconds)
-    let attempts = 0;
-    const tryInit = () => {
-      const THREE = window.THREE;
-      if (!THREE) {
-        if (attempts++ < 30) { setTimeout(tryInit, 100); return; }
-        el.innerHTML = '<div style="color:#FF8080;padding:20px;font-family:sans-serif">Three.js failed to load. Check internet connection.</div>';
-        return;
-      }
-      initScene(THREE);
-    };
+    // Dynamically load Three.js if not already available
+    const init = () => {
+      const T = window.THREE;
+      if (!T) { setStatus('Three.js not available — check internet connection'); return; }
 
-    const initScene = (THREE) => {
-    const W2=el.clientWidth, H2=el.clientHeight;
-    const scene    = new THREE.Scene();
-    scene.background = new THREE.Color("#0A1520");
-    scene.fog      = new THREE.FogExp2(0x0A1520, 0.03);
-    sceneRef.current = scene;
-    const camera   = new THREE.PerspectiveCamera(55, W2/H2, 0.1, 100);
-    camRef.current = camera;
-    const renderer = new THREE.WebGLRenderer({ antialias:true });
-    renderer.setSize(W2, H2);
-    renderer.shadowMap.enabled = true;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
-    el.appendChild(renderer.domElement);
-    rendRef.current = renderer;
+      setStatus('');
 
-    // Lights
-    scene.add(new THREE.AmbientLight(0xFFF5E8, 0.5));
-    const sun = new THREE.DirectionalLight(0xFFF8E8, 1.0);
-    sun.position.set(5, 8, 5); sun.castShadow=true;
-    scene.add(sun);
-    const pt = new THREE.PointLight(0xFFEDD0, 0.6, 12);
-    pt.position.set(0, RH*0.9, 0);
-    scene.add(pt);
+      // Scene
+      const scene = new T.Scene();
+      scene.background = new T.Color('#0D1B2A');
+      sceneRef.current = scene;
 
-    // Room geometry
-    const build = () => {
-      scene.children.filter(c=>c.userData.r).forEach(c=>scene.remove(c));
-      const mk=(geo,mat,px,py,pz,rx=0,ry=0,rz=0)=>{
-        const m=new THREE.Mesh(geo,mat); m.position.set(px,py,pz);
-        m.rotation.set(rx,ry,rz); m.receiveShadow=true; m.userData.r=1; scene.add(m);
+      // Camera
+      const w = mount.clientWidth  || 600;
+      const h = mount.clientHeight || 400;
+      const camera = new T.PerspectiveCamera(50, w / h, 0.1, 200);
+      cameraRef.current = camera;
+
+      // Renderer
+      const renderer = new T.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(w, h);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = T.PCFSoftShadowMap;
+      mount.appendChild(renderer.domElement);
+      rendererRef.current = renderer;
+
+      // Lights
+      scene.add(new T.AmbientLight(0xfff5e0, 0.6));
+      const dir = new T.DirectionalLight(0xfff8e8, 1.2);
+      dir.position.set(RL, RH * 2, RW);
+      dir.castShadow = true;
+      dir.shadow.mapSize.width  = 1024;
+      dir.shadow.mapSize.height = 1024;
+      dir.shadow.camera.near = 0.1;
+      dir.shadow.camera.far  = 50;
+      dir.shadow.camera.left = dir.shadow.camera.bottom = -15;
+      dir.shadow.camera.right = dir.shadow.camera.top  =  15;
+      scene.add(dir);
+      const fill = new T.DirectionalLight(0xd0e8ff, 0.3);
+      fill.position.set(-RL, RH, -RW);
+      scene.add(fill);
+
+      // Floor
+      const floorGeo = new T.PlaneGeometry(RW, RL);
+      const floorMat = new T.MeshStandardMaterial({ color: floor, roughness: 0.6, metalness: 0.05 });
+      const floorMesh = new T.Mesh(floorGeo, floorMat);
+      floorMesh.rotation.x = -Math.PI / 2;
+      floorMesh.receiveShadow = true;
+      scene.add(floorMesh);
+
+      // Walls
+      const wallMat = new T.MeshStandardMaterial({ color: wall, roughness: 0.9, side: T.DoubleSide });
+
+      // Back wall
+      const bw = new T.Mesh(new T.PlaneGeometry(RW, RH), wallMat.clone());
+      bw.position.set(0, RH/2, -RL/2);
+      bw.receiveShadow = true;
+      scene.add(bw);
+
+      // Left wall
+      const lw = new T.Mesh(new T.PlaneGeometry(RL, RH), wallMat.clone());
+      lw.rotation.y = Math.PI / 2;
+      lw.position.set(-RW/2, RH/2, 0);
+      lw.receiveShadow = true;
+      scene.add(lw);
+
+      // Right wall
+      const rw = new T.Mesh(new T.PlaneGeometry(RL, RH), wallMat.clone());
+      rw.rotation.y = -Math.PI / 2;
+      rw.position.set(RW/2, RH/2, 0);
+      rw.receiveShadow = true;
+      scene.add(rw);
+
+      // Ceiling (subtle)
+      const ceilMat = new T.MeshStandardMaterial({ color: '#FAFAF8', roughness: 1, side: T.BackSide });
+      const ceil = new T.Mesh(new T.PlaneGeometry(RW, RL), ceilMat);
+      ceil.rotation.x = Math.PI / 2;
+      ceil.position.y = RH;
+      scene.add(ceil);
+
+      // Skirting boards
+      const skirtMat = new T.MeshStandardMaterial({ color: '#D4CFCA', roughness: 0.7 });
+      const skirtH = 0.08;
+      const skirts = [
+        [new T.BoxGeometry(RW, skirtH, 0.04), [0, skirtH/2, -RL/2 + 0.02], [0,0,0]],
+        [new T.BoxGeometry(RL, skirtH, 0.04), [-RW/2 + 0.02, skirtH/2, 0], [0, Math.PI/2, 0]],
+        [new T.BoxGeometry(RL, skirtH, 0.04), [RW/2 - 0.02, skirtH/2, 0], [0, Math.PI/2, 0]],
+      ];
+      skirts.forEach(([geo, pos, rot]) => {
+        const m = new T.Mesh(geo, skirtMat);
+        m.position.set(...pos);
+        m.rotation.set(...rot);
+        scene.add(m);
+      });
+
+      // Floor grid (subtle)
+      const grid = new T.GridHelper(Math.max(RW, RL) * 3, 20, 0x1E3A4A, 0x1A2E3A);
+      grid.position.y = 0.001;
+      scene.add(grid);
+
+      // Camera position
+      const radius = Math.max(RL, RW) * 1.6 + 2;
+      dragRef.current.radius = radius;
+
+      const updateCamera = () => {
+        const { theta, phi } = dragRef.current;
+        const r = dragRef.current.radius || radius;
+        camera.position.set(
+          r * Math.sin(phi) * Math.sin(theta),
+          r * Math.cos(phi),
+          r * Math.sin(phi) * Math.cos(theta)
+        );
+        camera.lookAt(0, RH * 0.4, 0);
       };
-      const fMat=new THREE.MeshStandardMaterial({color:floor,roughness:0.4});
-      const wMat=new THREE.MeshStandardMaterial({color:wall,roughness:0.9});
-      const cMat=new THREE.MeshStandardMaterial({color:"#FAFAFA",roughness:1});
-      const hw=RW/2, hl=RL/2;
-      mk(new THREE.PlaneGeometry(RW,RL),fMat,0,0,0,-Math.PI/2,0,0);
-      mk(new THREE.PlaneGeometry(RW,RL),cMat,0,RH,0,Math.PI/2,0,0);
-      mk(new THREE.PlaneGeometry(RW,RH),wMat,0,RH/2,-hl);
-      mk(new THREE.PlaneGeometry(RL,RH),wMat,-hw,RH/2,0,0,Math.PI/2,0);
-      mk(new THREE.PlaneGeometry(RL,RH),wMat,hw,RH/2,0,0,-Math.PI/2,0);
-      // Skirting
-      const sk=new THREE.MeshStandardMaterial({color:"#D4CDB8",roughness:0.6});
-      mk(new THREE.BoxGeometry(RW,0.1,0.02),sk,0,0.05,-hl+0.01);
-      mk(new THREE.BoxGeometry(RL,0.1,0.02),sk,-hw+0.01,0.05,0,0,Math.PI/2,0);
-      mk(new THREE.BoxGeometry(RL,0.1,0.02),sk,hw-0.01,0.05,0,0,-Math.PI/2,0);
-      // Grid
-      const g=new THREE.GridHelper(Math.max(RW,RL)*2,20,0x1E3A4A,0x1E3A4A);
-      g.position.y=0.001; g.userData.r=1; scene.add(g);
+      dragRef.current.updateCamera = updateCamera;
+      updateCamera();
+
+      // Animate
+      const animate = () => {
+        frameRef.current = requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      };
+      animate();
+
+      // Resize
+      const onResize = () => {
+        const nw = mount.clientWidth, nh = mount.clientHeight;
+        if (!nw || !nh) return;
+        camera.aspect = nw / nh;
+        camera.updateProjectionMatrix();
+        renderer.setSize(nw, nh);
+      };
+      window.addEventListener('resize', onResize);
+
+      return () => {
+        window.removeEventListener('resize', onResize);
+        cancelAnimationFrame(frameRef.current);
+        renderer.dispose();
+        if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
+      };
     };
-    build();
 
-    stateRef.current.radius = Math.max(RL,RW)*1.4+3;
-    updateCam();
-    const animate=()=>{ frameRef.current=requestAnimationFrame(animate); renderer.render(scene,camera); };
-    animate();
-    const onR=()=>{ camera.aspect=el.clientWidth/el.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(el.clientWidth,el.clientHeight); };
-    window.addEventListener("resize",onR);
-    return ()=>{ window.removeEventListener("resize",onR); cancelAnimationFrame(frameRef.current); renderer.dispose(); if(el.contains(renderer.domElement))el.removeChild(renderer.domElement); };
-    }; // end initScene
-
-    tryInit();
-  }, [activeRoom, RL, RW, RH, wall, floor, updateCam]);
-
-  const onMD=e=>{stateRef.current.dragging=true;stateRef.current.lx=e.clientX;stateRef.current.ly=e.clientY;};
-  const onMU=()=>{stateRef.current.dragging=false;};
-  const onMM=e=>{
-    if(!stateRef.current.dragging)return;
-    stateRef.current.theta-=(e.clientX-stateRef.current.lx)*0.008;
-    stateRef.current.phi=Math.max(0.1,Math.min(1.4,stateRef.current.phi+(e.clientY-stateRef.current.ly)*0.008));
-    stateRef.current.lx=e.clientX; stateRef.current.ly=e.clientY;
-    updateCam();
-  };
-  const onW=e=>{stateRef.current.radius=Math.max(2,Math.min(20,stateRef.current.radius+e.deltaY*0.01));updateCam();};
-
-  const WALL_OPTS=[["#F5F5F0","White"],["#E8D5B7","Beige"],["#8FAF8F","Sage"],["#3A3A3A","Charcoal"],["#C0614A","Terracotta"],["#1B2A4A","Navy"]];
-  const FLOOR_OPTS=[["#8B6340","Teak"],["#C8A96E","Oak"],["#E8E4DC","Marble"],["#3A3530","Granite"],["#9A9590","Concrete"]];
-
-  const [threeReady, setThreeReady] = useState(!!window.THREE);
-  useEffect(() => {
-    if (!window.THREE) {
-      const check = setInterval(() => {
-        if (window.THREE) { setThreeReady(true); clearInterval(check); }
+    // Wait for THREE if not loaded
+    if (window.THREE) {
+      const cleanup = init();
+      return cleanup;
+    } else {
+      let cleaned = false;
+      let cleanupFn = null;
+      const interval = setInterval(() => {
+        if (window.THREE) {
+          clearInterval(interval);
+          if (!cleaned) cleanupFn = init();
+        }
       }, 100);
-      return () => clearInterval(check);
+      // Timeout after 5s
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        if (!window.THREE) setStatus('Failed to load Three.js — please check internet connection');
+      }, 5000);
+      return () => {
+        cleaned = true;
+        clearInterval(interval);
+        clearTimeout(timeout);
+        if (cleanupFn) cleanupFn();
+      };
     }
-  }, []);
+  }, [activeRoom, RL, RW, RH, wall, floor]);
+
+  // Mouse/touch orbit
+  const onDown = (e) => {
+    dragRef.current.active = true;
+    dragRef.current.x = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    dragRef.current.y = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+  };
+  const onUp   = () => { dragRef.current.active = false; };
+  const onMove = (e) => {
+    if (!dragRef.current.active) return;
+    const cx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    const cy = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+    dragRef.current.theta -= (cx - dragRef.current.x) * 0.008;
+    dragRef.current.phi    = Math.max(0.15, Math.min(1.45, dragRef.current.phi + (cy - dragRef.current.y) * 0.008));
+    dragRef.current.x = cx;
+    dragRef.current.y = cy;
+    dragRef.current.updateCamera?.();
+  };
+  const onWheel = (e) => {
+    dragRef.current.radius = Math.max(2, Math.min(25, (dragRef.current.radius||8) + e.deltaY * 0.02));
+    dragRef.current.updateCamera?.();
+  };
+
+  const WALL_OPTS  = [['#F0EDE8','White'],['#E8D5B7','Beige'],['#8FAF8F','Sage'],['#3A3A3A','Charcoal'],['#C0614A','Terracotta'],['#1B2A4A','Navy']];
+  const FLOOR_OPTS = [['#8B6340','Teak'],['#C8A96E','Oak'],['#E8E4DC','Marble'],['#3A3530','Granite'],['#9A9590','Concrete']];
 
   return (
-    <div style={{ display:"flex", height:"calc(100vh - 57px)" }}>
-      {!threeReady && (
-        <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center",
-          justifyContent:"center", background:"#0A1520", zIndex:10, flexDirection:"column", gap:12 }}>
-          <div style={{ width:32, height:32, border:"2px solid #1A5276",
-            borderTop:"2px solid #fff", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
-          <div style={{ color:"#1A5276", fontSize:11, letterSpacing:3 }}>LOADING 3D ENGINE…</div>
-        </div>
-      )}
+    <div style={{ display:'flex', height:'calc(100vh - 100px)', background:'#0D1B2A' }}>
       {/* Controls */}
-      <div style={{ width:200, background:"#0A1520", padding:14, borderRight:"1px solid #1E2D3A", overflowY:"auto", flexShrink:0 }}>
-        {rooms.length>1 && (
+      <div style={{ width:180, background:'#0A1520', padding:12, borderRight:'1px solid #1E2D3A', overflowY:'auto', flexShrink:0 }}>
+        {rooms.length > 1 && (
           <div style={{ marginBottom:14 }}>
-            <div style={{ fontSize:9,letterSpacing:2,color:C.teal,textTransform:"uppercase",marginBottom:8,fontWeight:700 }}>Room</div>
-            {rooms.map(r=>(
+            <div style={{ fontSize:9, letterSpacing:2, color:'#1A5276', textTransform:'uppercase', marginBottom:8, fontWeight:700 }}>Switch Room</div>
+            {rooms.map(r => (
               <button key={r} onClick={()=>setActiveRoom(r)}
-                style={{ display:"block",width:"100%",padding:"5px 8px",marginBottom:4,borderRadius:2,
-                  border:"none",cursor:"pointer",textAlign:"left",fontFamily:"inherit",fontSize:11,
-                  background:activeRoom===r?C.teal:"#1E2D3A",color:activeRoom===r?"#fff":C.muted }}>
+                style={{ display:'block', width:'100%', padding:'5px 8px', marginBottom:3,
+                  borderRadius:2, border:'none', cursor:'pointer', textAlign:'left',
+                  fontFamily:'inherit', fontSize:11,
+                  background: activeRoom===r ? '#1A5276' : '#1E2D3A',
+                  color: activeRoom===r ? '#fff' : '#5A8A9A' }}>
                 {r}
               </button>
             ))}
           </div>
         )}
+
         <div style={{ marginBottom:14 }}>
-          <div style={{ fontSize:9,letterSpacing:2,color:C.teal,textTransform:"uppercase",marginBottom:8,fontWeight:700 }}>Wall Colour</div>
-          <div style={{ display:"flex",flexWrap:"wrap",gap:5 }}>
-            {WALL_OPTS.map(([c,n])=>(
+          <div style={{ fontSize:9, letterSpacing:2, color:'#1A5276', textTransform:'uppercase', marginBottom:8, fontWeight:700 }}>Wall Colour</div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
+            {WALL_OPTS.map(([c,n]) => (
               <button key={c} title={n} onClick={()=>setWall(c)}
-                style={{ width:26,height:26,borderRadius:2,cursor:"pointer",background:c,
-                  border:wall===c?"2px solid #1A5276":"2px solid transparent" }}/>
+                style={{ width:26, height:26, borderRadius:2, cursor:'pointer', background:c,
+                  border: wall===c ? '2px solid #1A5276' : '1px solid #2A3A4A' }}/>
             ))}
           </div>
         </div>
+
         <div style={{ marginBottom:14 }}>
-          <div style={{ fontSize:9,letterSpacing:2,color:C.teal,textTransform:"uppercase",marginBottom:8,fontWeight:700 }}>Floor Material</div>
-          <div style={{ display:"flex",flexWrap:"wrap",gap:5 }}>
-            {FLOOR_OPTS.map(([c,n])=>(
+          <div style={{ fontSize:9, letterSpacing:2, color:'#1A5276', textTransform:'uppercase', marginBottom:8, fontWeight:700 }}>Floor</div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
+            {FLOOR_OPTS.map(([c,n]) => (
               <button key={c} title={n} onClick={()=>setFloor(c)}
-                style={{ width:26,height:26,borderRadius:2,cursor:"pointer",background:c,
-                  border:floor===c?"2px solid #1A5276":"2px solid transparent" }}/>
+                style={{ width:26, height:26, borderRadius:2, cursor:'pointer', background:c,
+                  border: floor===c ? '2px solid #1A5276' : '1px solid #2A3A4A' }}/>
             ))}
           </div>
         </div>
-        <div style={{ fontSize:9,color:"#3A5A6A",lineHeight:1.8,marginTop:16 }}>
-          <div>🖱 Drag to orbit</div>
-          <div>⚲ Scroll to zoom</div>
-          <div style={{ marginTop:8, color:C.teal }}>{activeRoom}: {RL}×{RW}×{RH}m</div>
-          <div style={{ color:"#3A5A6A" }}>{(RL*RW).toFixed(1)} m²</div>
+
+        <div style={{ fontSize:10, color:'#3A5A6A', lineHeight:2, marginTop:16, borderTop:'1px solid #1E2D3A', paddingTop:12 }}>
+          <div style={{ color:'#1A5276', fontWeight:700, marginBottom:6 }}>📐 {activeRoom}</div>
+          <div>L: {RL}m</div>
+          <div>W: {RW}m</div>
+          <div>H: {RH}m</div>
+          <div style={{ marginTop:6 }}>{(RL*RW).toFixed(1)} m²</div>
+          <div style={{ marginTop:12, fontSize:9, color:'#3A5A6A', lineHeight:1.8 }}>
+            Drag to orbit<br/>Scroll to zoom
+          </div>
         </div>
       </div>
-      {/* Canvas */}
-      <div ref={mountRef} style={{ flex:1, cursor:"grab" }}
-        onMouseDown={onMD} onMouseUp={onMU} onMouseMove={onMM} onMouseLeave={onMU} onWheel={onW}/>
+
+      {/* Canvas container */}
+      <div style={{ flex:1, position:'relative' }}>
+        {status && (
+          <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column',
+            alignItems:'center', justifyContent:'center', background:'#0D1B2A', zIndex:10, gap:14 }}>
+            <div style={{ width:28, height:28, border:'2px solid #1A5276',
+              borderTop:'2px solid #fff', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
+            <div style={{ color:'#3A5A6A', fontSize:11, letterSpacing:2 }}>{status.toUpperCase()}</div>
+          </div>
+        )}
+        <div ref={mountRef} style={{ width:'100%', height:'100%', cursor:'grab', touchAction:'none' }}
+          onMouseDown={onDown} onMouseUp={onUp} onMouseMove={onMove} onMouseLeave={onUp}
+          onTouchStart={e=>onDown(e.touches[0])} onTouchEnd={onUp}
+          onTouchMove={e=>{e.preventDefault();onMove(e.touches[0]);}}
+          onWheel={onWheel}/>
+      </div>
     </div>
   );
 }
+
 
 // ── CLIENT REPORT (standalone component so hooks work) ───────────────
 function ClientReport({ selected, setView, customers }) {
