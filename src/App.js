@@ -683,7 +683,20 @@ function Room3DEmbed({ length: L=5, width: W=4, height: H=2.8, roomType="Living 
 
   useEffect(() => {
     const el = mountRef.current; if (!el) return;
-    const THREE = window.THREE; if (!THREE) return;
+
+    // Wait for Three.js CDN to load (retry up to 3 seconds)
+    let attempts = 0;
+    const tryInit = () => {
+      const THREE = window.THREE;
+      if (!THREE) {
+        if (attempts++ < 30) { setTimeout(tryInit, 100); return; }
+        el.innerHTML = '<div style="color:#FF8080;padding:20px;font-family:sans-serif">Three.js failed to load. Check internet connection.</div>';
+        return;
+      }
+      initScene(THREE);
+    };
+
+    const initScene = (THREE) => {
     const W2=el.clientWidth, H2=el.clientHeight;
     const scene    = new THREE.Scene();
     scene.background = new THREE.Color("#0A1520");
@@ -742,6 +755,9 @@ function Room3DEmbed({ length: L=5, width: W=4, height: H=2.8, roomType="Living 
     const onR=()=>{ camera.aspect=el.clientWidth/el.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(el.clientWidth,el.clientHeight); };
     window.addEventListener("resize",onR);
     return ()=>{ window.removeEventListener("resize",onR); cancelAnimationFrame(frameRef.current); renderer.dispose(); if(el.contains(renderer.domElement))el.removeChild(renderer.domElement); };
+    }; // end initScene
+
+    tryInit();
   }, [activeRoom, RL, RW, RH, wall, floor, updateCam]);
 
   const onMD=e=>{stateRef.current.dragging=true;stateRef.current.lx=e.clientX;stateRef.current.ly=e.clientY;};
@@ -758,8 +774,26 @@ function Room3DEmbed({ length: L=5, width: W=4, height: H=2.8, roomType="Living 
   const WALL_OPTS=[["#F5F5F0","White"],["#E8D5B7","Beige"],["#8FAF8F","Sage"],["#3A3A3A","Charcoal"],["#C0614A","Terracotta"],["#1B2A4A","Navy"]];
   const FLOOR_OPTS=[["#8B6340","Teak"],["#C8A96E","Oak"],["#E8E4DC","Marble"],["#3A3530","Granite"],["#9A9590","Concrete"]];
 
+  const [threeReady, setThreeReady] = useState(!!window.THREE);
+  useEffect(() => {
+    if (!window.THREE) {
+      const check = setInterval(() => {
+        if (window.THREE) { setThreeReady(true); clearInterval(check); }
+      }, 100);
+      return () => clearInterval(check);
+    }
+  }, []);
+
   return (
     <div style={{ display:"flex", height:"calc(100vh - 57px)" }}>
+      {!threeReady && (
+        <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center",
+          justifyContent:"center", background:"#0A1520", zIndex:10, flexDirection:"column", gap:12 }}>
+          <div style={{ width:32, height:32, border:"2px solid #1A5276",
+            borderTop:"2px solid #fff", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>
+          <div style={{ color:"#1A5276", fontSize:11, letterSpacing:3 }}>LOADING 3D ENGINE…</div>
+        </div>
+      )}
       {/* Controls */}
       <div style={{ width:200, background:"#0A1520", padding:14, borderRight:"1px solid #1E2D3A", overflowY:"auto", flexShrink:0 }}>
         {rooms.length>1 && (
@@ -2269,6 +2303,26 @@ High Rise Interiors Team`
               </span>
             ))}
           </div>
+        </div>
+        {(!rd.length && !rd.width) && (
+          <div style={{ background:"#1A2A1A", borderBottom:"1px solid #2A4A2A",
+            padding:"10px 24px", display:"flex", gap:12, alignItems:"center" }}>
+            <span style={{ fontSize:16 }}>⚠️</span>
+            <div style={{ fontSize:12, color:"#6AE86A", lineHeight:1.8 }}>
+              No dimensions for <strong style={{color:"#fff"}}>{firstRoom}</strong> yet.&nbsp;
+              Go to <strong style={{color:"#fff"}}>Edit → 📐 Dimensions</strong> tab,
+              select rooms and enter Length × Width × Height.
+              The 3D room will auto-update with those measurements.
+            </div>
+          </div>
+        )}
+        {/* Orbit hint */}
+        <div style={{ background:"#050D14", padding:"6px 24px", display:"flex",
+          gap:20, fontSize:10, color:"#3A5A6A", borderBottom:"1px solid #1E2D3A" }}>
+          <span>🖱 Drag to orbit</span>
+          <span>⚲ Scroll to zoom</span>
+          <span>📐 Uses dimensions from <strong style={{color:C.teal}}>Dimensions tab</strong></span>
+          <span style={{marginLeft:"auto"}}>Room: {RL}m × {RW}m × {RH}m high = {(RL*RW).toFixed(1)} m²</span>
         </div>
         <Room3DEmbed length={L} width={W} height={H} roomType={firstRoom} rooms={rooms} roomDetails={selected.roomDetails||{}}/>
       </div>
