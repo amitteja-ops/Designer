@@ -319,6 +319,10 @@ const SUPABASE_URL = "https://utctflrqhjzxhzyuhsnn.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY";
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
 
+// Returns "Quotation" for Lead, "Order" for all other statuses
+const getDocTerm = (status) =>
+  (!status || status === "Lead") ? "Quotation" : "Order";
+
 // ── Audit log helpers ─────────────────────────────────────────────────
 const AUDIT_ICONS = {
   created:    "🆕", updated:   "✏️",  status:    "🔄",
@@ -1168,6 +1172,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     validTill.setDate(validTill.getDate() + 3);
     const validDate = validTill.toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
     const today = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
+    const docTerm   = getDocTerm(client.status);
     const quotation = client.quotation ? `₹${Number(client.quotation).toLocaleString("en-IN")}` : "As discussed";
     const quoteRef = `HRI-Q-${String(client.id||"XXXX").slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`;
 
@@ -1180,10 +1185,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
 
 Welcome to High Rise Interiors! We are pleased to share your project quotation.
 
-Quotation Ref : ${quoteRef}
-Total Value   : ${quotation}
+${docTerm} Ref   : ${quoteRef}
+Total Value     : ${quotation}
 
-⚠️ This quotation is valid until ${validDate} (3 days from today).
+⚠️ This ${docTerm.toLowerCase()} is valid until ${validDate} (3 days from today).
 Please confirm before this date to lock in the current pricing.
 
 Kindly find the detailed project report attached to this email.
@@ -2350,7 +2355,7 @@ High Rise Interiors Team`
             )}
             {selected.quotation && (
               <div style={S.card}>
-                <div style={S.sec}>Quotation</div>
+                <div style={S.sec}>{getDocTerm(selected.status)}</div>
                 {selected.previousQuotation && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:C.muted }}>Previous: </span><span style={{ textDecoration:"line-through" }}>{fmt(selected.previousQuotation)}</span></div>}
                 {selected.revisedQuotation  && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:C.muted }}>Revised: </span>{fmt(selected.revisedQuotation)}</div>}
                 <div style={{ fontSize:20,fontWeight:700,color:C.teal,marginTop:8 }}>Final: {fmt(selected.quotation)}</div>
@@ -2924,7 +2929,7 @@ High Rise Interiors Team`
           {/* ── QUOTATION ── */}
           {activeTab==="quotation" && (
             <div>
-              <div style={S.sec}>Project Quotation (INR ₹)</div>
+              <div style={S.sec}>{getDocTerm(form.status)} (INR ₹)</div>
 
               {/* Configurable Labour % */}
               <div style={{ display:"flex", alignItems:"center", gap:16, background:C.light, borderRadius:10, padding:"12px 18px", marginBottom:16, border:`1px solid ${C.line}` }}>
@@ -3169,7 +3174,7 @@ High Rise Interiors Team`
 
               {/* Final Quotation */}
               <div style={{ marginBottom:24 }}>
-                <label style={S.label}>Final Quotation ₹ (Client sees this)</label>
+                <label style={S.label}>Final {getDocTerm(form.status)} ₹ (Client sees this)</label>
                 <input style={{ ...S.input, fontSize:18, fontWeight:700, borderColor:C.red }} type="number" value={form.quotation}
                   onChange={e=>setF("quotation",e.target.value)} placeholder="e.g. 2504040"/>
                 <div style={{ fontSize:11, color:C.muted, marginTop:6, letterSpacing:1 }}>
@@ -3180,7 +3185,7 @@ High Rise Interiors Team`
               {/* Payment Schedule */}
               {form.quotation && (
                 <div>
-                  <div style={S.sec}>Auto Payment Schedule</div>
+                  <div style={S.sec}>{getDocTerm(form.status)} Payment Schedule</div>
                   {PAYMENT_PHASES.map((p,i)=>(
                     <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.light,borderRadius:12,padding:"14px 18px",marginBottom:10,border:`1px solid ${C.line}` }}>
                       <div><div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.day} — {p.pct}% — {p.label}</div></div>
