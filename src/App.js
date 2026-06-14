@@ -539,174 +539,13 @@ function Select({ value, onChange, options, placeholder }) {
   );
 }
 
-export default function App({ token, user, onLogout, onSessionExpired }) {
-  const [customers,    setCustomers]    = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [saving,       setSaving]       = useState(false);
-  const [view,         setView]         = useState("list");
-  const [form,         setForm]         = useState(EMPTY);
-  const [selectedId,   setSelectedId]   = useState(null);
-  const [search,       setSearch]       = useState("");
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [activeTab,    setActiveTab]    = useState("personal");
-  const [toast,        setToast]        = useState(null);
-  const [connected,    setConnected]    = useState(false);
 
-  const showToast = (msg, type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null),4000); };
+// ── CLIENT REPORT (standalone component so hooks work) ───────────────
+function ClientReport({ selected, setView, customers }) {
+  const [showSigPad, setShowSigPad] = React.useState(null);
+  const [signatures, setSignatures] = React.useState({});
+  const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
 
-  const getToken = () => {
-    try { return JSON.parse(localStorage.getItem("crm_session")||"{}").token || token; }
-    catch { return token; }
-  };
-
-  const safeCall = useCallback(async (fn) => {
-    try { return await fn(getToken()); }
-    catch(e) {
-      if (e.code === "SESSION_EXPIRED") {
-        const ok = await onSessionExpired();
-        if (ok) return await fn(getToken());
-        throw new Error("Please log in again");
-      }
-      throw e;
-    }
-  }, [token, onSessionExpired]);
-
-  const fetchCustomers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const rows = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc`, "GET", null, t));
-      setCustomers((rows||[]).map(fromRow));
-      setConnected(true);
-    } catch(e) {
-      setConnected(false);
-      showToast("Load error: " + e.message, "error");
-    } finally { setLoading(false); }
-  }, [safeCall]);
-
-  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
-
-  // ── Open edit — explicitly map every field ────────────────────────
-  const openEdit = (c) => {
-    setForm({
-      id:                c.id                || null,
-      name:              c.name              || "",
-      email:             c.email             || "",
-      phone:             c.phone             || "",
-      address:           c.address           || "",
-      status:            c.status            || "Lead",
-      projectType:       c.projectType       || "Residential",
-      budget:            c.budget            || "",
-      timeline:          c.timeline          || "",
-      startDate:         c.startDate         || "",
-      rooms:             c.rooms             || [],
-      dimensions: {
-        length:          c.dimensions?.length || "",
-        width:           c.dimensions?.width  || "",
-        height:          c.dimensions?.height || "",
-      },
-      style:             c.style             || "",
-      notes:             c.notes             || "",
-      quotation:         c.quotation         || "",
-      previousQuotation: c.previousQuotation || "",
-      revisedQuotation:  c.revisedQuotation  || "",
-      plywood:           c.plywood           || "",
-      laminate:          c.laminate          || "",
-      hardware:          c.hardware          || "",
-      glass:             c.glass             || "",
-      ceiling:           c.ceiling           || "",
-      lights:            c.lights            || "",
-      handles:           c.handles           || "",
-      roomDetails:       c.roomDetails       || {},
-      roomMaterials:     c.roomMaterials     || {},
-      rebateType:        c.rebateType        || "amount",
-      rebateValue:       c.rebateValue       || "",
-      inventory:           c.inventory           || {},
-      referralCode:        c.referralCode        || "",
-      appliedReferralCode: c.appliedReferralCode || "",
-      referralDiscount:   c.referralDiscount   || false,
-      labourPct:         c.labourPct         != null ? c.labourPct : 50,
-    });
-    setActiveTab("personal");
-    setView("form");
-  };
-
-  const openNew    = () => { setForm({...EMPTY}); setActiveTab("personal"); setView("form"); };
-  const openDetail = (c) => { setSelectedId(c.id); setView("detail"); };
-  const setF       = (k, v) => setForm(f => ({...f, [k]: v}));
-  const setDim     = (k, v) => setForm(f => ({...f, dimensions: {...f.dimensions, [k]: v}}));
-  const toggleRoom = (r)    => setForm(f => ({...f, rooms: f.rooms.includes(r) ? f.rooms.filter(x=>x!==r) : [...f.rooms, r]}));
-
-  const saveCustomer = async () => {
-    if (!form.name.trim()) { showToast("Client name is required", "error"); return; }
-    setSaving(true);
-    try {
-      // For existing clients — preserve existing referral code, never regenerate
-      const formToSave = {...form};
-      if (!formToSave.id) {
-        // New client — will generate code after we get the real ID back
-        formToSave.referralCode = "";
-      }
-      // Existing client — referralCode stays exactly as loaded, no change
-      const row = toRow(formToSave);
-      if (formToSave.id) {
-        await safeCall(t => sb(`${TABLE}?id=eq.${formToSave.id}`, "PATCH", row, t));
-        showToast("✓ Client updated");
-      } else {
-        const result = await safeCall(t => sb(TABLE, "POST", row, t));
-        // Generate permanent code using the real DB id
-        if (result && result[0]?.id) {
-          const realCode = genReferralCode(result[0].id);
-          await safeCall(t => sb(`${TABLE}?id=eq.${result[0].id}`, "PATCH", { referral_code: realCode }, t));
-        }
-        showToast("✓ Client saved");
-      }
-      await fetchCustomers();
-      setView("list");
-    } catch(e) { showToast("Save failed: " + e.message, "error"); }
-    finally { setSaving(false); }
-  };
-
-  const deleteCustomer = async (id) => {
-    if (!window.confirm("Delete this client permanently?")) return;
-    try {
-      await safeCall(t => sb(`${TABLE}?id=eq.${id}`, "DELETE", null, t));
-      showToast("Client deleted", "info");
-      await fetchCustomers();
-      setView("list");
-    } catch(e) { showToast("Delete failed: " + e.message, "error"); }
-  };
-
-  const exportCSV = () => {
-    const h = ["Name","Phone","Email","Address","Status","Type","Budget","Timeline","Start","Rooms","Quotation","Style","Plywood","Laminate","Hardware","Notes"];
-    const rows = customers.map(c => [
-      c.name,c.phone,c.email,c.address,c.status,c.projectType,c.budget,c.timeline,c.startDate,
-      (c.rooms||[]).join("|"),c.quotation||"",c.style,c.plywood||"",c.laminate||"",c.hardware||"",c.notes
-    ].map(v=>`"${(v||"").toString().replace(/"/g,'""')}"`).join(","));
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([[h.join(","),...rows].join("\n")],{type:"text/csv"}));
-    a.download = "highrise-clients.csv"; a.click();
-    showToast("✓ CSV exported");
-  };
-
-  const filtered = customers.filter(c => {
-    const q = search.toLowerCase();
-    return (c.name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)||(c.phone||"").includes(q)||(c.address||"").toLowerCase().includes(q))
-      && (filterStatus==="All" || c.status===filterStatus);
-  });
-
-  const stats = {
-    total:     customers.length,
-    active:    customers.filter(c=>c.status==="Active"||c.status==="In Progress").length,
-    leads:     customers.filter(c=>c.status==="Lead").length,
-    completed: customers.filter(c=>c.status==="Completed").length,
-    revenue:   customers.reduce((s,c)=>s+Number(c.quotation||0),0),
-  };
-
-  const selected = customers.find(c => c.id === selectedId);
-  const TABS = ["personal","dimensions","materials","quotation","notes","inventory"];
-
-  // ── REPORT ───────────────────────────────────────────────────────────
-  if (view==="report" && selected) {
     const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
     const noteLines   = (selected.notes||"").split("\n").filter(l=>l.trim());
     const scopeLines  = noteLines.filter(l=>/drawing|living|bedroom|kitchen|ceiling|pooja|wardrobe|unit|partition|entrance|balcony|bathroom/i.test(l));
@@ -726,7 +565,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
                         fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",
                         fontFamily:"'DM Sans',sans-serif" }),
     };
-    return (
+      return (
       <div style={{ background:C.white,minHeight:"100vh",
                     fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
                     color:C.ink,paddingBottom:60 }}>
@@ -790,7 +629,7 @@ Hyderabad`);
                 {selected.rooms.map((r,i) => {
                   const rd = selected.roomDetails?.[r] || {};
                   const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
-                  return (
+                    return (
                     <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.line}` }}>
                       <div style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</div>
                       <div style={{ fontSize:13 }}>{rd.length||"—"}</div>
@@ -821,7 +660,7 @@ Hyderabad`);
                     {(selected.rooms||[]).map(r => {
                       const photos = selected.roomDetails?.[r]?.photos||[];
                       if (!photos.length) return null;
-                      return (
+                        return (
                         <div key={r} style={{ marginBottom:12 }}>
                           <div style={{ fontSize:12, fontWeight:700, color:C.red, marginBottom:6 }}>🏠 {r}</div>
                           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
@@ -851,7 +690,7 @@ Hyderabad`);
                 {(selected.rooms||[]).map(r => {
                   const photos = selected.roomDetails?.[r]?.photos||[];
                   if (!photos.length) return null;
-                  return (
+                    return (
                     <div key={r} style={{ marginBottom:20 }}>
                       <div style={{ fontSize:12, fontWeight:700, color:C.teal, marginBottom:8 }}>🏠 {r}</div>
                       <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
@@ -882,7 +721,7 @@ Hyderabad`);
                   return t+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
                 },0);
                 const roomTotal = Math.round(roomCost*(1+lp/100));
-                return (
+                  return (
                   <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
                     {/* Room header */}
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
@@ -899,7 +738,7 @@ Hyderabad`);
                     {/* Material rows — brand + qty only, no rates */}
                     {matEntries.map(([matType, sel], i) => {
                       const item = getCatalog(matType).find(m=>m.name===sel.name);
-                      return (
+                        return (
                         <div key={matType} style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
                           padding:"9px 14px", background:i%2===0?C.white:C.smoke,
                           borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
@@ -1109,6 +948,178 @@ Hyderabad`);
   }
 
 
+}
+
+export default function App({ token, user, onLogout, onSessionExpired }) {
+  const [customers,    setCustomers]    = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [saving,       setSaving]       = useState(false);
+  const [view,         setView]         = useState("list");
+  const [form,         setForm]         = useState(EMPTY);
+  const [selectedId,   setSelectedId]   = useState(null);
+  const [search,       setSearch]       = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [activeTab,    setActiveTab]    = useState("personal");
+  const [toast,        setToast]        = useState(null);
+  const [connected,    setConnected]    = useState(false);
+
+  const showToast = (msg, type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null),4000); };
+
+  const getToken = () => {
+    try { return JSON.parse(localStorage.getItem("crm_session")||"{}").token || token; }
+    catch { return token; }
+  };
+
+  const safeCall = useCallback(async (fn) => {
+    try { return await fn(getToken()); }
+    catch(e) {
+      if (e.code === "SESSION_EXPIRED") {
+        const ok = await onSessionExpired();
+        if (ok) return await fn(getToken());
+        throw new Error("Please log in again");
+      }
+      throw e;
+    }
+  }, [token, onSessionExpired]);
+
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const rows = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc`, "GET", null, t));
+      setCustomers((rows||[]).map(fromRow));
+      setConnected(true);
+    } catch(e) {
+      setConnected(false);
+      showToast("Load error: " + e.message, "error");
+    } finally { setLoading(false); }
+  }, [safeCall]);
+
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
+
+  // ── Open edit — explicitly map every field ────────────────────────
+  const openEdit = (c) => {
+    setForm({
+      id:                c.id                || null,
+      name:              c.name              || "",
+      email:             c.email             || "",
+      phone:             c.phone             || "",
+      address:           c.address           || "",
+      status:            c.status            || "Lead",
+      projectType:       c.projectType       || "Residential",
+      budget:            c.budget            || "",
+      timeline:          c.timeline          || "",
+      startDate:         c.startDate         || "",
+      rooms:             c.rooms             || [],
+      dimensions: {
+        length:          c.dimensions?.length || "",
+        width:           c.dimensions?.width  || "",
+        height:          c.dimensions?.height || "",
+      },
+      style:             c.style             || "",
+      notes:             c.notes             || "",
+      quotation:         c.quotation         || "",
+      previousQuotation: c.previousQuotation || "",
+      revisedQuotation:  c.revisedQuotation  || "",
+      plywood:           c.plywood           || "",
+      laminate:          c.laminate          || "",
+      hardware:          c.hardware          || "",
+      glass:             c.glass             || "",
+      ceiling:           c.ceiling           || "",
+      lights:            c.lights            || "",
+      handles:           c.handles           || "",
+      roomDetails:       c.roomDetails       || {},
+      roomMaterials:     c.roomMaterials     || {},
+      rebateType:        c.rebateType        || "amount",
+      rebateValue:       c.rebateValue       || "",
+      inventory:           c.inventory           || {},
+      referralCode:        c.referralCode        || "",
+      appliedReferralCode: c.appliedReferralCode || "",
+      referralDiscount:   c.referralDiscount   || false,
+      labourPct:         c.labourPct         != null ? c.labourPct : 50,
+    });
+    setActiveTab("personal");
+    setView("form");
+  };
+
+  const openNew    = () => { setForm({...EMPTY}); setActiveTab("personal"); setView("form"); };
+  const openDetail = (c) => { setSelectedId(c.id); setView("detail"); };
+  const setF       = (k, v) => setForm(f => ({...f, [k]: v}));
+  const setDim     = (k, v) => setForm(f => ({...f, dimensions: {...f.dimensions, [k]: v}}));
+  const toggleRoom = (r)    => setForm(f => ({...f, rooms: f.rooms.includes(r) ? f.rooms.filter(x=>x!==r) : [...f.rooms, r]}));
+
+  const saveCustomer = async () => {
+    if (!form.name.trim()) { showToast("Client name is required", "error"); return; }
+    setSaving(true);
+    try {
+      // For existing clients — preserve existing referral code, never regenerate
+      const formToSave = {...form};
+      if (!formToSave.id) {
+        // New client — will generate code after we get the real ID back
+        formToSave.referralCode = "";
+      }
+      // Existing client — referralCode stays exactly as loaded, no change
+      const row = toRow(formToSave);
+      if (formToSave.id) {
+        await safeCall(t => sb(`${TABLE}?id=eq.${formToSave.id}`, "PATCH", row, t));
+        showToast("✓ Client updated");
+      } else {
+        const result = await safeCall(t => sb(TABLE, "POST", row, t));
+        // Generate permanent code using the real DB id
+        if (result && result[0]?.id) {
+          const realCode = genReferralCode(result[0].id);
+          await safeCall(t => sb(`${TABLE}?id=eq.${result[0].id}`, "PATCH", { referral_code: realCode }, t));
+        }
+        showToast("✓ Client saved");
+      }
+      await fetchCustomers();
+      setView("list");
+    } catch(e) { showToast("Save failed: " + e.message, "error"); }
+    finally { setSaving(false); }
+  };
+
+  const deleteCustomer = async (id) => {
+    if (!window.confirm("Delete this client permanently?")) return;
+    try {
+      await safeCall(t => sb(`${TABLE}?id=eq.${id}`, "DELETE", null, t));
+      showToast("Client deleted", "info");
+      await fetchCustomers();
+      setView("list");
+    } catch(e) { showToast("Delete failed: " + e.message, "error"); }
+  };
+
+  const exportCSV = () => {
+    const h = ["Name","Phone","Email","Address","Status","Type","Budget","Timeline","Start","Rooms","Quotation","Style","Plywood","Laminate","Hardware","Notes"];
+    const rows = customers.map(c => [
+      c.name,c.phone,c.email,c.address,c.status,c.projectType,c.budget,c.timeline,c.startDate,
+      (c.rooms||[]).join("|"),c.quotation||"",c.style,c.plywood||"",c.laminate||"",c.hardware||"",c.notes
+    ].map(v=>`"${(v||"").toString().replace(/"/g,'""')}"`).join(","));
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([[h.join(","),...rows].join("\n")],{type:"text/csv"}));
+    a.download = "highrise-clients.csv"; a.click();
+    showToast("✓ CSV exported");
+  };
+
+  const filtered = customers.filter(c => {
+    const q = search.toLowerCase();
+    return (c.name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)||(c.phone||"").includes(q)||(c.address||"").toLowerCase().includes(q))
+      && (filterStatus==="All" || c.status===filterStatus);
+  });
+
+  const stats = {
+    total:     customers.length,
+    active:    customers.filter(c=>c.status==="Active"||c.status==="In Progress").length,
+    leads:     customers.filter(c=>c.status==="Lead").length,
+    completed: customers.filter(c=>c.status==="Completed").length,
+    revenue:   customers.reduce((s,c)=>s+Number(c.quotation||0),0),
+  };
+
+  const selected = customers.find(c => c.id === selectedId);
+  const TABS = ["personal","dimensions","materials","quotation","notes","inventory"];
+
+  // ── REPORT ───────────────────────────────────────────────────────────
+  if (view==="report" && selected) {
+    return <ClientReport selected={selected} setView={setView} customers={customers}/>;
+  }
   // ── INTERNAL REPORT ──────────────────────────────────────────────────
   if (view==="internal" && selected) {
     const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
