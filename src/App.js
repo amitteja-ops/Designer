@@ -653,11 +653,19 @@ function Select({ value, onChange, options, placeholder }) {
 function ClientReport({ selected, setView, customers }) {
   const [showSigPad, setShowSigPad] = React.useState(null);
   // Load saved signatures from last audit log entry that has them
-  const lastSigEntry = [...(selected.auditLog||[])].reverse().find(e=>e.type==="signed"&&(e.signatures?.clientImg||e.signatures?.hriImg));
-  const [signatures, setSignatures] = React.useState({
-    client: lastSigEntry?.signatures?.clientImg || null,
-    hri:    lastSigEntry?.signatures?.hriImg    || null,
-  });
+  const [signatures, setSignatures] = React.useState({ client:null, hri:null });
+
+  // Load saved signatures from audit log whenever auditLog changes
+  React.useEffect(() => {
+    const lastSigEntry = [...(selected.auditLog||[])].reverse()
+      .find(e => e.type==="signed" && (e.signatures?.clientImg||e.signatures?.hriImg));
+    if (lastSigEntry) {
+      setSignatures({
+        client: lastSigEntry.signatures?.clientImg || null,
+        hri:    lastSigEntry.signatures?.hriImg    || null,
+      });
+    }
+  }, [selected.auditLog]);
   const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
   const noteLines   = (selected.notes||"").split("\n").filter(l=>l.trim());
   const scopeLines  = noteLines.filter(l=>/drawing|living|bedroom|kitchen|ceiling|pooja|wardrobe|unit|partition|entrance|balcony|bathroom/i.test(l));
@@ -1023,6 +1031,10 @@ Hyderabad`);
                   },
                   body: JSON.stringify({ audit_log: JSON.stringify(updatedLog) })
                 });
+                // Update customers list so signatures reload immediately
+                setCustomers(prev => prev.map(c =>
+                  c.id===selected.id ? { ...c, auditLog: updatedLog } : c
+                ));
               } catch(e) { console.warn("Signature save failed:", e); }
             }}
             onClose={()=>setShowSigPad(null)}
@@ -1149,6 +1161,210 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
   // ── Open edit — explicitly map every field ────────────────────────
+  // ── Send welcome email via device mail app ───────────────────────────
+  const sendWelcomeEmail = (client) => {
+    if (!client.email) { showToast("No email address for this client", "warning"); return; }
+    const validTill = new Date();
+    validTill.setDate(validTill.getDate() + 3);
+    const validDate = validTill.toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
+    const today = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
+    const quotation = client.quotation ? `₹${Number(client.quotation).toLocaleString("en-IN")}` : "As discussed";
+    const quoteRef = `HRI-Q-${String(client.id||"XXXX").slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`;
+
+    const subject = encodeURIComponent(
+      `Welcome to High Rise Interiors — Quotation ${quoteRef}`
+    );
+
+    const body = encodeURIComponent(
+`Dear ${client.name},
+
+Welcome to High Rise Interiors! We are pleased to share your project quotation.
+
+Quotation Ref : ${quoteRef}
+Total Value   : ${quotation}
+
+⚠️ This quotation is valid until ${validDate} (3 days from today).
+Please confirm before this date to lock in the current pricing.
+
+Kindly find the detailed project report attached to this email.
+
+Warm regards,
+High Rise Interiors
+Hyderabad, Telangana`
+    );
+
+    // Remind user to attach the PDF report
+    showToast("📎 Please attach the Client Report PDF before sending", "info");
+
+    window.location.href = `mailto:${client.email}?subject=${subject}&body=${body}`;
+
+    // Log email sent in audit trail
+    const emailEntry = makeEntry(
+      "note",
+      `Welcome email sent to ${client.email} — Quotation ${quoteRef} valid till ${validDate}`,
+      { quotation: client.quotation, status: client.status, quoteRef, validTill: validDate }
+    );
+    const updatedLog = [...(client.auditLog||[]), emailEntry];
+    saveAuditEntry(client.id, client.auditLog, emailEntry);
+    setCustomers(prev => prev.map(c => c.id===client.id ? {...c, auditLog: updatedLog} : c));
+    showToast("📧 Mail app opened — remember to attach the Client Report PDF", "success");
+  };
+
+  // ── Status Change Email Agent ─────────────────────────────────────────
+  // Triggered automatically whenever client status changes
+  const statusEmailAgent = async (client, oldStatus, newStatus) => {
+    if (!client.email) return;
+    const quoteRef = `HRI-Q-${String(client.id||"").slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`;
+    const quotation = client.quotation ? `₹${Number(client.quotation).toLocaleString("en-IN")}` : "As discussed";
+    const today = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+    const validTill = new Date(); validTill.setDate(validTill.getDate()+3);
+    const validDate = validTill.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+
+    // Use Claude API to compose a personalised email for this status change
+    setToast({ msg:`🤖 Agent composing ${newStatus} email for ${client.name}…`, type:"info" });
+
+    let emailBody = "";
+    let emailSubject = "";
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          model:"claude-sonnet-4-6",
+          max_tokens:1000,
+          system:`You are the email agent for High Rise Interiors, a premium interior design firm in Hyderabad, India.
+Write professional, warm, concise client emails.
+Always include: client name, quotation reference, key action required.
+Never include pricing breakdowns — attach report separately.
+Keep emails under 150 words. Sign off as "High Rise Interiors Team".
+Respond with JSON only: { "subject": "...", "body": "..." }
+No markdown, no backticks, just raw JSON.`,
+          messages:[{
+            role:"user",
+            content:`Write a status update email for this client:
+
+Name: ${client.name}
+Project: ${client.projectType||"Residential"} interior design
+Address: ${client.address||"Hyderabad"}
+Quotation Ref: ${quoteRef}
+Total Value: ${quotation}
+Status changed: ${oldStatus} → ${newStatus}
+Today: ${today}
+
+Email context by status:
+- Lead: First contact, quotation valid till ${validDate} (3 days), ask to confirm
+- Active: Project confirmed, welcome, advance payment (35%) needed to start
+- In Progress: Work started, share progress update, next payment reminder
+- Completed: Work done, thank you, request review/referral
+- On Hold: Acknowledge hold, reassure, keep in touch
+
+Write the email for status: ${newStatus}`
+          }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || "";
+      const clean = text.replace(/```json|```/g,"").trim();
+      const parsed = JSON.parse(clean);
+      emailSubject = parsed.subject;
+      emailBody = parsed.body;
+    } catch(e) {
+      // Fallback if AI fails — use template
+      console.warn("AI agent failed, using template:", e);
+      const templates = {
+        Lead: {
+          subject: `High Rise Interiors — Your Quotation ${quoteRef} (Valid till ${validDate})`,
+          body: `Dear ${client.name},
+
+Thank you for your interest in High Rise Interiors.
+
+Quotation Ref: ${quoteRef}
+Value: ${quotation}
+
+⚠️ This quotation is valid until ${validDate}. Please confirm at the earliest to lock in the pricing.
+
+Kindly find the detailed project report attached.
+
+Warm regards,
+High Rise Interiors Team`
+        },
+        Active: {
+          subject: `Project Confirmed — ${quoteRef} | High Rise Interiors`,
+          body: `Dear ${client.name},
+
+Welcome aboard! Your project is now confirmed.
+
+Quotation Ref: ${quoteRef}
+Value: ${quotation}
+
+To commence work, please make the advance payment (35%). Our team will contact you within 48 hours to schedule the kickoff.
+
+Kindly find the detailed project report attached.
+
+Warm regards,
+High Rise Interiors Team`
+        },
+        "In Progress": {
+          subject: `Project Update — ${quoteRef} | High Rise Interiors`,
+          body: `Dear ${client.name},
+
+Your interior project is in progress. Our team is working diligently to deliver the best results.
+
+Quotation Ref: ${quoteRef}
+
+For any queries or to schedule a site visit, please feel free to reach out.
+
+Warm regards,
+High Rise Interiors Team`
+        },
+        Completed: {
+          subject: `Project Completed — ${quoteRef} | High Rise Interiors`,
+          body: `Dear ${client.name},
+
+Congratulations! Your project is now complete. It has been a pleasure working with you.
+
+Quotation Ref: ${quoteRef}
+
+We would love to hear your feedback. A referral from you would mean the world to us — your referral code is: ${client.referralCode||"Contact us for your code"}.
+
+Warm regards,
+High Rise Interiors Team`
+        },
+        "On Hold": {
+          subject: `Project On Hold — ${quoteRef} | High Rise Interiors`,
+          body: `Dear ${client.name},
+
+We acknowledge that your project (${quoteRef}) is currently on hold.
+
+We completely understand and will keep your requirements on record. Whenever you are ready to resume, we are here for you.
+
+Warm regards,
+High Rise Interiors Team`
+        },
+      };
+      const t = templates[newStatus] || templates.Lead;
+      emailSubject = t.subject;
+      emailBody = t.body;
+    }
+
+    // Open mail app with composed email
+    const subject = encodeURIComponent(emailSubject);
+    const body = encodeURIComponent(emailBody);
+    window.location.href = `mailto:${client.email}?subject=${subject}&body=${body}`;
+
+    // Log in audit trail
+    const emailEntry = makeEntry("note",
+      `🤖 Agent sent ${newStatus} email to ${client.email}`,
+      { status: newStatus, quotation: client.quotation, quoteRef }
+    );
+    saveAuditEntry(client.id, client.auditLog, emailEntry);
+    setCustomers(prev => prev.map(c =>
+      c.id===client.id ? {...c, auditLog:[...(c.auditLog||[]), emailEntry]} : c
+    ));
+    showToast(`📧 ${newStatus} email ready — attach PDF report before sending`, "success");
+  };
+
   const openEdit = (c) => {
     setForm({
       id:                c.id                || null,
@@ -1247,6 +1463,12 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
       if (formToSave.id) {
         await safeCall(t => sb(`${TABLE}?id=eq.${formToSave.id}`, "PATCH", row, t));
         showToast("✓ Client updated");
+        // Trigger status email agent if status changed
+        if (existingClient && existingClient.status !== formToSave.status) {
+          setTimeout(() => {
+            statusEmailAgent(formToSave, existingClient.status, formToSave.status);
+          }, 800);
+        }
       } else {
         const result = await safeCall(t => sb(TABLE, "POST", row, t));
         if (result && result[0]?.id) {
@@ -1254,6 +1476,12 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
           await safeCall(t => sb(`${TABLE}?id=eq.${result[0].id}`, "PATCH", { referral_code: realCode }, t));
         }
         showToast("✓ Client saved");
+        // Auto-trigger Lead email for new clients
+        if (formToSave.email) {
+          setTimeout(() => {
+            statusEmailAgent({...formToSave, id: formToSave.id}, "New", "Lead");
+          }, 800);
+        }
       }
       await fetchCustomers();
       setView("list");
@@ -2029,7 +2257,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
         <div style={{ display:"flex",gap:10 }}>
           <button style={S.btn("dark")} onClick={()=>setView("list")}>← Back</button>
-          <button style={S.btn("dark")} onClick={()=>setView("report")}>📄 Client Report</button>
+<button style={S.btn("dark")} onClick={()=>setView("report")}>📄 Client Report</button>
           <button style={S.btn("dark")} onClick={()=>setView("internal")}>🔧 Internal Report</button>
           <button style={S.btn("dark")} onClick={()=>setView("vendor")}>🛒 Vendor Order</button>
           <button style={S.btn("dark")} onClick={()=>setView("invoice")}>🧾 Invoice</button>
