@@ -653,6 +653,162 @@ function Select({ value, onChange, options, placeholder }) {
 }
 
 
+// ── 3D Room Embed using Three.js CDN ─────────────────────────────────
+function Room3DEmbed({ length: L=5, width: W=4, height: H=2.8, roomType="Living Room", rooms=[], roomDetails={} }) {
+  const mountRef  = useRef(null);
+  const stateRef  = useRef({ theta:0.6, phi:0.8, radius:Math.max(L,W)*1.4+3, dragging:false, lx:0, ly:0 });
+  const sceneRef  = useRef(null);
+  const camRef    = useRef(null);
+  const rendRef   = useRef(null);
+  const frameRef  = useRef(null);
+  const [wall,  setWall]  = useState("#F5F5F0");
+  const [floor, setFloor] = useState("#8B6340");
+  const [activeRoom, setActiveRoom] = useState(roomType);
+
+  const rd = roomDetails[activeRoom]||{};
+  const RL = parseFloat(rd.length||L);
+  const RW = parseFloat(rd.width||W);
+  const RH = parseFloat(rd.height||H);
+
+  const updateCam = useCallback(() => {
+    if (!camRef.current) return;
+    const { theta, phi, radius } = stateRef.current;
+    camRef.current.position.set(
+      radius*Math.sin(phi)*Math.sin(theta),
+      radius*Math.cos(phi),
+      radius*Math.sin(phi)*Math.cos(theta)
+    );
+    camRef.current.lookAt(0, RH/2, 0);
+  }, [RH]);
+
+  useEffect(() => {
+    const el = mountRef.current; if (!el) return;
+    const THREE = window.THREE; if (!THREE) return;
+    const W2=el.clientWidth, H2=el.clientHeight;
+    const scene    = new THREE.Scene();
+    scene.background = new THREE.Color("#0A1520");
+    scene.fog      = new THREE.FogExp2(0x0A1520, 0.03);
+    sceneRef.current = scene;
+    const camera   = new THREE.PerspectiveCamera(55, W2/H2, 0.1, 100);
+    camRef.current = camera;
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(W2, H2);
+    renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    el.appendChild(renderer.domElement);
+    rendRef.current = renderer;
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0xFFF5E8, 0.5));
+    const sun = new THREE.DirectionalLight(0xFFF8E8, 1.0);
+    sun.position.set(5, 8, 5); sun.castShadow=true;
+    scene.add(sun);
+    const pt = new THREE.PointLight(0xFFEDD0, 0.6, 12);
+    pt.position.set(0, RH*0.9, 0);
+    scene.add(pt);
+
+    // Room geometry
+    const build = () => {
+      scene.children.filter(c=>c.userData.r).forEach(c=>scene.remove(c));
+      const mk=(geo,mat,px,py,pz,rx=0,ry=0,rz=0)=>{
+        const m=new THREE.Mesh(geo,mat); m.position.set(px,py,pz);
+        m.rotation.set(rx,ry,rz); m.receiveShadow=true; m.userData.r=1; scene.add(m);
+      };
+      const fMat=new THREE.MeshStandardMaterial({color:floor,roughness:0.4});
+      const wMat=new THREE.MeshStandardMaterial({color:wall,roughness:0.9});
+      const cMat=new THREE.MeshStandardMaterial({color:"#FAFAFA",roughness:1});
+      const hw=RW/2, hl=RL/2;
+      mk(new THREE.PlaneGeometry(RW,RL),fMat,0,0,0,-Math.PI/2,0,0);
+      mk(new THREE.PlaneGeometry(RW,RL),cMat,0,RH,0,Math.PI/2,0,0);
+      mk(new THREE.PlaneGeometry(RW,RH),wMat,0,RH/2,-hl);
+      mk(new THREE.PlaneGeometry(RL,RH),wMat,-hw,RH/2,0,0,Math.PI/2,0);
+      mk(new THREE.PlaneGeometry(RL,RH),wMat,hw,RH/2,0,0,-Math.PI/2,0);
+      // Skirting
+      const sk=new THREE.MeshStandardMaterial({color:"#D4CDB8",roughness:0.6});
+      mk(new THREE.BoxGeometry(RW,0.1,0.02),sk,0,0.05,-hl+0.01);
+      mk(new THREE.BoxGeometry(RL,0.1,0.02),sk,-hw+0.01,0.05,0,0,Math.PI/2,0);
+      mk(new THREE.BoxGeometry(RL,0.1,0.02),sk,hw-0.01,0.05,0,0,-Math.PI/2,0);
+      // Grid
+      const g=new THREE.GridHelper(Math.max(RW,RL)*2,20,0x1E3A4A,0x1E3A4A);
+      g.position.y=0.001; g.userData.r=1; scene.add(g);
+    };
+    build();
+
+    stateRef.current.radius = Math.max(RL,RW)*1.4+3;
+    updateCam();
+    const animate=()=>{ frameRef.current=requestAnimationFrame(animate); renderer.render(scene,camera); };
+    animate();
+    const onR=()=>{ camera.aspect=el.clientWidth/el.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(el.clientWidth,el.clientHeight); };
+    window.addEventListener("resize",onR);
+    return ()=>{ window.removeEventListener("resize",onR); cancelAnimationFrame(frameRef.current); renderer.dispose(); if(el.contains(renderer.domElement))el.removeChild(renderer.domElement); };
+  }, [activeRoom, RL, RW, RH, wall, floor, updateCam]);
+
+  const onMD=e=>{stateRef.current.dragging=true;stateRef.current.lx=e.clientX;stateRef.current.ly=e.clientY;};
+  const onMU=()=>{stateRef.current.dragging=false;};
+  const onMM=e=>{
+    if(!stateRef.current.dragging)return;
+    stateRef.current.theta-=(e.clientX-stateRef.current.lx)*0.008;
+    stateRef.current.phi=Math.max(0.1,Math.min(1.4,stateRef.current.phi+(e.clientY-stateRef.current.ly)*0.008));
+    stateRef.current.lx=e.clientX; stateRef.current.ly=e.clientY;
+    updateCam();
+  };
+  const onW=e=>{stateRef.current.radius=Math.max(2,Math.min(20,stateRef.current.radius+e.deltaY*0.01));updateCam();};
+
+  const WALL_OPTS=[["#F5F5F0","White"],["#E8D5B7","Beige"],["#8FAF8F","Sage"],["#3A3A3A","Charcoal"],["#C0614A","Terracotta"],["#1B2A4A","Navy"]];
+  const FLOOR_OPTS=[["#8B6340","Teak"],["#C8A96E","Oak"],["#E8E4DC","Marble"],["#3A3530","Granite"],["#9A9590","Concrete"]];
+
+  return (
+    <div style={{ display:"flex", height:"calc(100vh - 57px)" }}>
+      {/* Controls */}
+      <div style={{ width:200, background:"#0A1520", padding:14, borderRight:"1px solid #1E2D3A", overflowY:"auto", flexShrink:0 }}>
+        {rooms.length>1 && (
+          <div style={{ marginBottom:14 }}>
+            <div style={{ fontSize:9,letterSpacing:2,color:C.teal,textTransform:"uppercase",marginBottom:8,fontWeight:700 }}>Room</div>
+            {rooms.map(r=>(
+              <button key={r} onClick={()=>setActiveRoom(r)}
+                style={{ display:"block",width:"100%",padding:"5px 8px",marginBottom:4,borderRadius:2,
+                  border:"none",cursor:"pointer",textAlign:"left",fontFamily:"inherit",fontSize:11,
+                  background:activeRoom===r?C.teal:"#1E2D3A",color:activeRoom===r?"#fff":C.muted }}>
+                {r}
+              </button>
+            ))}
+          </div>
+        )}
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:9,letterSpacing:2,color:C.teal,textTransform:"uppercase",marginBottom:8,fontWeight:700 }}>Wall Colour</div>
+          <div style={{ display:"flex",flexWrap:"wrap",gap:5 }}>
+            {WALL_OPTS.map(([c,n])=>(
+              <button key={c} title={n} onClick={()=>setWall(c)}
+                style={{ width:26,height:26,borderRadius:2,cursor:"pointer",background:c,
+                  border:wall===c?"2px solid #1A5276":"2px solid transparent" }}/>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:9,letterSpacing:2,color:C.teal,textTransform:"uppercase",marginBottom:8,fontWeight:700 }}>Floor Material</div>
+          <div style={{ display:"flex",flexWrap:"wrap",gap:5 }}>
+            {FLOOR_OPTS.map(([c,n])=>(
+              <button key={c} title={n} onClick={()=>setFloor(c)}
+                style={{ width:26,height:26,borderRadius:2,cursor:"pointer",background:c,
+                  border:floor===c?"2px solid #1A5276":"2px solid transparent" }}/>
+            ))}
+          </div>
+        </div>
+        <div style={{ fontSize:9,color:"#3A5A6A",lineHeight:1.8,marginTop:16 }}>
+          <div>🖱 Drag to orbit</div>
+          <div>⚲ Scroll to zoom</div>
+          <div style={{ marginTop:8, color:C.teal }}>{activeRoom}: {RL}×{RW}×{RH}m</div>
+          <div style={{ color:"#3A5A6A" }}>{(RL*RW).toFixed(1)} m²</div>
+        </div>
+      </div>
+      {/* Canvas */}
+      <div ref={mountRef} style={{ flex:1, cursor:"grab" }}
+        onMouseDown={onMD} onMouseUp={onMU} onMouseMove={onMM} onMouseLeave={onMU} onWheel={onW}/>
+    </div>
+  );
+}
+
 // ── CLIENT REPORT (standalone component so hooks work) ───────────────
 function ClientReport({ selected, setView, customers }) {
   const [showSigPad, setShowSigPad] = React.useState(null);
@@ -2089,6 +2245,36 @@ High Rise Interiors Team`
     );
   }
 
+  // ── 3D ROOM PLANNER ─────────────────────────────────────────────────
+  if (view==="room3d" && selected) {
+    const rooms = selected.rooms||[];
+    const firstRoom = rooms[0]||"Living Room";
+    const rd = selected.roomDetails?.[firstRoom]||{};
+    const L = parseFloat(rd.length||5);
+    const W = parseFloat(rd.width||4);
+    const H = parseFloat(rd.height||2.8);
+    return (
+      <div style={{ minHeight:"100vh", background:C.ink, fontFamily:"'DM Sans',system-ui,sans-serif" }}>
+        <div style={{ background:C.ink, padding:"12px 24px", display:"flex",
+          alignItems:"center", gap:12, borderBottom:`3px solid ${C.teal}` }}>
+          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+          <div style={{ color:"#fff", fontSize:13, fontWeight:700, letterSpacing:2 }}>
+            3D Room Planner — {selected.name}
+          </div>
+          <div style={{ display:"flex", gap:6, marginLeft:16 }}>
+            {rooms.map(r=>(
+              <span key={r} style={{ background:"#1E2D3A", color:C.teal,
+                padding:"3px 10px", borderRadius:2, fontSize:10, fontWeight:700, cursor:"pointer" }}>
+                {r}
+              </span>
+            ))}
+          </div>
+        </div>
+        <Room3DEmbed length={L} width={W} height={H} roomType={firstRoom} rooms={rooms} roomDetails={selected.roomDetails||{}}/>
+      </div>
+    );
+  }
+
   // ── INVOICE ───────────────────────────────────────────────────────────
   if (view==="invoice" && selected) {
     const d         = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
@@ -2277,7 +2463,8 @@ High Rise Interiors Team`
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
         <div style={{ display:"flex",gap:10 }}>
           <button style={S.btn("dark")} onClick={()=>setView("list")}>← Back</button>
-<button style={S.btn("dark")} onClick={()=>setView("report")}>📄 Client Report</button>
+<button style={S.btn("dark")} onClick={()=>setView("room3d")}>🧊 3D Room</button>
+          <button style={S.btn("dark")} onClick={()=>setView("report")}>📄 Client Report</button>
           <button style={S.btn("dark")} onClick={()=>setView("internal")}>🔧 Internal Report</button>
           <button style={S.btn("dark")} onClick={()=>setView("vendor")}>🛒 Vendor Order</button>
           <button style={S.btn("dark")} onClick={()=>setView("invoice")}>🧾 Invoice</button>
