@@ -545,37 +545,35 @@ function ClientReport({ selected, setView, customers }) {
   const [showSigPad, setShowSigPad] = React.useState(null);
   const [signatures, setSignatures] = React.useState({});
   const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
-
-    const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
-    const noteLines   = (selected.notes||"").split("\n").filter(l=>l.trim());
-    const scopeLines  = noteLines.filter(l=>/drawing|living|bedroom|kitchen|ceiling|pooja|wardrobe|unit|partition|entrance|balcony|bathroom/i.test(l));
-    const outOfScope  = noteLines.filter(l=>/out of scope|not included|excluded|accessories|appliances|curtain|mesh|invisible|ac copper|bathroom tile/i.test(l));
-    const discussions = noteLines.filter(l=>!scopeLines.includes(l)&&!outOfScope.includes(l));
-    const RS = {
-      sTitle:{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
-               color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14,
-               fontFamily:"'DM Sans',sans-serif" },
-      row:   { display:"flex",justifyContent:"space-between",padding:"10px 0",
-               borderBottom:`1px solid ${C.line}`,fontSize:13,fontFamily:"'DM Sans',sans-serif" },
-      payRow:{ display:"flex",justifyContent:"space-between",alignItems:"center",
-               background:C.smoke,borderRadius:3,padding:"12px 18px",marginBottom:6,
-               border:`1px solid ${C.line}`,fontFamily:"'DM Sans',sans-serif" },
-      bullet:{ fontSize:13,lineHeight:2,paddingLeft:16,fontFamily:"'DM Sans',sans-serif" },
-      pill:  (bg,c)=>({ background:bg,color:c,padding:"3px 12px",borderRadius:2,
-                        fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",
-                        fontFamily:"'DM Sans',sans-serif" }),
-    };
-      return (
-      <div style={{ background:C.white,minHeight:"100vh",
-                    fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
-                    color:C.ink,paddingBottom:60 }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
-        <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
-          <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
-          <button onClick={()=>{
-            const subject = encodeURIComponent(`High Rise Interiors — Project Report for ${selected.name}`);
-            const body = encodeURIComponent(`Dear ${selected.name},
+  const noteLines   = (selected.notes||"").split("\n").filter(l=>l.trim());
+  const scopeLines  = noteLines.filter(l=>/drawing|living|bedroom|kitchen|ceiling|pooja|wardrobe|unit|partition|entrance|balcony|bathroom/i.test(l));
+  const outOfScope  = noteLines.filter(l=>/out of scope|not included|excluded|accessories|appliances|curtain|mesh|invisible|ac copper|bathroom tile/i.test(l));
+  const discussions = noteLines.filter(l=>!scopeLines.includes(l)&&!outOfScope.includes(l));
+  const RS = {
+    sTitle:{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+             color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14,
+             fontFamily:"'DM Sans',sans-serif" },
+    row:   { display:"flex",justifyContent:"space-between",padding:"10px 0",
+             borderBottom:`1px solid ${C.line}`,fontSize:13,fontFamily:"'DM Sans',sans-serif" },
+    payRow:{ display:"flex",justifyContent:"space-between",alignItems:"center",
+             background:C.smoke,borderRadius:3,padding:"12px 18px",marginBottom:6,
+             border:`1px solid ${C.line}`,fontFamily:"'DM Sans',sans-serif" },
+    bullet:{ fontSize:13,lineHeight:2,paddingLeft:16,fontFamily:"'DM Sans',sans-serif" },
+    pill:  (bg,c)=>({ background:bg,color:c,padding:"3px 12px",borderRadius:2,
+                      fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",
+                      fontFamily:"'DM Sans',sans-serif" }),
+  };
+    return (
+    <div style={{ background:C.white,minHeight:"100vh",
+                  fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
+                  color:C.ink,paddingBottom:60 }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
+      <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
+        <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+        <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
+        <button onClick={()=>{
+          const subject = encodeURIComponent(`High Rise Interiors — Project Report for ${selected.name}`);
+          const body = encodeURIComponent(`Dear ${selected.name},
 
 Please find your project summary report attached.
 
@@ -587,364 +585,364 @@ Kindly review and sign.
 Warm regards,
 High Rise Interiors
 Hyderabad`);
-            window.location.href = `mailto:${selected.email||""}?subject=${subject}&body=${body}`;
-          }} style={S.btn("dark")}>📧 Email Client</button>
-          <span style={{ color:C.muted,fontSize:11,marginLeft:"auto" }}>
-            {signatures.client&&signatures.hri?"✓ Both signed — ready to print"
-              :signatures.client?"Client signed — awaiting HRI"
-              :signatures.hri?"HRI signed — awaiting client"
-              :"Sign below before printing"}
-          </span>
+          window.location.href = `mailto:${selected.email||""}?subject=${subject}&body=${body}`;
+        }} style={S.btn("dark")}>📧 Email Client</button>
+        <span style={{ color:C.muted,fontSize:11,marginLeft:"auto" }}>
+          {signatures.client&&signatures.hri?"✓ Both signed — ready to print"
+            :signatures.client?"Client signed — awaiting HRI"
+            :signatures.hri?"HRI signed — awaiting client"
+            :"Sign below before printing"}
+        </span>
+      </div>
+      <div style={{ background:C.ink,padding:"28px 48px",marginBottom:36,borderBottom:`3px solid ${C.teal}` }}>
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
+          <div>
+            <div style={{ color:"#fff",fontSize:20,fontWeight:700,letterSpacing:4,textTransform:"uppercase",fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
+            <div style={{ color:C.teal,fontSize:10,letterSpacing:5,marginTop:6,textTransform:"uppercase" }}>Project Summary Report</div>
+          </div>
+          <div style={{ textAlign:"right",color:C.muted,fontSize:11,letterSpacing:1 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
         </div>
-        <div style={{ background:C.ink,padding:"28px 48px",marginBottom:36,borderBottom:`3px solid ${C.teal}` }}>
-          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
+      </div>
+      <div style={{ maxWidth:820,margin:"0 auto",padding:"0 48px" }}>
+        {/* Client */}
+        <div style={{ marginBottom:32 }}>
+          <div style={RS.sTitle}>Client Information</div>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 32px" }}>
+            {[["Client Name",selected.name],["Phone",selected.phone],["Email",selected.email],["Project Type",selected.projectType],["Address",selected.address],["Style",selected.style],["Start Date",selected.startDate],["Duration",selected.timeline]].filter(([,v])=>v).map(([l,v])=>(
+              <div key={l} style={RS.row}><span style={{ color:C.muted }}>{l}</span><strong>{v}</strong></div>
+            ))}
+          </div>
+        </div>
+        {/* Scope — Room wise Dimensions */}
+        <div style={{ marginBottom:32 }}>
+          <div style={RS.sTitle}>Scope of Work — Room Dimensions</div>
+          {(selected.rooms||[]).length>0 ? (
             <div>
-              <div style={{ color:"#fff",fontSize:20,fontWeight:700,letterSpacing:4,textTransform:"uppercase",fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
-              <div style={{ color:C.teal,fontSize:10,letterSpacing:5,marginTop:6,textTransform:"uppercase" }}>Project Summary Report</div>
-            </div>
-            <div style={{ textAlign:"right",color:C.muted,fontSize:11,letterSpacing:1 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
-          </div>
-        </div>
-        <div style={{ maxWidth:820,margin:"0 auto",padding:"0 48px" }}>
-          {/* Client */}
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Client Information</div>
-            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 32px" }}>
-              {[["Client Name",selected.name],["Phone",selected.phone],["Email",selected.email],["Project Type",selected.projectType],["Address",selected.address],["Style",selected.style],["Start Date",selected.startDate],["Duration",selected.timeline]].filter(([,v])=>v).map(([l,v])=>(
-                <div key={l} style={RS.row}><span style={{ color:C.muted }}>{l}</span><strong>{v}</strong></div>
-              ))}
-            </div>
-          </div>
-          {/* Scope — Room wise Dimensions */}
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Scope of Work — Room Dimensions</div>
-            {(selected.rooms||[]).length>0 ? (
-              <div>
-                {/* Table header */}
-                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"8px 12px", background:C.red, borderRadius:"10px 10px 0 0" }}>
-                  {["Room","Length (ft)","Width (ft)","Height (ft)","Area (sq ft)"].map(h=>(
-                    <div key={h} style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase" }}>{h}</div>
-                  ))}
-                </div>
-                {selected.rooms.map((r,i) => {
-                  const rd = selected.roomDetails?.[r] || {};
-                  const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
-                    return (
-                    <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.line}` }}>
-                      <div style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</div>
-                      <div style={{ fontSize:13 }}>{rd.length||"—"}</div>
-                      <div style={{ fontSize:13 }}>{rd.width||"—"}</div>
-                      <div style={{ fontSize:13 }}>{rd.height||"—"}</div>
-                      <div style={{ fontSize:13, fontWeight:700 }}>{area !== "—" ? `${area} sq ft` : "—"}</div>
-                    </div>
-                  );
-                })}
-                {/* Total row */}
-                {(() => {
-                  const totalArea = (selected.rooms||[]).reduce((sum,r) => {
-                    const rd = selected.roomDetails?.[r]||{};
-                    return sum + (rd.length&&rd.width ? parseFloat(rd.length)*parseFloat(rd.width) : 0);
-                  }, 0);
-                  return totalArea > 0 ? (
-                    <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:C.red, borderRadius:"0 0 10px 10px" }}>
-                      <div style={{ fontWeight:700, fontSize:13, color:"#fff" }}>Total</div>
-                      <div/><div/><div/>
-                      <div style={{ fontWeight:700, fontSize:14, color:"#fff" }}>{totalArea.toFixed(0)} sq ft</div>
-                    </div>
-                  ) : <div style={{ borderRadius:"0 0 10px 10px", border:`1px solid ${C.line}`, borderTop:"none" }}/>;
-                })()}
-                {/* Room photos */}
-                {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
-                  <div style={{ marginTop:16 }}>
-                    <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Room Photos</div>
-                    {(selected.rooms||[]).map(r => {
-                      const photos = selected.roomDetails?.[r]?.photos||[];
-                      if (!photos.length) return null;
-                        return (
-                        <div key={r} style={{ marginBottom:12 }}>
-                          <div style={{ fontSize:12, fontWeight:700, color:C.red, marginBottom:6 }}>🏠 {r}</div>
-                          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                            {photos.map((p,i)=><img key={i} src={p} alt={r} style={{ width:100, height:100, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.line}` }}/>)}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+              {/* Table header */}
+              <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"8px 12px", background:C.red, borderRadius:"10px 10px 0 0" }}>
+                {["Room","Length (ft)","Width (ft)","Height (ft)","Area (sq ft)"].map(h=>(
+                  <div key={h} style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase" }}>{h}</div>
+                ))}
               </div>
-            ) : (
-              <div style={{ color:C.muted, fontSize:13 }}>No rooms selected</div>
-            )}
-            {/* Scope notes */}
-            {scopeLines.length>0 && (
-              <div style={{ marginTop:16 }}>
-                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8 }}>Work Description</div>
-                {scopeLines.map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)}
-              </div>
-            )}
-
-            {/* Room Photos in Client Report */}
-            {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
-              <div style={{ marginTop:20 }}>
-                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Room Reference Photos</div>
-                {(selected.rooms||[]).map(r => {
-                  const photos = selected.roomDetails?.[r]?.photos||[];
-                  if (!photos.length) return null;
-                    return (
-                    <div key={r} style={{ marginBottom:20 }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:C.teal, marginBottom:8 }}>🏠 {r}</div>
-                      <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                        {photos.map((p,i)=>(
-                          <div key={i}>
-                            <img src={p} alt={`${r} ${i+1}`} style={{ width:140, height:105,
-                              objectFit:"cover", borderRadius:3, border:`1px solid ${C.line}` }}/>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Room-wise Materials & Cost — show brand/qty, hide rates */}
-          {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
-            <div style={{ marginBottom:32 }}>
-              <div style={RS.sTitle}>Material Specifications by Room</div>
-              {Object.entries(selected.roomMaterials).map(([room, mats], ri) => {
-                const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
-                if (!matEntries.length) return null;
-                const lp = selected.labourPct != null ? selected.labourPct : 50;
-                const roomCost = matEntries.reduce((t,[matType,sel])=>{
-                  const item = getCatalog(matType).find(m=>m.name===sel.name);
-                  return t+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
-                },0);
-                const roomTotal = Math.round(roomCost*(1+lp/100));
+              {selected.rooms.map((r,i) => {
+                const rd = selected.roomDetails?.[r] || {};
+                const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
                   return (
-                  <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
-                    {/* Room header */}
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                      background:C.ink, padding:"10px 16px" }}>
-                      <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
-                      {roomTotal>0 && <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{fmt(roomTotal)}</span>}
-                    </div>
-                    {/* Column headers */}
-                    <div style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
-                      padding:"6px 14px", background:"#2A3A4A",
-                      fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
-                      <span>Category</span><span>Brand / Specification</span><span>Quantity</span>
-                    </div>
-                    {/* Material rows — brand + qty only, no rates */}
-                    {matEntries.map(([matType, sel], i) => {
-                      const item = getCatalog(matType).find(m=>m.name===sel.name);
-                        return (
-                        <div key={matType} style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
-                          padding:"9px 14px", background:i%2===0?C.white:C.smoke,
-                          borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
-                          <div style={{ fontSize:11, color:C.muted, fontWeight:700,
-                            textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
-                          <div style={{ fontSize:12, fontWeight:600, color:C.ink }}>{sel.name}</div>
-                          <div style={{ fontSize:12, color:C.muted }}>
-                            {sel.qty} {item?.unit||""}
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.line}` }}>
+                    <div style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</div>
+                    <div style={{ fontSize:13 }}>{rd.length||"—"}</div>
+                    <div style={{ fontSize:13 }}>{rd.width||"—"}</div>
+                    <div style={{ fontSize:13 }}>{rd.height||"—"}</div>
+                    <div style={{ fontSize:13, fontWeight:700 }}>{area !== "—" ? `${area} sq ft` : "—"}</div>
                   </div>
                 );
               })}
-              {/* Grand total */}
+              {/* Total row */}
               {(() => {
-                const lp = selected.labourPct != null ? selected.labourPct : 50;
-                const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
-                  t+Object.entries(mats).reduce((rt,[matType,sel])=>{
-                    const item = getCatalog(matType).find(m=>m.name===sel.name);
-                    return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
-                  },0),0);
-                const total = Math.round(matCost*(1+lp/100));
-                return total>0?(
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                    background:C.teal, padding:"14px 20px", borderRadius:3, marginTop:4 }}>
-                    <span style={{ color:"#fff", fontWeight:700, fontSize:14 }}>Total Estimated Project Cost</span>
-                    <strong style={{ color:"#fff", fontSize:20 }}>{fmt(total)}</strong>
+                const totalArea = (selected.rooms||[]).reduce((sum,r) => {
+                  const rd = selected.roomDetails?.[r]||{};
+                  return sum + (rd.length&&rd.width ? parseFloat(rd.length)*parseFloat(rd.width) : 0);
+                }, 0);
+                return totalArea > 0 ? (
+                  <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:C.red, borderRadius:"0 0 10px 10px" }}>
+                    <div style={{ fontWeight:700, fontSize:13, color:"#fff" }}>Total</div>
+                    <div/><div/><div/>
+                    <div style={{ fontWeight:700, fontSize:14, color:"#fff" }}>{totalArea.toFixed(0)} sq ft</div>
                   </div>
-                ):null;
+                ) : <div style={{ borderRadius:"0 0 10px 10px", border:`1px solid ${C.line}`, borderTop:"none" }}/>;
               })()}
+              {/* Room photos */}
+              {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
+                <div style={{ marginTop:16 }}>
+                  <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Room Photos</div>
+                  {(selected.rooms||[]).map(r => {
+                    const photos = selected.roomDetails?.[r]?.photos||[];
+                    if (!photos.length) return null;
+                      return (
+                      <div key={r} style={{ marginBottom:12 }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:C.red, marginBottom:6 }}>🏠 {r}</div>
+                        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                          {photos.map((p,i)=><img key={i} src={p} alt={r} style={{ width:100, height:100, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.line}` }}/>)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ color:C.muted, fontSize:13 }}>No rooms selected</div>
+          )}
+          {/* Scope notes */}
+          {scopeLines.length>0 && (
+            <div style={{ marginTop:16 }}>
+              <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8 }}>Work Description</div>
+              {scopeLines.map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)}
             </div>
           )}
 
-                    {/* Out of Scope */}
-          {outOfScope.length>0 && (
-            <div style={{ marginBottom:32 }}>
-              <div style={RS.sTitle}>Out of Scope</div>
-              <div style={{ background:"#FEF2F2",borderRadius:3,padding:"16px 20px",border:"1px solid #FECACA" }}>
-                {outOfScope.map((l,i)=><div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {l}</div>)}
+          {/* Room Photos in Client Report */}
+          {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
+            <div style={{ marginTop:20 }}>
+              <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Room Reference Photos</div>
+              {(selected.rooms||[]).map(r => {
+                const photos = selected.roomDetails?.[r]?.photos||[];
+                if (!photos.length) return null;
+                  return (
+                  <div key={r} style={{ marginBottom:20 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:C.teal, marginBottom:8 }}>🏠 {r}</div>
+                    <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                      {photos.map((p,i)=>(
+                        <div key={i}>
+                          <img src={p} alt={`${r} ${i+1}`} style={{ width:140, height:105,
+                            objectFit:"cover", borderRadius:3, border:`1px solid ${C.line}` }}/>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Room-wise Materials & Cost — show brand/qty, hide rates */}
+        {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
+          <div style={{ marginBottom:32 }}>
+            <div style={RS.sTitle}>Material Specifications by Room</div>
+            {Object.entries(selected.roomMaterials).map(([room, mats], ri) => {
+              const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
+              if (!matEntries.length) return null;
+              const lp = selected.labourPct != null ? selected.labourPct : 50;
+              const roomCost = matEntries.reduce((t,[matType,sel])=>{
+                const item = getCatalog(matType).find(m=>m.name===sel.name);
+                return t+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+              },0);
+              const roomTotal = Math.round(roomCost*(1+lp/100));
+                return (
+                <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                  {/* Room header */}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                    background:C.ink, padding:"10px 16px" }}>
+                    <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
+                    {roomTotal>0 && <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{fmt(roomTotal)}</span>}
+                  </div>
+                  {/* Column headers */}
+                  <div style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
+                    padding:"6px 14px", background:"#2A3A4A",
+                    fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
+                    <span>Category</span><span>Brand / Specification</span><span>Quantity</span>
+                  </div>
+                  {/* Material rows — brand + qty only, no rates */}
+                  {matEntries.map(([matType, sel], i) => {
+                    const item = getCatalog(matType).find(m=>m.name===sel.name);
+                      return (
+                      <div key={matType} style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
+                        padding:"9px 14px", background:i%2===0?C.white:C.smoke,
+                        borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
+                        <div style={{ fontSize:11, color:C.muted, fontWeight:700,
+                          textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
+                        <div style={{ fontSize:12, fontWeight:600, color:C.ink }}>{sel.name}</div>
+                        <div style={{ fontSize:12, color:C.muted }}>
+                          {sel.qty} {item?.unit||""}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {/* Grand total */}
+            {(() => {
+              const lp = selected.labourPct != null ? selected.labourPct : 50;
+              const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
+                t+Object.entries(mats).reduce((rt,[matType,sel])=>{
+                  const item = getCatalog(matType).find(m=>m.name===sel.name);
+                  return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+                },0),0);
+              const total = Math.round(matCost*(1+lp/100));
+              return total>0?(
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                  background:C.teal, padding:"14px 20px", borderRadius:3, marginTop:4 }}>
+                  <span style={{ color:"#fff", fontWeight:700, fontSize:14 }}>Total Estimated Project Cost</span>
+                  <strong style={{ color:"#fff", fontSize:20 }}>{fmt(total)}</strong>
+                </div>
+              ):null;
+            })()}
+          </div>
+        )}
+
+                  {/* Out of Scope */}
+        {outOfScope.length>0 && (
+          <div style={{ marginBottom:32 }}>
+            <div style={RS.sTitle}>Out of Scope</div>
+            <div style={{ background:"#FEF2F2",borderRadius:3,padding:"16px 20px",border:"1px solid #FECACA" }}>
+              {outOfScope.map((l,i)=><div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {l}</div>)}
+            </div>
+          </div>
+        )}
+        {/* Budget */}
+        <div style={{ marginBottom:32 }}>
+          <div style={RS.sTitle}>Budget Summary</div>
+          {selected.previousQuotation && (
+            <div style={RS.row}>
+              <span style={{ color:C.muted }}>Previous Quotation</span>
+              <span style={{ textDecoration: selected.revisedQuotation?"line-through":"none", color:C.muted }}>{fmt(selected.previousQuotation)}</span>
+            </div>
+          )}
+          {selected.rebateValue && (
+            <div style={{ background:"#DCFCE7", borderRadius:3, padding:"10px 14px", margin:"6px 0", border:"1px solid #86EFAC" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <span style={{ color:"#166534", fontWeight:700 }}>
+                  🎁 Rebate Applied {selected.appliedReferralCode && `(Referral: ${selected.appliedReferralCode})`}
+                </span>
+                <span style={{ color:"#166534", fontWeight:700 }}>
+                  - {selected.rebateType==="percent" ? `${selected.rebateValue}%` : fmt(selected.rebateValue)}
+                  {selected.previousQuotation && ` = - ${fmt(selected.rebateType==="percent" ? Math.round(Number(selected.previousQuotation)*Number(selected.rebateValue)/100) : Number(selected.rebateValue))}`}
+                </span>
               </div>
             </div>
           )}
-          {/* Budget */}
+          {selected.referralCode && (
+            <div style={{ background:"#DCFCE7", borderRadius:3, padding:"14px 18px", margin:"8px 0", border:"1px solid #86EFAC" }}>
+              <div style={{ fontSize:10, fontWeight:700, color:"#166534", letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>🎁 Your Referral Code</div>
+              <div style={{ fontSize:24, fontWeight:800, letterSpacing:5, color:"#064E3B", fontFamily:"monospace", marginBottom:8 }}>{selected.referralCode}</div>
+              <div style={{ fontSize:12, color:"#166534", lineHeight:1.9 }}>
+                <div>• Share this code with friends & family</div>
+                <div>• Referred friend gets <strong>5% off</strong> their High Rise Interiors project</div>
+                <div>• You earn <strong>5% cashback</strong> credited on your next payment</div>
+              </div>
+            </div>
+          )}
+          {selected.revisedQuotation && (
+            <div style={RS.row}>
+              <span style={{ color:C.muted }}>Revised Quotation (After Rebate)</span>
+              <span style={{ fontWeight:700, color:C.dark }}>{fmt(selected.revisedQuotation)}</span>
+            </div>
+          )}
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.red,borderRadius:12,padding:"16px 20px",marginTop:12 }}>
+            <div>
+              <span style={{ color:"#fff",fontWeight:700,fontSize:16 }}>Final Quotation</span>
+              {selected.appliedReferralCode && <div style={{ color:"#7ECFF0", fontSize:11, marginTop:2 }}>Referral: {selected.appliedReferralCode}</div>}
+            </div>
+            <strong style={{ color:"#fff",fontSize:26 }}>{fmt(selected.quotation)||selected.budget||"TBD"}</strong>
+          </div>
+        </div>
+        {/* Discussions */}
+        {discussions.length>0 && (
           <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Budget Summary</div>
-            {selected.previousQuotation && (
-              <div style={RS.row}>
-                <span style={{ color:C.muted }}>Previous Quotation</span>
-                <span style={{ textDecoration: selected.revisedQuotation?"line-through":"none", color:C.muted }}>{fmt(selected.previousQuotation)}</span>
-              </div>
-            )}
-            {selected.rebateValue && (
-              <div style={{ background:"#DCFCE7", borderRadius:3, padding:"10px 14px", margin:"6px 0", border:"1px solid #86EFAC" }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <span style={{ color:"#166534", fontWeight:700 }}>
-                    🎁 Rebate Applied {selected.appliedReferralCode && `(Referral: ${selected.appliedReferralCode})`}
-                  </span>
-                  <span style={{ color:"#166534", fontWeight:700 }}>
-                    - {selected.rebateType==="percent" ? `${selected.rebateValue}%` : fmt(selected.rebateValue)}
-                    {selected.previousQuotation && ` = - ${fmt(selected.rebateType==="percent" ? Math.round(Number(selected.previousQuotation)*Number(selected.rebateValue)/100) : Number(selected.rebateValue))}`}
-                  </span>
+            <div style={RS.sTitle}>Discussions & Notes</div>
+            <div style={{ background:C.smoke,borderRadius:12,padding:"16px 20px",border:`1px solid ${C.line}` }}>
+              {discussions.map((l,i)=><div key={i} style={{ ...RS.bullet,marginBottom:4 }}>• {l}</div>)}
+            </div>
+          </div>
+        )}
+        {/* Payment Terms */}
+        <div style={{ marginBottom:32 }}>
+          <div style={RS.sTitle}>Payment Terms & Schedule</div>
+          {PAYMENT_PHASES.map((p,i)=>(
+            <div key={i} style={RS.payRow}>
+              <div style={{ display:"flex",alignItems:"center",gap:14 }}>
+                <div style={{ background:C.red,color:"#fff",borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,flexShrink:0 }}>{i+1}</div>
+                <div>
+                  <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.day} — {p.label}</div>
+                  <div style={{ fontSize:12,color:C.muted,marginTop:2 }}>{p.pct}% of total value</div>
                 </div>
               </div>
-            )}
-            {selected.referralCode && (
-              <div style={{ background:"#DCFCE7", borderRadius:3, padding:"14px 18px", margin:"8px 0", border:"1px solid #86EFAC" }}>
-                <div style={{ fontSize:10, fontWeight:700, color:"#166534", letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>🎁 Your Referral Code</div>
-                <div style={{ fontSize:24, fontWeight:800, letterSpacing:5, color:"#064E3B", fontFamily:"monospace", marginBottom:8 }}>{selected.referralCode}</div>
-                <div style={{ fontSize:12, color:"#166534", lineHeight:1.9 }}>
-                  <div>• Share this code with friends & family</div>
-                  <div>• Referred friend gets <strong>5% off</strong> their High Rise Interiors project</div>
-                  <div>• You earn <strong>5% cashback</strong> credited on your next payment</div>
-                </div>
-              </div>
-            )}
-            {selected.revisedQuotation && (
-              <div style={RS.row}>
-                <span style={{ color:C.muted }}>Revised Quotation (After Rebate)</span>
-                <span style={{ fontWeight:700, color:C.dark }}>{fmt(selected.revisedQuotation)}</span>
-              </div>
-            )}
-            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.red,borderRadius:12,padding:"16px 20px",marginTop:12 }}>
+              <strong style={{ fontSize:16,color:C.ink }}>{selected.quotation ? fmt(Math.round(Number(selected.quotation)*p.pct/100)) : `${p.pct}%`}</strong>
+            </div>
+          ))}
+          <div style={{ background:C.smoke,borderRadius:10,padding:"14px 18px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
+            <div>• Payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
+            <div>• Work commences only after advance payment (35%) is received</div>
+            <div>• Each phase must be cleared before proceeding to next</div>
+            <div>• GST @ 18% applicable as per government norms</div>
+          </div>
+        </div>
+        {/* Disclaimers */}
+        <div style={{ marginBottom:32 }}>
+          <div style={RS.sTitle}>Disclaimers & Terms</div>
+          <div style={{ background:"#FFFFF8",borderRadius:12,padding:"20px 24px",border:`1.5px solid #E8E0C0`,fontSize:13,lineHeight:2.1,color:"#4A4A2A" }}>
+            <div style={{ background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:3,padding:"10px 14px",marginBottom:12,color:C.rust,fontWeight:700 }}>
+              🚫 NO REFUND POLICY: All payments are strictly non-refundable once work has commenced.
+            </div>
+            <div>1. <strong>Draft Quotation:</strong> This is a draft and may vary based on final quantity and material selection.</div>
+            <div>2. <strong>Material Prices:</strong> Subject to market fluctuations. Valid for 30 days from date of issue.</div>
+            <div>3. <strong>Scope Changes:</strong> Any additions will be quoted and billed separately with written approval.</div>
+            <div>4. <strong>Timeline:</strong> {selected.timeline||"Agreed duration"} is indicative. Delays due to civil work or approvals not included.</div>
+            <div>5. <strong>Warranty:</strong> 1-year workmanship warranty. Material warranty per manufacturer.</div>
+            <div>6. <strong>Cancellation:</strong> Amounts paid till date are forfeited upon cancellation after commencement.</div>
+            <div>7. <strong>Dispute Resolution:</strong> Subject to jurisdiction of Hyderabad courts only.</div>
+          </div>
+        </div>
+        {/* Sign-on-Screen Pad */}
+        {showSigPad && (
+          <SignaturePad
+            label={showSigPad==="client"?`${selected.name} — Client Signature`:"High Rise Interiors — Authorised Signatory"}
+            onSave={dataUrl=>{setSignatures(s=>({...s,[showSigPad]:dataUrl}));setShowSigPad(null);}}
+            onClose={()=>setShowSigPad(null)}
+          />
+        )}
+        {/* Signature blocks */}
+        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:32 }}>
+          <div style={{ borderTop:`2px solid ${C.ink}`,paddingTop:12 }}>
+            <div style={{ fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Client Signature</div>
+            <div style={{ fontSize:14,fontWeight:700,marginBottom:12 }}>{selected.name}</div>
+            {signatures.client ? (
               <div>
-                <span style={{ color:"#fff",fontWeight:700,fontSize:16 }}>Final Quotation</span>
-                {selected.appliedReferralCode && <div style={{ color:"#7ECFF0", fontSize:11, marginTop:2 }}>Referral: {selected.appliedReferralCode}</div>}
+                <img src={signatures.client} alt="sig"
+                  style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"#FAFAFA",display:"block" }}/>
+                <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
+                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
+                  onClick={()=>setSignatures(s=>({...s,client:null}))}>✕ Clear</button>
               </div>
-              <strong style={{ color:"#fff",fontSize:26 }}>{fmt(selected.quotation)||selected.budget||"TBD"}</strong>
-            </div>
-          </div>
-          {/* Discussions */}
-          {discussions.length>0 && (
-            <div style={{ marginBottom:32 }}>
-              <div style={RS.sTitle}>Discussions & Notes</div>
-              <div style={{ background:C.smoke,borderRadius:12,padding:"16px 20px",border:`1px solid ${C.line}` }}>
-                {discussions.map((l,i)=><div key={i} style={{ ...RS.bullet,marginBottom:4 }}>• {l}</div>)}
+            ):(
+              <div>
+                <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
+                  display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:C.smoke }}>
+                  <span style={{ fontSize:11,color:C.muted }}>Tap to sign</span>
+                </div>
+                <button className="no-print" style={{ ...S.btn(),fontSize:11,padding:"7px 16px" }}
+                  onClick={()=>setShowSigPad("client")}>✍ Sign Here</button>
               </div>
-            </div>
-          )}
-          {/* Payment Terms */}
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Payment Terms & Schedule</div>
-            {PAYMENT_PHASES.map((p,i)=>(
-              <div key={i} style={RS.payRow}>
-                <div style={{ display:"flex",alignItems:"center",gap:14 }}>
-                  <div style={{ background:C.red,color:"#fff",borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,flexShrink:0 }}>{i+1}</div>
-                  <div>
-                    <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.day} — {p.label}</div>
-                    <div style={{ fontSize:12,color:C.muted,marginTop:2 }}>{p.pct}% of total value</div>
-                  </div>
-                </div>
-                <strong style={{ fontSize:16,color:C.ink }}>{selected.quotation ? fmt(Math.round(Number(selected.quotation)*p.pct/100)) : `${p.pct}%`}</strong>
+            )}
+          </div>
+          <div style={{ borderTop:`2px solid ${C.teal}`,paddingTop:12 }}>
+            <div style={{ fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Authorised by</div>
+            <div style={{ fontSize:14,fontWeight:700,color:C.teal,marginBottom:12 }}>High Rise Interiors</div>
+            {signatures.hri ? (
+              <div>
+                <img src={signatures.hri} alt="sig"
+                  style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"#FAFAFA",display:"block" }}/>
+                <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
+                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
+                  onClick={()=>setSignatures(s=>({...s,hri:null}))}>✕ Clear</button>
               </div>
-            ))}
-            <div style={{ background:C.smoke,borderRadius:10,padding:"14px 18px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
-              <div>• Payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
-              <div>• Work commences only after advance payment (35%) is received</div>
-              <div>• Each phase must be cleared before proceeding to next</div>
-              <div>• GST @ 18% applicable as per government norms</div>
-            </div>
-          </div>
-          {/* Disclaimers */}
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Disclaimers & Terms</div>
-            <div style={{ background:"#FFFFF8",borderRadius:12,padding:"20px 24px",border:`1.5px solid #E8E0C0`,fontSize:13,lineHeight:2.1,color:"#4A4A2A" }}>
-              <div style={{ background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:3,padding:"10px 14px",marginBottom:12,color:C.rust,fontWeight:700 }}>
-                🚫 NO REFUND POLICY: All payments are strictly non-refundable once work has commenced.
+            ):(
+              <div>
+                <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
+                  display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:C.smoke }}>
+                  <span style={{ fontSize:11,color:C.muted }}>Tap to sign</span>
+                </div>
+                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:11,padding:"7px 16px" }}
+                  onClick={()=>setShowSigPad("hri")}>✍ Sign Here</button>
               </div>
-              <div>1. <strong>Draft Quotation:</strong> This is a draft and may vary based on final quantity and material selection.</div>
-              <div>2. <strong>Material Prices:</strong> Subject to market fluctuations. Valid for 30 days from date of issue.</div>
-              <div>3. <strong>Scope Changes:</strong> Any additions will be quoted and billed separately with written approval.</div>
-              <div>4. <strong>Timeline:</strong> {selected.timeline||"Agreed duration"} is indicative. Delays due to civil work or approvals not included.</div>
-              <div>5. <strong>Warranty:</strong> 1-year workmanship warranty. Material warranty per manufacturer.</div>
-              <div>6. <strong>Cancellation:</strong> Amounts paid till date are forfeited upon cancellation after commencement.</div>
-              <div>7. <strong>Dispute Resolution:</strong> Subject to jurisdiction of Hyderabad courts only.</div>
-            </div>
+            )}
           </div>
-          {/* Sign-on-Screen Pad */}
-          {showSigPad && (
-            <SignaturePad
-              label={showSigPad==="client"?`${selected.name} — Client Signature`:"High Rise Interiors — Authorised Signatory"}
-              onSave={dataUrl=>{setSignatures(s=>({...s,[showSigPad]:dataUrl}));setShowSigPad(null);}}
-              onClose={()=>setShowSigPad(null)}
-            />
-          )}
-          {/* Signature blocks */}
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:32 }}>
-            <div style={{ borderTop:`2px solid ${C.ink}`,paddingTop:12 }}>
-              <div style={{ fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Client Signature</div>
-              <div style={{ fontSize:14,fontWeight:700,marginBottom:12 }}>{selected.name}</div>
-              {signatures.client ? (
-                <div>
-                  <img src={signatures.client} alt="sig"
-                    style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"#FAFAFA",display:"block" }}/>
-                  <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
-                  <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
-                    onClick={()=>setSignatures(s=>({...s,client:null}))}>✕ Clear</button>
-                </div>
-              ):(
-                <div>
-                  <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
-                    display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:C.smoke }}>
-                    <span style={{ fontSize:11,color:C.muted }}>Tap to sign</span>
-                  </div>
-                  <button className="no-print" style={{ ...S.btn(),fontSize:11,padding:"7px 16px" }}
-                    onClick={()=>setShowSigPad("client")}>✍ Sign Here</button>
-                </div>
-              )}
-            </div>
-            <div style={{ borderTop:`2px solid ${C.teal}`,paddingTop:12 }}>
-              <div style={{ fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Authorised by</div>
-              <div style={{ fontSize:14,fontWeight:700,color:C.teal,marginBottom:12 }}>High Rise Interiors</div>
-              {signatures.hri ? (
-                <div>
-                  <img src={signatures.hri} alt="sig"
-                    style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"#FAFAFA",display:"block" }}/>
-                  <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
-                  <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
-                    onClick={()=>setSignatures(s=>({...s,hri:null}))}>✕ Clear</button>
-                </div>
-              ):(
-                <div>
-                  <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
-                    display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:C.smoke }}>
-                    <span style={{ fontSize:11,color:C.muted }}>Tap to sign</span>
-                  </div>
-                  <button className="no-print" style={{ ...S.btn("ghost"),fontSize:11,padding:"7px 16px" }}
-                    onClick={()=>setShowSigPad("hri")}>✍ Sign Here</button>
-                </div>
-              )}
-            </div>
+        </div>
+        {/* Footer */}
+        <div style={{ borderTop:`2px solid ${C.line}`,paddingTop:16,marginTop:24 }}>
+          <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted,marginBottom:6 }}>
+            <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
+            <span>{d}</span>
           </div>
-          {/* Footer */}
-          <div style={{ borderTop:`2px solid ${C.line}`,paddingTop:16,marginTop:24 }}>
-            <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted,marginBottom:6 }}>
-              <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
-              <span>{d}</span>
-            </div>
-            <div style={{ fontSize:11,color:"#C0A0A0",textAlign:"center",lineHeight:1.8 }}>
-              Confidential — intended solely for {selected.name}. All payments are non-refundable. Prices in INR ₹.
-            </div>
+          <div style={{ fontSize:11,color:"#C0A0A0",textAlign:"center",lineHeight:1.8 }}>
+            Confidential — intended solely for {selected.name}. All payments are non-refundable. Prices in INR ₹.
           </div>
         </div>
       </div>
-    );
+    </div>
+  );
   }
 
 
