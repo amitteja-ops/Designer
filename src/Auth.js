@@ -12,16 +12,52 @@ export default function Auth({ onLogin }) {
   const [debug,    setDebug]    = useState("");
 
   const S = {
-    page:    { minHeight:"100vh", background:"linear-gradient(135deg,#2C1F0E 0%,#5C3D1E 50%,#8B6F47 100%)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Cormorant Garamond',Georgia,serif" },
-    card:    { background:"#fff", borderRadius:24, padding:"40px 36px", width:420, boxShadow:"0 24px 60px rgba(0,0,0,0.3)" },
-    title:   { fontSize:26, fontWeight:700, color:"#2C1F0E", letterSpacing:3, textTransform:"uppercase", textAlign:"center" },
+    page:  { minHeight:"100vh", background:"#0F1923", display:"flex", alignItems:"center",
+             justifyContent:"center", fontFamily:"'DM Sans','Inter',system-ui,sans-serif" },
+    card:  { background:"#fff", borderRadius:4, padding:"40px 36px", width:420,
+             boxShadow:"0 24px 60px rgba(0,0,0,0.5)", borderTop:"3px solid #1A5276" },
+    title: { fontSize:20, fontWeight:700, color:"#0F1923", letterSpacing:4,
+             textTransform:"uppercase", textAlign:"center" },
+    sub:   { color:"#1A5276", fontSize:9, letterSpacing:4, display:"block",
+             background:"#C5DCF0", borderRadius:2, padding:"4px 0",
+             marginTop:4, textAlign:"center", textTransform:"uppercase" },
+    label: { fontSize:10, letterSpacing:2, color:"#5A564F", textTransform:"uppercase",
+             marginBottom:6, display:"block", fontWeight:600 },
+    input: { width:"100%", padding:"10px 14px", borderRadius:3,
+             border:"1.5px solid #E2DDD6", fontFamily:"inherit", fontSize:14,
+             color:"#0F1923", background:"#fff", outline:"none", boxSizing:"border-box" },
+    btn:   { width:"100%", padding:14, background:"#1A5276", color:"#fff",
+             border:"none", borderRadius:3, cursor:"pointer", fontFamily:"inherit",
+             fontSize:11, letterSpacing:2, textTransform:"uppercase", fontWeight:700 },
+    err:   { background:"#FEF2F2", border:"1px solid #FECACA", borderRadius:3,
+             padding:"12px 16px", fontSize:13, color:"#7A0000", marginBottom:16 },
+    ok:    { background:"#DCFCE7", border:"1px solid #86EFAC", borderRadius:3,
+             padding:"12px 16px", fontSize:13, color:"#166534", marginBottom:16 },
+    link:  { color:"#1A5276", cursor:"pointer", fontWeight:700 },
+};port { useState } from "react";
+import { signIn, signUp } from "./supabase";
+
+export default function Auth({ onLogin }) {
+  const [mode,     setMode]     = useState("login");
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm,  setConfirm]  = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState("");
+  const [success,  setSuccess]  = useState("");
+  const [debug,    setDebug]    = useState("");
+
+  const S = {
+    page:    { minHeight:"100vh", background:"linear-gradient(135deg,#0F1923 0%,#5C3D1E 50%,#8B6F47 100%)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'DM Sans','Inter',system-ui,sans-serif" },
+    card:    { background:"#fff", borderRadius:4, padding:"40px 36px", width:420, boxShadow:"0 24px 60px rgba(0,0,0,0.3)" },
+    title:   { fontSize:26, fontWeight:700, color:"#0F1923", letterSpacing:3, textTransform:"uppercase", textAlign:"center" },
     sub:     { fontSize:11, color:"#C9A882", letterSpacing:6, marginTop:4, textAlign:"center", display:"block", marginBottom:32 },
     label:   { fontSize:11, letterSpacing:2, color:"#9A8070", textTransform:"uppercase", marginBottom:6, display:"block" },
-    input:   { width:"100%", padding:"12px 16px", borderRadius:10, border:"1.5px solid #DDD0C0", fontFamily:"inherit", fontSize:14, color:"#2C1F0E", background:"#FDFAF6", outline:"none", boxSizing:"border-box", marginBottom:16 },
+    input:   { width:"100%", padding:"12px 16px", borderRadius:3, border:"1.5px solid #DDD0C0", fontFamily:"inherit", fontSize:14, color:"#0F1923", background:"#FDFAF6", outline:"none", boxSizing:"border-box", marginBottom:16 },
     btn:     { width:"100%", padding:"14px", borderRadius:12, border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:13, letterSpacing:2, textTransform:"uppercase", fontWeight:700, background:"linear-gradient(135deg,#5C3D1E,#8B6F47)", color:"#fff", marginTop:8 },
-    error:   { background:"#FDF0F0", border:"1px solid #F5C6C6", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#721C24", marginBottom:14, lineHeight:1.6 },
-    success: { background:"#F0FDF4", border:"1px solid #BBF7D0", borderRadius:10, padding:"12px 16px", fontSize:13, color:"#166534", marginBottom:14, lineHeight:1.6 },
-    debug:   { background:"#1E1E1E", color:"#A8D8A8", borderRadius:10, padding:"12px 14px", fontSize:11, fontFamily:"monospace", marginBottom:14, lineHeight:1.7, whiteSpace:"pre-wrap", wordBreak:"break-all" },
+    error:   { background:"#FDF0F0", border:"1px solid #F5C6C6", borderRadius:3, padding:"12px 16px", fontSize:13, color:"#7A0000", marginBottom:14, lineHeight:1.6 },
+    success: { background:"#F0FDF4", border:"1px solid #BBF7D0", borderRadius:3, padding:"12px 16px", fontSize:13, color:"#166534", marginBottom:14, lineHeight:1.6 },
+    debug:   { background:"#1E1E1E", color:"#A8D8A8", borderRadius:3, padding:"12px 14px", fontSize:11, fontFamily:"monospace", marginBottom:14, lineHeight:1.7, whiteSpace:"pre-wrap", wordBreak:"break-all" },
     toggle:  { textAlign:"center", marginTop:18, fontSize:13, color:"#9A8070" },
     link:    { color:"#8B6F47", cursor:"pointer", fontWeight:700, textDecoration:"underline" },
   };
@@ -94,7 +130,7 @@ export default function Auth({ onLogin }) {
         <div style={S.title}>High Rise Interiors</div>
         <span style={S.sub}>Studio CRM</span>
 
-        <div style={{ fontSize:15, fontWeight:700, color:"#2C1F0E", marginBottom:18, textAlign:"center" }}>
+        <div style={{ fontSize:15, fontWeight:700, color:"#0F1923", marginBottom:18, textAlign:"center" }}>
           {mode==="login" ? "Sign in to your account" : "Create an account"}
         </div>
 
@@ -129,7 +165,7 @@ export default function Auth({ onLogin }) {
             ? <>No account? <span style={S.link} onClick={()=>{setMode("signup");setError("");setDebug("");}}>Sign up</span></>
             : <>Have account? <span style={S.link} onClick={()=>{setMode("login");setError("");setDebug("");}}>Sign in</span></>}
         </div>
-        <div style={{ textAlign:"center", marginTop:16, fontSize:11, color:"#C9A882" }}>🔒 Secured by Supabase · © Genovatech IT Services Pvt. Ltd.</div>
+        <div style={{ textAlign:"center", marginTop:16, fontSize:11, color:"#C9A882" }}>© Genovatech IT Services Pvt. Ltd. · Secured by Supabase</div>
       </div>
     </div>
   );
