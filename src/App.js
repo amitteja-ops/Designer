@@ -659,17 +659,26 @@ function ClientReport({ selected, setView, customers }) {
   // Load saved signatures from last audit log entry that has them
   const [signatures, setSignatures] = React.useState({ client:null, hri:null });
 
-  // Load saved signatures from audit log whenever auditLog changes
+  // Load saved signatures from dedicated clientSignatures field
   React.useEffect(() => {
-    const lastSigEntry = [...(selected.auditLog||[])].reverse()
-      .find(e => e.type==="signed" && (e.signatures?.clientImg||e.signatures?.hriImg));
-    if (lastSigEntry) {
+    const sigs = selected.clientSignatures;
+    if (sigs && (sigs.clientImg || sigs.hriImg)) {
       setSignatures({
-        client: lastSigEntry.signatures?.clientImg || null,
-        hri:    lastSigEntry.signatures?.hriImg    || null,
+        client: sigs.clientImg || null,
+        hri:    sigs.hriImg    || null,
       });
+    } else {
+      // Fallback: check audit log
+      const lastSigEntry = [...(selected.auditLog||[])].reverse()
+        .find(e => e.type==="signed" && (e.signatures?.clientImg||e.signatures?.hriImg));
+      if (lastSigEntry) {
+        setSignatures({
+          client: lastSigEntry.signatures?.clientImg || null,
+          hri:    lastSigEntry.signatures?.hriImg    || null,
+        });
+      }
     }
-  }, [selected.auditLog]);
+  }, [selected.clientSignatures, selected.auditLog]);
   const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
   const noteLines   = (selected.notes||"").split("\n").filter(l=>l.trim());
   const scopeLines  = noteLines.filter(l=>/drawing|living|bedroom|kitchen|ceiling|pooja|wardrobe|unit|partition|entrance|balcony|bathroom/i.test(l));
@@ -1025,7 +1034,21 @@ Hyderabad`);
               const updatedLog = [...(selected.auditLog||[]), sigEntry];
               try {
                 const tok = JSON.parse(localStorage.getItem("crm_session")||"{}").token;
-                await fetch(`https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${selected.id}`, {
+                // Save signatures in dedicated column + metadata in audit_log
+                // Strip large image data from audit_log to keep it small
+                const auditForDB = updatedLog.map(e => ({
+                  ...e,
+                  signatures: e.signatures ? {
+                    client: !!e.signatures.clientImg || !!e.signatures.client,
+                    hri:    !!e.signatures.hriImg    || !!e.signatures.hri,
+                  } : undefined
+                }));
+                const sigsForDB = {
+                  clientImg: newSigs.client || null,
+                  hriImg:    newSigs.hri    || null,
+                  savedAt:   new Date().toISOString(),
+                };
+                const res = await fetch(`https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${selected.id}`, {
                   method:"PATCH",
                   headers:{
                     "apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY",
@@ -1033,13 +1056,26 @@ Hyderabad`);
                     "Content-Type":"application/json",
                     "Prefer":"return=minimal"
                   },
-                  body: JSON.stringify({ audit_log: JSON.stringify(updatedLog) })
+                  body: JSON.stringify({
+                    audit_log:         JSON.stringify(auditForDB),
+                    client_signatures: JSON.stringify(sigsForDB),
+                  })
                 });
-                // Update customers list so signatures reload immediately
-                setCustomers(prev => prev.map(c =>
-                  c.id===selected.id ? { ...c, auditLog: updatedLog } : c
-                ));
-              } catch(e) { console.warn("Signature save failed:", e); }
+                if (!res.ok) {
+                  const err = await res.json().catch(()=>({}));
+                  console.error("Signature save HTTP error:", res.status, err);
+                  showToast(`Signature save failed: ${err.message||res.status}`, "error");
+                } else {
+                  showToast("✍ Signature saved", "success");
+                  // Update customers list so signatures reload immediately
+                  setCustomers(prev => prev.map(c =>
+                    c.id===selected.id ? { ...c, auditLog: updatedLog, clientSignatures: sigsForDB } : c
+                  ));
+                }
+              } catch(e) {
+                console.error("Signature save error:", e);
+                showToast("Signature save failed — check connection", "error");
+              }
             }}
             onClose={()=>setShowSigPad(null)}
           />
@@ -1201,7 +1237,10 @@ Hyderabad, Telangana`
     // Remind user to attach the PDF report
     showToast("📎 Please attach the Client Report PDF before sending", "info");
 
-    window.location.href = `mailto:${client.email}?subject=${subject}&body=${body}`;
+    // Open mail app without navigating away from the CRM
+    const mailLink = document.createElement("a");
+    mailLink.href = `mailto:${client.email}?subject=${subject}&body=${body}`;
+    mailLink.click();
 
     // Log email sent in audit trail
     const emailEntry = makeEntry(
@@ -1227,7 +1266,7 @@ Hyderabad, Telangana`
     const validDate = validTill.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
 
     // Use Claude API to compose a personalised email for this status change
-    setToast({ msg:`🤖 Agent composing ${newStatus} email for ${client.name}…`, type:"info" });
+    showToast(`🤖 Composing ${newStatus} email for ${client.name}…`, "info");
 
     let emailBody = "";
     let emailSubject = "";
@@ -1235,7 +1274,7 @@ Hyderabad, Telangana`
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method:"POST",
-        headers:{ "Content-Type":"application/json" },
+        headers:{ "Content-Type":"application/json", "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" },
         body: JSON.stringify({
           model:"claude-sonnet-4-6",
           max_tokens:1000,
@@ -1277,7 +1316,8 @@ Write the email for status: ${newStatus}`
       emailBody = parsed.body;
     } catch(e) {
       // Fallback if AI fails — use template
-      console.warn("AI agent failed, using template:", e);
+      console.warn("AI agent failed, using template:", e.message||e);
+      showToast("🤖 AI unavailable — using template email", "info");
       const templates = {
         Lead: {
           subject: `High Rise Interiors — Your Quotation ${quoteRef} (Valid till ${validDate})`,
@@ -1357,7 +1397,10 @@ High Rise Interiors Team`
     // Open mail app with composed email
     const subject = encodeURIComponent(emailSubject);
     const body = encodeURIComponent(emailBody);
-    window.location.href = `mailto:${client.email}?subject=${subject}&body=${body}`;
+    // Open mail app without navigating away from the CRM
+    const mailLink = document.createElement("a");
+    mailLink.href = `mailto:${client.email}?subject=${subject}&body=${body}`;
+    mailLink.click();
 
     // Log in audit trail
     const emailEntry = makeEntry("note",
@@ -1486,11 +1529,14 @@ High Rise Interiors Team`
           await safeCall(t => sb(`${TABLE}?id=eq.${result[0].id}`, "PATCH", { referral_code: realCode }, t));
         }
         showToast("✓ Client saved");
-        // Auto-trigger Lead email for new clients
+        // Auto-trigger Lead email after new client is saved
+        // Fetch updated customers to get real ID first
         if (formToSave.email) {
-          setTimeout(() => {
-            statusEmailAgent({...formToSave, id: formToSave.id}, "New", "Lead");
-          }, 800);
+          setTimeout(async () => {
+            const updated = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc&limit=1`, "GET", null, t));
+            const newClient = updated?.[0] ? fromRow(updated[0]) : {...formToSave};
+            statusEmailAgent(newClient, "New", "Lead");
+          }, 1200);
         }
       }
       await fetchCustomers();

@@ -110,6 +110,9 @@ export const toRow = (f) => {
     room_materials:     f.roomMaterials && Object.keys(f.roomMaterials).length > 0
                           ? JSON.stringify(f.roomMaterials)
                           : null,
+    client_signatures:  f.clientSignatures
+                          ? JSON.stringify(f.clientSignatures)
+                          : null,
     audit_log:          f.auditLog && f.auditLog.length > 0
                           ? JSON.stringify(f.auditLog.map(e=>({
                               ...e,
@@ -192,6 +195,9 @@ export const fromRow = (r) => {
     inventory:          r.inventory
                           ? (typeof r.inventory      === "string" ? JSON.parse(r.inventory)      : r.inventory)
                           : {},
+    clientSignatures:   r.client_signatures
+                          ? (typeof r.client_signatures==="string" ? JSON.parse(r.client_signatures) : r.client_signatures)
+                          : null,
     auditLog:           r.audit_log
                           ? (typeof r.audit_log      === "string" ? JSON.parse(r.audit_log)      : r.audit_log)
                           : [],
