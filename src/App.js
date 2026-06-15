@@ -654,196 +654,197 @@ function Select({ value, onChange, options, placeholder }) {
 }
 
 
-// ── 3D Room Embed ────────────────────────────────────────────────────
+// ── Room Planner (2D Floor Plan + 3D link) ──────────────────────────
 function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Room", rooms=[], roomDetails={} }) {
-  const mountRef   = useRef(null);
-  const stateRef   = useRef(null); // holds { renderer, camera, scene, raf, drag }
+  const canvasRef  = useRef(null);
   const [activeRoom, setActiveRoom] = useState(roomType);
   const [wall,  setWall]  = useState('#F0EDE8');
-  const [floor, setFloor] = useState('#8B6340');
+  const [floor, setFloor] = useState('#C8A96E');
+  const [scale, setScale]  = useState(60); // pixels per metre
 
   const rd = roomDetails[activeRoom] || {};
   const RL = Math.max(1, parseFloat(rd.length || L));
   const RW = Math.max(1, parseFloat(rd.width  || W));
   const RH = Math.max(1, parseFloat(rd.height || H));
 
-  // Destroy previous Three.js context
-  const destroyScene = () => {
-    const s = stateRef.current;
-    if (!s) return;
-    cancelAnimationFrame(s.raf);
-    window.removeEventListener('resize', s.onResize);
-    s.renderer.dispose();
-    if (s.mount && s.mount.contains(s.renderer.domElement))
-      s.mount.removeChild(s.renderer.domElement);
-    stateRef.current = null;
-  };
-
+  // Draw 2D floor plan on canvas
   useEffect(() => {
-    destroyScene();
-    const mount = mountRef.current;
-    if (!mount) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const CW = canvas.width;
+    const CH = canvas.height;
 
-    // Use setTimeout to ensure the DOM has painted and has real dimensions
-    const timer = setTimeout(() => {
-      const W2 = mount.clientWidth;
-      const H2 = mount.clientHeight;
+    const pw = RL * scale;  // plan width in px
+    const pd = RW * scale;  // plan depth in px
+    const ox = (CW - pw) / 2;  // origin x (centre)
+    const oy = (CH - pd) / 2;  // origin y (centre)
 
-      if (!W2 || !H2) {
-        console.warn('3D mount has no size:', W2, H2);
-        return;
-      }
+    // Clear
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.fillStyle = '#0D1B2A';
+    ctx.fillRect(0, 0, CW, CH);
 
-      // Scene
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color('#0D1B2A');
+    // Grid
+    ctx.strokeStyle = '#1E3A4A';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x <= CW; x += scale) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CH); ctx.stroke();
+    }
+    for (let y = 0; y <= CH; y += scale) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CW, y); ctx.stroke();
+    }
 
-      // Camera
-      const camera = new THREE.PerspectiveCamera(50, W2 / H2, 0.1, 200);
+    // Floor fill
+    ctx.fillStyle = floor;
+    ctx.fillRect(ox, oy, pw, pd);
 
-      // Drag state
-      const drag = { active:false, x:0, y:0, theta:0.8, phi:0.65, radius: Math.max(RL,RW)*1.6+2 };
+    // Floor pattern (wood grain lines)
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 1;
+    for (let x = ox; x < ox + pw; x += 12) {
+      ctx.beginPath(); ctx.moveTo(x, oy); ctx.lineTo(x, oy + pd); ctx.stroke();
+    }
 
-      const updateCamera = () => {
-        const { theta, phi, radius } = drag;
-        camera.position.set(
-          radius * Math.sin(phi) * Math.sin(theta),
-          radius * Math.cos(phi),
-          radius * Math.sin(phi) * Math.cos(theta)
-        );
-        camera.lookAt(0, RH * 0.4, 0);
-        camera.updateProjectionMatrix();
-      };
-      drag.update = updateCamera;
-      updateCamera();
+    // Walls (thick border)
+    ctx.strokeStyle = wall;
+    ctx.lineWidth = 14;
+    ctx.strokeRect(ox, oy, pw, pd);
 
-      // Renderer
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setSize(W2, H2);
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      mount.appendChild(renderer.domElement);
+    // Wall inner line
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(ox + 7, oy + 7, pw - 14, pd - 14);
 
-      // Lights
-      scene.add(new THREE.AmbientLight(0xfff5e0, 0.6));
-      const sun = new THREE.DirectionalLight(0xfff8e8, 1.2);
-      sun.position.set(RL, RH * 2, RW);
-      sun.castShadow = true;
-      sun.shadow.mapSize.set(1024, 1024);
-      sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 50;
-      sun.shadow.camera.left = sun.shadow.camera.bottom = -15;
-      sun.shadow.camera.right = sun.shadow.camera.top   =  15;
-      scene.add(sun);
-      const fill = new THREE.DirectionalLight(0xd0e8ff, 0.3);
-      fill.position.set(-RL, RH, -RW); scene.add(fill);
-      const pt = new THREE.PointLight(0xffe8c0, 0.4, RH * 5);
-      pt.position.set(0, RH * 0.9, 0); scene.add(pt);
+    // Dimensions — length
+    ctx.fillStyle = '#1A5276';
+    ctx.font = 'bold 13px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${RL}m`, ox + pw/2, oy - 14);
+    // Arrow heads
+    ctx.strokeStyle = '#1A5276';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(ox, oy - 10); ctx.lineTo(ox + pw, oy - 10); ctx.stroke();
+    [ox, ox + pw].forEach(x => {
+      ctx.beginPath(); ctx.moveTo(x, oy - 14); ctx.lineTo(x, oy - 6); ctx.stroke();
+    });
 
-      // Floor
-      const floorMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(RW, RL),
-        new THREE.MeshStandardMaterial({ color: floor, roughness: 0.6 })
-      );
-      floorMesh.rotation.x = -Math.PI / 2;
-      floorMesh.receiveShadow = true;
-      scene.add(floorMesh);
+    // Dimensions — width
+    ctx.save();
+    ctx.translate(ox - 14, oy + pd/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = '#1A5276';
+    ctx.fillText(`${RW}m`, 0, 0);
+    ctx.restore();
+    ctx.strokeStyle = '#1A5276';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(ox - 10, oy); ctx.lineTo(ox - 10, oy + pd); ctx.stroke();
+    [oy, oy + pd].forEach(y => {
+      ctx.beginPath(); ctx.moveTo(ox - 14, y); ctx.lineTo(ox - 6, y); ctx.stroke();
+    });
 
-      // Ceiling
-      const ceilMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(RW, RL),
-        new THREE.MeshStandardMaterial({ color: '#FAFAF8', roughness: 1, side: THREE.DoubleSide })
-      );
-      ceilMesh.rotation.x = Math.PI / 2;
-      ceilMesh.position.y = RH;
-      scene.add(ceilMesh);
+    // Room label
+    ctx.fillStyle = 'rgba(15,25,35,0.7)';
+    ctx.fillRect(ox + pw/2 - 70, oy + pd/2 - 20, 140, 36);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(activeRoom, ox + pw/2, oy + pd/2 - 2);
+    ctx.font = '11px DM Sans, sans-serif';
+    ctx.fillStyle = '#1A5276';
+    ctx.fillText(`${(RL*RW).toFixed(1)} m²`, ox + pw/2, oy + pd/2 + 14);
 
-      // Walls
-      const wallMat = new THREE.MeshStandardMaterial({ color: wall, roughness: 0.9, side: THREE.DoubleSide });
-      [
-        { w: RW, h: RH, pos: [0, RH/2, -RL/2], rot: [0, 0, 0] },
-        { w: RL, h: RH, pos: [-RW/2, RH/2, 0], rot: [0,  Math.PI/2, 0] },
-        { w: RL, h: RH, pos: [ RW/2, RH/2, 0], rot: [0, -Math.PI/2, 0] },
-      ].forEach(({ w, h, pos, rot }) => {
-        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
-        m.position.set(...pos); m.rotation.set(...rot);
-        m.receiveShadow = true; scene.add(m);
-      });
+    // North arrow
+    ctx.fillStyle = '#1A5276';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('N ↑', 12, 24);
 
-      // Skirting boards
-      const skirtMat = new THREE.MeshStandardMaterial({ color: '#D4CFCA', roughness: 0.7 });
-      [
-        [RW, [0, 0.04, -RL/2 + 0.02], [0, 0, 0]],
-        [RL, [-RW/2 + 0.02, 0.04, 0], [0, Math.PI/2, 0]],
-        [RL, [ RW/2 - 0.02, 0.04, 0], [0, Math.PI/2, 0]],
-      ].forEach(([size, pos, rot]) => {
-        const m = new THREE.Mesh(new THREE.BoxGeometry(size, 0.08, 0.03), skirtMat);
-        m.position.set(...pos); m.rotation.set(...rot); scene.add(m);
-      });
+    // Scale bar
+    const barW = scale; // 1 metre
+    ctx.fillStyle = '#1A5276';
+    ctx.fillRect(CW - barW - 20, CH - 24, barW, 4);
+    ctx.fillStyle = '#fff';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('1m', CW - barW/2 - 20, CH - 10);
 
-      // Grid
-      const grid = new THREE.GridHelper(Math.max(RW, RL) * 3, 20, 0x1E3A4A, 0x172838);
-      grid.position.y = 0.001; scene.add(grid);
+  }, [activeRoom, RL, RW, wall, floor, scale]);
 
-      // Animate
-      let raf;
-      const animate = () => { raf = requestAnimationFrame(animate); renderer.render(scene, camera); };
-      animate();
+  // 3D view elevation sketch (right side)
+  useEffect(() => {
+    const canvas = document.getElementById('elev-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const CW = canvas.width, CH = canvas.height;
 
-      // Resize
-      const onResize = () => {
-        const nw = mount.clientWidth, nh = mount.clientHeight;
-        if (!nw || !nh) return;
-        camera.aspect = nw / nh; camera.updateProjectionMatrix();
-        renderer.setSize(nw, nh);
-      };
-      window.addEventListener('resize', onResize);
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.fillStyle = '#0A1520';
+    ctx.fillRect(0, 0, CW, CH);
 
-      stateRef.current = { renderer, camera, scene, drag, mount, onResize,
-        get raf() { return raf; }, set raf(v) { raf = v; } };
+    const s = Math.min(CW / (RL + 1), CH / (RH + 1)) * 0.7;
+    const ox = (CW - RL * s) / 2;
+    const oy = CH - (CH - RH * s) / 2;
 
-    }, 100); // 100ms delay to ensure DOM has real dimensions
+    // Floor line
+    ctx.strokeStyle = '#C8A96E';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + RL*s, oy); ctx.stroke();
 
-    return () => { clearTimeout(timer); destroyScene(); };
-  }, [activeRoom, RL, RW, RH, wall, floor]);
+    // Walls
+    ctx.strokeStyle = wall;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.lineTo(ox, oy - RH*s);
+    ctx.lineTo(ox + RL*s, oy - RH*s);
+    ctx.lineTo(ox + RL*s, oy);
+    ctx.stroke();
 
-  // Pointer handlers
-  const onDown = e => {
-    const s = stateRef.current; if (!s) return;
-    s.drag.active = true;
-    s.drag.x = e.touches ? e.touches[0].clientX : e.clientX;
-    s.drag.y = e.touches ? e.touches[0].clientY : e.clientY;
-  };
-  const onUp   = () => { if (stateRef.current) stateRef.current.drag.active = false; };
-  const onMove = e => {
-    const s = stateRef.current; if (!s || !s.drag.active) return;
-    const cx = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    s.drag.theta -= (cx - s.drag.x) * 0.009;
-    s.drag.phi    = Math.max(0.1, Math.min(1.4, s.drag.phi + (cy - s.drag.y) * 0.009));
-    s.drag.x = cx; s.drag.y = cy;
-    s.drag.update();
-  };
-  const onWheel = e => {
-    const s = stateRef.current; if (!s) return;
-    s.drag.radius = Math.max(2, Math.min(25, s.drag.radius + e.deltaY * 0.02));
-    s.drag.update();
-    e.preventDefault();
-  };
+    // Ceiling line
+    ctx.strokeStyle = '#FAFAF8';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(ox, oy - RH*s); ctx.lineTo(ox + RL*s, oy - RH*s); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Height dimension
+    ctx.strokeStyle = '#1A5276';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ox - 20, oy); ctx.lineTo(ox - 20, oy - RH*s); ctx.stroke();
+    [oy, oy - RH*s].forEach(y => {
+      ctx.beginPath(); ctx.moveTo(ox - 24, y); ctx.lineTo(ox - 16, y); ctx.stroke();
+    });
+    ctx.save();
+    ctx.translate(ox - 32, oy - RH*s/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillStyle = '#1A5276';
+    ctx.font = 'bold 12px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${RH}m`, 0, 0);
+    ctx.restore();
+
+    // Label
+    ctx.fillStyle = '#3A5A6A';
+    ctx.font = '10px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Front Elevation', CW/2, CH - 8);
+
+  }, [activeRoom, RL, RH, wall, scale]);
 
   const WALL_OPTS  = [['#F0EDE8','White'],['#E8D5B7','Beige'],['#8FAF8F','Sage'],['#3A3A3A','Charcoal'],['#C0614A','Terracotta'],['#1B2A4A','Navy']];
   const FLOOR_OPTS = [['#8B6340','Teak'],['#C8A96E','Oak'],['#E8E4DC','Marble'],['#3A3530','Granite'],['#9A9590','Concrete']];
 
   return (
-    <div style={{ display:'flex', width:'100%', height:'calc(100vh - 100px)', background:'#0D1B2A', overflow:'hidden' }}>
+    <div style={{ display:'flex', height:'calc(100vh - 100px)', background:'#0D1B2A', overflow:'hidden' }}>
 
       {/* Sidebar */}
-      <div style={{ width:176, minWidth:176, background:'#0A1520', padding:12,
+      <div style={{ width:180, minWidth:180, background:'#0A1520', padding:14,
         borderRight:'1px solid #1E2D3A', overflowY:'auto', flexShrink:0 }}>
 
         {rooms.length > 1 && (
           <div style={{ marginBottom:14 }}>
-            <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Room</div>
+            <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Switch Room</div>
             {rooms.map(r=>(
               <button key={r} onClick={()=>setActiveRoom(r)}
                 style={{ display:'block',width:'100%',padding:'5px 8px',marginBottom:3,
@@ -858,46 +859,88 @@ function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Roo
         )}
 
         <div style={{ marginBottom:12 }}>
-          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Wall</div>
+          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Wall Colour</div>
           <div style={{ display:'flex',flexWrap:'wrap',gap:4 }}>
             {WALL_OPTS.map(([c,n])=>(
               <button key={c} title={n} onClick={()=>setWall(c)}
-                style={{ width:24,height:24,borderRadius:2,cursor:'pointer',background:c,
+                style={{ width:26,height:26,borderRadius:2,cursor:'pointer',background:c,
                   border:wall===c?'2px solid #1A5276':'1px solid #2A3A4A' }}/>
             ))}
+          </div>
+          <div style={{ fontSize:9,color:'#3A5A6A',marginTop:4 }}>
+            {WALL_OPTS.find(([c])=>c===wall)?.[1]||''}
           </div>
         </div>
 
         <div style={{ marginBottom:12 }}>
-          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Floor</div>
+          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Floor Material</div>
           <div style={{ display:'flex',flexWrap:'wrap',gap:4 }}>
             {FLOOR_OPTS.map(([c,n])=>(
               <button key={c} title={n} onClick={()=>setFloor(c)}
-                style={{ width:24,height:24,borderRadius:2,cursor:'pointer',background:c,
+                style={{ width:26,height:26,borderRadius:2,cursor:'pointer',background:c,
                   border:floor===c?'2px solid #1A5276':'1px solid #2A3A4A' }}/>
             ))}
           </div>
+          <div style={{ fontSize:9,color:'#3A5A6A',marginTop:4 }}>
+            {FLOOR_OPTS.find(([c])=>c===floor)?.[1]||''}
+          </div>
         </div>
 
-        <div style={{ fontSize:10,color:'#3A5A6A',lineHeight:2,marginTop:12,
+        <div style={{ marginBottom:12 }}>
+          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Zoom</div>
+          <input type="range" min={30} max={120} value={scale}
+            onChange={e=>setScale(Number(e.target.value))}
+            style={{ width:'100%', accentColor:'#1A5276' }}/>
+        </div>
+
+        <div style={{ fontSize:10,color:'#3A5A6A',lineHeight:1.9,marginTop:12,
           borderTop:'1px solid #1E2D3A',paddingTop:10 }}>
-          <div style={{ color:'#1A5276',fontWeight:700,marginBottom:4 }}>📐 {activeRoom}</div>
-          <div>{RL}m × {RW}m × {RH}m</div>
-          <div>{(RL*RW).toFixed(1)} m²</div>
-          <div style={{ marginTop:8,fontSize:9,color:'#2A4A5A',lineHeight:1.9 }}>
-            Drag to orbit<br/>Scroll to zoom
-          </div>
+          <div style={{ color:'#1A5276',fontWeight:700,marginBottom:6 }}>📐 {activeRoom}</div>
+          <div>Length: {RL}m</div>
+          <div>Width:  {RW}m</div>
+          <div>Height: {RH}m</div>
+          <div style={{ marginTop:4,color:'#1A5276',fontWeight:700 }}>{(RL*RW).toFixed(1)} m²</div>
         </div>
       </div>
 
-      {/* Canvas — explicit width/height so renderer knows size */}
-      <div ref={mountRef}
-        style={{ flex:1, minHeight:400, cursor:'grab', touchAction:'none', position:'relative' }}
-        onMouseDown={onDown} onMouseUp={onUp} onMouseMove={onMove} onMouseLeave={onUp}
-        onTouchStart={onDown} onTouchEnd={onUp}
-        onTouchMove={e=>{ e.preventDefault(); onMove(e); }}
-        onWheel={onWheel}
-      />
+      {/* Plans */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+
+        {/* Tab bar */}
+        <div style={{ background:'#0A1520', padding:'8px 16px', display:'flex',
+          gap:8, borderBottom:'1px solid #1E2D3A', alignItems:'center' }}>
+          <span style={{ fontSize:10,color:'#3A5A6A',letterSpacing:2 }}>
+            FLOOR PLAN · {RL}m × {RW}m · {(RL*RW).toFixed(1)} m² · Height {RH}m
+          </span>
+          <span style={{ marginLeft:'auto', fontSize:9, color:'#2A4A5A' }}>
+            Inputs from Dimensions tab
+          </span>
+        </div>
+
+        {/* Main canvas area */}
+        <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
+          {/* Floor plan (2D top view) */}
+          <div style={{ flex:2, position:'relative', overflow:'hidden' }}>
+            <canvas ref={canvasRef} width={700} height={500}
+              style={{ width:'100%', height:'100%', display:'block' }}/>
+            <div style={{ position:'absolute', top:8, left:8,
+              fontSize:9,letterSpacing:2,color:'#3A5A6A',textTransform:'uppercase' }}>
+              Floor Plan — Top View
+            </div>
+          </div>
+
+          {/* Elevation (front view) */}
+          <div style={{ flex:1, borderLeft:'1px solid #1E2D3A', position:'relative' }}>
+            <canvas id="elev-canvas" width={350} height={500}
+              style={{ width:'100%', height:'100%', display:'block' }}/>
+            <div style={{ position:'absolute', top:8, left:8,
+              fontSize:9,letterSpacing:2,color:'#3A5A6A',textTransform:'uppercase' }}>
+              Elevation — Front View
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
