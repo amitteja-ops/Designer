@@ -310,6 +310,8 @@ const EMPTY = {
   rebateType:"amount", rebateValue:"", labourPct:50,
   auditLog:[],              // [{ts, type, user, summary, snapshot, signatures}]
   inventory:{},             // per-material status: { key: {status, orderedDate, deliveredDate, notes} }
+  floorPlanUrl:"",         // uploaded floor plan image URL
+  floorPlanData:null,       // analysed room data from AI
   referralCode:"",         // this client's own permanent referral code
   appliedReferralCode:"",  // referral code from another customer applied to this project
   referralDiscount:false,  // whether the applied code gives 5% discount
@@ -1694,6 +1696,8 @@ High Rise Interiors Team`
       roomMaterials:     c.roomMaterials     || {},
       rebateType:        c.rebateType        || "amount",
       rebateValue:       c.rebateValue       || "",
+      floorPlanUrl:        c.floorPlanUrl        || "",
+      floorPlanData:       c.floorPlanData       || null,
       auditLog:            c.auditLog            || [],
       inventory:           c.inventory           || {},
       referralCode:        c.referralCode        || "",
@@ -2917,6 +2921,172 @@ High Rise Interiors Team`
                   <span style={{ fontSize:11, color:C.muted }}>(Read only — cannot be changed)</span>
                 </div>
               )}
+              {/* ── Floor Plan Upload ── */}
+              <div style={{ marginBottom:24 }}>
+                <div style={S.sec}>Floor Plan</div>
+                <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>
+                  Upload a floor plan image — AI will automatically extract room names and dimensions into the Dimensions tab.
+                </div>
+
+                {/* Upload box */}
+                {!form.floorPlanUrl ? (
+                  <label style={{ display:"block", border:`2px dashed ${C.line}`, borderRadius:3,
+                    padding:"24px 16px", textAlign:"center", cursor:"pointer",
+                    background:C.smoke, transition:"border-color 0.2s" }}>
+                    <input type="file" accept="image/*" style={{ display:"none" }}
+                      onChange={async e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        // Preview
+                        const url = URL.createObjectURL(file);
+                        setF("floorPlanUrl", url);
+                        showToast("🤖 Analysing floor plan…", "info");
+
+                        try {
+                          // Convert to base64
+                          const base64 = await new Promise((res, rej) => {
+                            const reader = new FileReader();
+                            reader.onload  = () => res(reader.result.split(",")[1]);
+                            reader.onerror = rej;
+                            reader.readAsDataURL(file);
+                          });
+
+                          const resp = await fetch("https://api.anthropic.com/v1/messages", {
+                            method:"POST",
+                            headers:{
+                              "Content-Type":"application/json",
+                              "anthropic-version":"2023-06-01",
+                              "anthropic-dangerous-direct-browser-access":"true",
+                            },
+                            body:JSON.stringify({
+                              model:"claude-sonnet-4-6",
+                              max_tokens:1500,
+                              messages:[{
+                                role:"user",
+                                content:[
+                                  { type:"image", source:{ type:"base64", media_type:file.type||"image/jpeg", data:base64 } },
+                                  { type:"text", text:`Analyse this floor plan. Extract ALL room names and dimensions.
+
+Return ONLY valid JSON (no markdown):
+{
+  "rooms": ["Living Room","Kitchen","Master Bedroom","Bedroom 2","Bathroom"],
+  "dimensions": {
+    "Living Room":    { "length": "13.9", "width": "12.6", "height": "9" },
+    "Kitchen":        { "length": "8.0",  "width": "12.5", "height": "9" },
+    "Master Bedroom": { "length": "14.8", "width": "12.4", "height": "9" }
+  },
+  "notes": "3 BHK flat, approx 1780 sq ft"
+}
+
+Rules:
+- dimensions in FEET (convert if metric)
+- include ALL rooms: bedrooms, bathrooms, kitchen, living, dining, balcony, utility, puja, hallway
+- if dimension labels visible on plan, use those exact values
+- height default 9 feet if not shown
+- room names must match what's written on the floor plan` }
+                                ]
+                              }]
+                            })
+                          });
+
+                          if (!resp.ok) throw new Error(`API error ${resp.status}`);
+                          const data = await resp.json();
+                          const text = data.content?.[0]?.text || "";
+                          const parsed = JSON.parse(text.replace(/\`\`\`json|\`\`\`/g,"").trim());
+
+                          if (!parsed.rooms?.length) throw new Error("No rooms detected");
+
+                          // Auto-populate form rooms and dimensions
+                          const detectedRooms = parsed.rooms.filter(r =>
+                            ROOMS.includes(r) || ROOMS.some(cr => cr.toLowerCase().includes(r.toLowerCase()) || r.toLowerCase().includes(cr.toLowerCase()))
+                          );
+                          // Map detected rooms to our ROOMS list
+                          const mappedRooms = parsed.rooms.map(detected => {
+                            const match = ROOMS.find(r =>
+                              r.toLowerCase() === detected.toLowerCase() ||
+                              r.toLowerCase().includes(detected.toLowerCase()) ||
+                              detected.toLowerCase().includes(r.toLowerCase().split(" ")[0])
+                            );
+                            return match || null;
+                          }).filter(Boolean);
+
+                          const uniqueRooms = [...new Set(mappedRooms)];
+
+                          // Build roomDetails from parsed dimensions
+                          const newRoomDetails = {};
+                          Object.entries(parsed.dimensions||{}).forEach(([roomName, dims]) => {
+                            const match = ROOMS.find(r =>
+                              r.toLowerCase() === roomName.toLowerCase() ||
+                              r.toLowerCase().includes(roomName.toLowerCase().split(" ")[0]) ||
+                              roomName.toLowerCase().includes(r.toLowerCase().split(" ")[0])
+                            );
+                            if (match) {
+                              newRoomDetails[match] = {
+                                length: String(parseFloat(dims.length||0).toFixed(1)),
+                                width:  String(parseFloat(dims.width||0).toFixed(1)),
+                                height: String(parseFloat(dims.height||9).toFixed(1)),
+                                photos: [],
+                                subsections: {},
+                              };
+                            }
+                          });
+
+                          setForm(f => ({
+                            ...f,
+                            floorPlanData: parsed,
+                            rooms: uniqueRooms.length > 0 ? uniqueRooms : f.rooms,
+                            roomDetails: { ...f.roomDetails, ...newRoomDetails },
+                          }));
+
+                          const count = Object.keys(newRoomDetails).length;
+                          showToast(`✅ Detected ${parsed.rooms.length} rooms, ${count} with dimensions — see Dimensions tab`, "success", 6000);
+
+                          if (count > 0) {
+                            setTimeout(() => setActiveTab("dimensions"), 1500);
+                          }
+
+                        } catch(err) {
+                          console.error("Floor plan analysis error:", err);
+                          showToast("⚠️ Could not analyse floor plan: " + err.message, "error");
+                        }
+                      }}/>
+                    <div style={{ fontSize:28, marginBottom:8 }}>🏗</div>
+                    <div style={{ fontSize:13, color:C.ink, fontWeight:600, marginBottom:4 }}>
+                      Upload Floor Plan
+                    </div>
+                    <div style={{ fontSize:11, color:C.muted }}>
+                      JPG, PNG — AI will extract room names and dimensions automatically
+                    </div>
+                  </label>
+                ) : (
+                  <div>
+                    <div style={{ position:"relative", display:"inline-block", marginBottom:8 }}>
+                      <img src={form.floorPlanUrl} alt="Floor plan"
+                        style={{ maxWidth:"100%", maxHeight:200, borderRadius:3,
+                          border:`1px solid ${C.line}`, objectFit:"contain", background:C.smoke }}/>
+                      <button onClick={()=>setForm(f=>({...f,floorPlanUrl:"",floorPlanData:null}))}
+                        style={{ position:"absolute", top:4, right:4, background:"rgba(0,0,0,0.6)",
+                          color:"#fff", border:"none", borderRadius:2, cursor:"pointer",
+                          padding:"2px 8px", fontSize:10 }}>✕</button>
+                    </div>
+                    {form.floorPlanData && (
+                      <div style={{ background:"#DCFCE7", border:"1px solid #86EFAC",
+                        borderRadius:3, padding:"10px 14px", fontSize:12, color:"#166534" }}>
+                        ✅ {form.floorPlanData.rooms?.length} rooms detected
+                        {form.floorPlanData.notes && ` · ${form.floorPlanData.notes}`}
+                        <div style={{ marginTop:4, fontSize:11 }}>
+                          Rooms auto-populated in <strong>Dimensions tab</strong>
+                        </div>
+                      </div>
+                    )}
+                    <button onClick={()=>setActiveTab("dimensions")}
+                      style={{ ...S.btn(), marginTop:10, fontSize:11 }}>
+                      📐 Go to Dimensions →
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div style={S.sec}>Client Information</div>
               <div style={S.row}>
                 <Field label="Full Name *">

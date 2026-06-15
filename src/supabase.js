@@ -110,6 +110,8 @@ export const toRow = (f) => {
     room_materials:     f.roomMaterials && Object.keys(f.roomMaterials).length > 0
                           ? JSON.stringify(f.roomMaterials)
                           : null,
+    floor_plan_url:     f.floorPlanUrl  || null,
+    floor_plan_data:    f.floorPlanData ? JSON.stringify(f.floorPlanData) : null,
     client_signatures:  f.clientSignatures
                           ? JSON.stringify(f.clientSignatures)
                           : null,
@@ -195,6 +197,10 @@ export const fromRow = (r) => {
     inventory:          r.inventory
                           ? (typeof r.inventory      === "string" ? JSON.parse(r.inventory)      : r.inventory)
                           : {},
+    floorPlanUrl:       r.floor_plan_url  || "",
+    floorPlanData:      r.floor_plan_data
+                          ? (typeof r.floor_plan_data==="string" ? JSON.parse(r.floor_plan_data) : r.floor_plan_data)
+                          : null,
     clientSignatures:   r.client_signatures
                           ? (typeof r.client_signatures==="string" ? JSON.parse(r.client_signatures) : r.client_signatures)
                           : null,
