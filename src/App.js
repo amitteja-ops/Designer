@@ -321,6 +321,41 @@ const SUPABASE_URL = "https://utctflrqhjzxhzyuhsnn.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY";
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
 
+// ── Universal Claude API helper — always goes through /api/claude proxy ──
+const callClaude = async ({ system, user, images=[], maxTokens=1000 }) => {
+  const content = [];
+  // Add images first
+  images.forEach(({ base64, mediaType }) => {
+    content.push({ type:"image", source:{ type:"base64", media_type:mediaType, data:base64 } });
+  });
+  // Add text prompt
+  content.push({ type:"text", text:user });
+
+  const body = {
+    model: "claude-sonnet-4-6",
+    max_tokens: maxTokens,
+    messages: [{ role:"user", content }],
+  };
+  if (system) body.system = system;
+
+  const res = await fetch("/api/claude", {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify(body),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Claude API error ${res.status}`);
+  const text = data.content?.[0]?.text || "";
+  return text;
+};
+
+// Parse JSON from Claude response safely
+const parseClaudeJSON = (text) => {
+  const clean = text.replace(/```json|```/g, "").trim();
+  return JSON.parse(clean);
+};
+
 // Returns "Quotation" for Lead, "Order" for all other statuses
 const getDocTerm = (status) =>
   (!status || status === "Lead") ? "Quotation" : "Order";
@@ -1564,8 +1599,21 @@ Hyderabad, Telangana`
     let emailBody = "";
     let emailSubject = "";
 
-    // Smart templates based on status
-    {
+    // Try AI first, fall back to templates
+    try {
+      const emailText = await callClaude({
+        maxTokens: 500,
+        system: `You are the email agent for High Rise Interiors, Hyderabad. Write professional warm emails under 100 words. Respond with JSON only: { "subject": "...", "body": "..." }`,
+        user: `Write a ${newStatus} status email for ${client.name}. ${docTerm} ref: ${quoteRef}. Value: ${quotation}. ${newStatus==="Lead"?"Quotation expires "+validDate+".":""} Sign as "High Rise Interiors Team".`
+      });
+      const ep = parseClaudeJSON(emailText);
+      emailSubject = ep.subject;
+      emailBody = ep.body;
+    } catch(_) {
+      // Fallback templates
+    }
+
+    if (!emailSubject) {
       const templates = {
         Lead: {
           subject: `High Rise Interiors — Your Quotation ${quoteRef} (Valid till ${validDate})`,
@@ -1640,7 +1688,7 @@ High Rise Interiors Team`
       const t = templates[newStatus] || templates.Lead;
       emailSubject = t.subject;
       emailBody = t.body;
-    }
+    } // end fallback
 
     // Open mail app with composed email
     const subject = encodeURIComponent(emailSubject);
@@ -2951,48 +2999,33 @@ High Rise Interiors Team`
                             reader.readAsDataURL(file);
                           });
 
-                          const resp = await fetch("https://api.anthropic.com/v1/messages", {
-                            method:"POST",
-                            headers:{
-                              "Content-Type":"application/json",
-                              "anthropic-version":"2023-06-01",
-                              "anthropic-dangerous-direct-browser-access":"true",
-                            },
-                            body:JSON.stringify({
-                              model:"claude-sonnet-4-6",
-                              max_tokens:1500,
-                              messages:[{
-                                role:"user",
-                                content:[
-                                  { type:"image", source:{ type:"base64", media_type:file.type||"image/jpeg", data:base64 } },
-                                  { type:"text", text:`Analyse this floor plan. Extract ALL room names and dimensions.
+                          // Use shared Claude helper — no CORS, no scattered API keys
+                          const text = await callClaude({
+                            maxTokens: 1500,
+                            images: [{ base64, mediaType: file.type || "image/jpeg" }],
+                            user: `Analyse this floor plan image carefully. Read all room labels and dimension text visible on the plan.
 
-Return ONLY valid JSON (no markdown):
+Return ONLY valid JSON (no markdown, no explanation):
 {
-  "rooms": ["Living Room","Kitchen","Master Bedroom","Bedroom 2","Bathroom"],
+  "rooms": ["Master Bedroom", "Bedroom 2", "Living Room", "Kitchen", "Bathroom"],
   "dimensions": {
-    "Living Room":    { "length": "13.9", "width": "12.6", "height": "9" },
-    "Kitchen":        { "length": "8.0",  "width": "12.5", "height": "9" },
-    "Master Bedroom": { "length": "14.8", "width": "12.4", "height": "9" }
+    "Master Bedroom": { "length": "14.8", "width": "12.4", "height": "9" },
+    "Bedroom 2":      { "length": "13.3", "width": "11.7", "height": "9" },
+    "Living Room":    { "length": "13.8", "width": "12.5", "height": "9" },
+    "Kitchen":        { "length": "8.0",  "width": "12.4", "height": "9" }
   },
   "notes": "3 BHK flat, approx 1780 sq ft"
 }
 
-Rules:
-- dimensions in FEET (convert if metric)
-- include ALL rooms: bedrooms, bathrooms, kitchen, living, dining, balcony, utility, puja, hallway
-- if dimension labels visible on plan, use those exact values
-- height default 9 feet if not shown
-- room names must match what's written on the floor plan` }
-                                ]
-                              }]
-                            })
+Critical rules:
+- Read EXACT dimension text on the plan (13'3" x 11'8" means length=13.25, width=11.67 in feet)
+- Convert feet+inches to decimal feet: 13'3" = 13.25, 8'2" = 8.17
+- Include ALL rooms: bedrooms, bathrooms, kitchen, living, dining, balcony, utility, puja, hallway, sitout, dressing
+- For "5'0 WIDE" style labels, use that as width and estimate depth from proportions
+- Default height = 9 feet unless stated
+- Use exact room names from the plan`
                           });
-
-                          if (!resp.ok) throw new Error(`API error ${resp.status}`);
-                          const data = await resp.json();
-                          const text = data.content?.[0]?.text || "";
-                          const parsed = JSON.parse(text.replace(/\`\`\`json|\`\`\`/g,"").trim());
+                          const parsed = parseClaudeJSON(text);
 
                           if (!parsed.rooms?.length) throw new Error("No rooms detected");
 
@@ -3000,26 +3033,40 @@ Rules:
                           const detectedRooms = parsed.rooms.filter(r =>
                             ROOMS.includes(r) || ROOMS.some(cr => cr.toLowerCase().includes(r.toLowerCase()) || r.toLowerCase().includes(cr.toLowerCase()))
                           );
-                          // Map detected rooms to our ROOMS list
-                          const mappedRooms = parsed.rooms.map(detected => {
-                            const match = ROOMS.find(r =>
-                              r.toLowerCase() === detected.toLowerCase() ||
-                              r.toLowerCase().includes(detected.toLowerCase()) ||
-                              detected.toLowerCase().includes(r.toLowerCase().split(" ")[0])
-                            );
-                            return match || null;
-                          }).filter(Boolean);
+                          // Smart room name mapping — handles variants like
+                          // "LIVING" → "Living Room", "MASTER BEDROOM" → "Master Bedroom" etc.
+                          const normalise = s => s.toLowerCase().trim()
+                            .replace(/master bed.*/,"master bedroom")
+                            .replace(/bed.?room.?2|bedroom-?2|bed 2/,"bedroom 2")
+                            .replace(/bed.?room.?3|bedroom-?3|bed 3/,"bedroom 3")
+                            .replace(/bed.?room.?4|bedroom-?4|bed 4/,"bedroom 4")
+                            .replace(/family.?dining|family\/dining|dining/,"dining area")
+                            .replace(/living.?dining|living\/dining/,"living room")
+                            .replace(/^living$/,"living room")
+                            .replace(/^kitchen$/,"kitchen")
+                            .replace(/toilet|bathroom|wc/,"bathroom")
+                            .replace(/balcony|terrace/,"balcony")
+                            .replace(/utility|store/,"utility")
+                            .replace(/dress.*/,"dressing")
+                            .replace(/sitout|sit out/,"sitout")
+                            .replace(/puja|prayer/,"puja room")
+                            .replace(/hall.*/,"hallway");
 
+                          const findMatch = (name) => {
+                            const n = normalise(name);
+                            return ROOMS.find(r => normalise(r) === n)
+                              || ROOMS.find(r => n.includes(normalise(r).split(" ")[0]))
+                              || ROOMS.find(r => normalise(r).includes(n.split(" ")[0]))
+                              || null;
+                          };
+
+                          const mappedRooms = (parsed.rooms||[]).map(findMatch).filter(Boolean);
                           const uniqueRooms = [...new Set(mappedRooms)];
 
                           // Build roomDetails from parsed dimensions
                           const newRoomDetails = {};
                           Object.entries(parsed.dimensions||{}).forEach(([roomName, dims]) => {
-                            const match = ROOMS.find(r =>
-                              r.toLowerCase() === roomName.toLowerCase() ||
-                              r.toLowerCase().includes(roomName.toLowerCase().split(" ")[0]) ||
-                              roomName.toLowerCase().includes(r.toLowerCase().split(" ")[0])
-                            );
+                            const match = findMatch(roomName);
                             if (match) {
                               newRoomDetails[match] = {
                                 length: String(parseFloat(dims.length||0).toFixed(1)),
