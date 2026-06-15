@@ -312,6 +312,7 @@ const EMPTY = {
   inventory:{},             // per-material status: { key: {status, orderedDate, deliveredDate, notes} }
   floorPlanUrl:"",         // uploaded floor plan image URL
   floorPlanData:null,       // analysed room data from AI
+  floorPlanPending:null,    // detected rooms awaiting user mapping
   referralCode:"",         // this client's own permanent referral code
   appliedReferralCode:"",  // referral code from another customer applied to this project
   referralDiscount:false,  // whether the applied code gives 5% discount
@@ -1048,7 +1049,12 @@ Kindly review and sign.
 Warm regards,
 High Rise Interiors
 Hyderabad`);
-          window.location.href = `mailto:${selected.email||""}?subject=${subject}&body=${body}`;
+          const ml = document.createElement("a");
+            ml.href = `mailto:${selected.email||""}?subject=${subject}&body=${body}`;
+            ml.style.display = "none";
+            document.body.appendChild(ml);
+            ml.click();
+            setTimeout(() => document.body.removeChild(ml), 500);
         }} style={S.btn("dark")}>📧 Email Client</button>
         <span style={{ color:C.muted,fontSize:11,marginLeft:"auto" }}>
           {signatures.client&&signatures.hri?"✓ Both signed — ready to print"
@@ -1585,32 +1591,38 @@ Hyderabad, Telangana`
   // ── Status Change Email Agent ─────────────────────────────────────────
   // Triggered automatically whenever client status changes
   const statusEmailAgent = async (client, oldStatus, newStatus) => {
-    if (!client.email) return;
-    const refPrefix = (!client.status||client.status==="Lead") ? "HRI-Q" : "HRI-O";
-    const quoteRef  = `${refPrefix}-${String(client.id||"").slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`;
-    const quotation = client.quotation ? `₹${Number(client.quotation).toLocaleString("en-IN")}` : "As discussed";
-    const today = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
-    const validTill = new Date(); validTill.setDate(validTill.getDate()+3);
-    const validDate = validTill.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+    if (!client.email) {
+      showToast("No email address for this client", "error");
+      return;
+    }
 
-    // Use Claude API to compose a personalised email for this status change
-    showToast(`🤖 Composing ${newStatus} email for ${client.name}…`, "info");
+    // Compute doc term locally — don't rely on outer scope
+    const agentDocTerm = (!newStatus || newStatus === "Lead") ? "Quotation" : "Order";
+    const refPrefix    = (!newStatus || newStatus === "Lead") ? "HRI-Q" : "HRI-O";
+    const quoteRef     = `${refPrefix}-${String(client.id||"").slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`;
+    const quotation    = client.quotation ? `₹${Number(client.quotation).toLocaleString("en-IN")}` : "As discussed";
+    const validTill    = new Date(); validTill.setDate(validTill.getDate()+3);
+    const validDate    = validTill.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
 
-    let emailBody = "";
+    showToast(`📧 Composing ${newStatus} email for ${client.name}…`, "info");
+
+    let emailBody    = "";
     let emailSubject = "";
 
-    // Try AI first, fall back to templates
+    // Try AI first via proxy, fall back to templates
     try {
       const emailText = await callClaude({
         maxTokens: 500,
         system: `You are the email agent for High Rise Interiors, Hyderabad. Write professional warm emails under 100 words. Respond with JSON only: { "subject": "...", "body": "..." }`,
-        user: `Write a ${newStatus} status email for ${client.name}. ${docTerm} ref: ${quoteRef}. Value: ${quotation}. ${newStatus==="Lead"?"Quotation expires "+validDate+".":""} Sign as "High Rise Interiors Team".`
+        user: `Write a ${newStatus} status email for ${client.name}. ${agentDocTerm} ref: ${quoteRef}. Value: ${quotation}. ${newStatus==="Lead"?"Quotation expires "+validDate+".":""} Sign as "High Rise Interiors Team".`
       });
       const ep = parseClaudeJSON(emailText);
-      emailSubject = ep.subject;
-      emailBody = ep.body;
-    } catch(_) {
-      // Fallback templates
+      if (ep.subject && ep.body) {
+        emailSubject = ep.subject;
+        emailBody    = ep.body;
+      }
+    } catch(aiErr) {
+      console.warn("AI email failed, using template:", aiErr.message);
     }
 
     if (!emailSubject) {
@@ -1690,13 +1702,16 @@ High Rise Interiors Team`
       emailBody = t.body;
     } // end fallback
 
-    // Open mail app with composed email
+    // Open mail app — must append to body on iOS Safari or click is swallowed
     const subject = encodeURIComponent(emailSubject);
-    const body = encodeURIComponent(emailBody);
-    // Open mail app without navigating away from the CRM
+    const body    = encodeURIComponent(emailBody);
     const mailLink = document.createElement("a");
-    mailLink.href = `mailto:${client.email}?subject=${subject}&body=${body}`;
+    mailLink.href   = `mailto:${client.email}?subject=${subject}&body=${body}`;
+    mailLink.style.display = "none";
+    document.body.appendChild(mailLink);
     mailLink.click();
+    setTimeout(() => document.body.removeChild(mailLink), 500);
+    showToast(`📧 Mail app opening — attach PDF report before sending`, "success", 6000);
 
     // Log in audit trail
     const emailEntry = makeEntry("note",
@@ -1746,6 +1761,7 @@ High Rise Interiors Team`
       rebateValue:       c.rebateValue       || "",
       floorPlanUrl:        c.floorPlanUrl        || "",
       floorPlanData:       c.floorPlanData       || null,
+      floorPlanPending:    c.floorPlanPending    || null,
       auditLog:            c.auditLog            || [],
       inventory:           c.inventory           || {},
       referralCode:        c.referralCode        || "",
@@ -2973,7 +2989,7 @@ High Rise Interiors Team`
               <div style={{ marginBottom:24 }}>
                 <div style={S.sec}>Floor Plan</div>
                 <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>
-                  Upload a floor plan image — AI will automatically extract room names and dimensions into the Dimensions tab.
+                  Upload any floor plan — AI reads the room names and dimensions exactly as printed, then you confirm the mapping.
                 </div>
 
                 {/* Upload box */}
@@ -3000,97 +3016,52 @@ High Rise Interiors Team`
                           });
 
                           // Use shared Claude helper — no CORS, no scattered API keys
+                          // Step 1: Claude reads the plan AS-IS — no mapping
                           const text = await callClaude({
-                            maxTokens: 1500,
+                            maxTokens: 2000,
                             images: [{ base64, mediaType: file.type || "image/jpeg" }],
-                            user: `Analyse this floor plan image carefully. Read all room labels and dimension text visible on the plan.
+                            user: `Read this floor plan image carefully.
 
-Return ONLY valid JSON (no markdown, no explanation):
+Extract EVERY room/space you can see, using the EXACT label text printed on the plan.
+Also read the dimension text printed inside or next to each room.
+
+Return ONLY valid JSON:
 {
-  "rooms": ["Master Bedroom", "Bedroom 2", "Living Room", "Kitchen", "Bathroom"],
-  "dimensions": {
-    "Master Bedroom": { "length": "14.8", "width": "12.4", "height": "9" },
-    "Bedroom 2":      { "length": "13.3", "width": "11.7", "height": "9" },
-    "Living Room":    { "length": "13.8", "width": "12.5", "height": "9" },
-    "Kitchen":        { "length": "8.0",  "width": "12.4", "height": "9" }
-  },
+  "detected": [
+    { "name": "MASTER BEDROOM", "length": "14.83", "width": "12.42", "height": "9", "raw": "14'10 x 12'5" },
+    { "name": "BEDROOM-2",      "length": "13.25", "width": "11.67", "height": "9", "raw": "13'3 x 11'8" },
+    { "name": "LIVING",         "length": "13.75", "width": "12.5",  "height": "9", "raw": "13'9 x 12'6" },
+    { "name": "KITCHEN",        "length": "8.0",   "width": "12.42", "height": "9", "raw": "8'0 x 12'5"  },
+    { "name": "TOILET",         "length": "5.75",  "width": "8.17",  "height": "9", "raw": "5'9 x 8'2"   }
+  ],
   "notes": "3 BHK flat, approx 1780 sq ft"
 }
 
-Critical rules:
-- Read EXACT dimension text on the plan (13'3" x 11'8" means length=13.25, width=11.67 in feet)
-- Convert feet+inches to decimal feet: 13'3" = 13.25, 8'2" = 8.17
-- Include ALL rooms: bedrooms, bathrooms, kitchen, living, dining, balcony, utility, puja, hallway, sitout, dressing
-- For "5'0 WIDE" style labels, use that as width and estimate depth from proportions
-- Default height = 9 feet unless stated
-- Use exact room names from the plan`
+Dimension conversion:
+- 13'3" → 13.25 (feet + inches/12)
+- 11'8" → 11.67
+- 14'10" → 14.83
+- If only width shown (e.g. "5'0 WIDE"), set length = width
+- Default height = 9 feet
+- Include ALL spaces: bedrooms, toilets, kitchen, living, dining, balcony, utility, puja, sitout, dressing, entrance`
                           });
+
                           const parsed = parseClaudeJSON(text);
+                          const detected = parsed.detected || [];
+                          if (!detected.length) throw new Error("No rooms detected in this image");
 
-                          if (!parsed.rooms?.length) throw new Error("No rooms detected");
-
-                          // Auto-populate form rooms and dimensions
-                          const detectedRooms = parsed.rooms.filter(r =>
-                            ROOMS.includes(r) || ROOMS.some(cr => cr.toLowerCase().includes(r.toLowerCase()) || r.toLowerCase().includes(cr.toLowerCase()))
-                          );
-                          // Smart room name mapping — handles variants like
-                          // "LIVING" → "Living Room", "MASTER BEDROOM" → "Master Bedroom" etc.
-                          const normalise = s => s.toLowerCase().trim()
-                            .replace(/master bed.*/,"master bedroom")
-                            .replace(/bed.?room.?2|bedroom-?2|bed 2/,"bedroom 2")
-                            .replace(/bed.?room.?3|bedroom-?3|bed 3/,"bedroom 3")
-                            .replace(/bed.?room.?4|bedroom-?4|bed 4/,"bedroom 4")
-                            .replace(/family.?dining|family\/dining|dining/,"dining area")
-                            .replace(/living.?dining|living\/dining/,"living room")
-                            .replace(/^living$/,"living room")
-                            .replace(/^kitchen$/,"kitchen")
-                            .replace(/toilet|bathroom|wc/,"bathroom")
-                            .replace(/balcony|terrace/,"balcony")
-                            .replace(/utility|store/,"utility")
-                            .replace(/dress.*/,"dressing")
-                            .replace(/sitout|sit out/,"sitout")
-                            .replace(/puja|prayer/,"puja room")
-                            .replace(/hall.*/,"hallway");
-
-                          const findMatch = (name) => {
-                            const n = normalise(name);
-                            return ROOMS.find(r => normalise(r) === n)
-                              || ROOMS.find(r => n.includes(normalise(r).split(" ")[0]))
-                              || ROOMS.find(r => normalise(r).includes(n.split(" ")[0]))
-                              || null;
-                          };
-
-                          const mappedRooms = (parsed.rooms||[]).map(findMatch).filter(Boolean);
-                          const uniqueRooms = [...new Set(mappedRooms)];
-
-                          // Build roomDetails from parsed dimensions
-                          const newRoomDetails = {};
-                          Object.entries(parsed.dimensions||{}).forEach(([roomName, dims]) => {
-                            const match = findMatch(roomName);
-                            if (match) {
-                              newRoomDetails[match] = {
-                                length: String(parseFloat(dims.length||0).toFixed(1)),
-                                width:  String(parseFloat(dims.width||0).toFixed(1)),
-                                height: String(parseFloat(dims.height||9).toFixed(1)),
-                                photos: [],
-                                subsections: {},
-                              };
-                            }
-                          });
-
+                          // Step 2: Show user a mapping dialog — they confirm which app-room each detected room maps to
+                          // Store raw detected data so the mapping UI can use it
                           setForm(f => ({
                             ...f,
-                            floorPlanData: parsed,
-                            rooms: uniqueRooms.length > 0 ? uniqueRooms : f.rooms,
-                            roomDetails: { ...f.roomDetails, ...newRoomDetails },
+                            floorPlanData: { detected, notes: parsed.notes },
+                            floorPlanPending: detected, // waiting for user to map
                           }));
 
-                          const count = Object.keys(newRoomDetails).length;
-                          showToast(`✅ Detected ${parsed.rooms.length} rooms, ${count} with dimensions — see Dimensions tab`, "success", 6000);
-
-                          if (count > 0) {
-                            setTimeout(() => setActiveTab("dimensions"), 1500);
-                          }
+                          showToast(
+                            `✅ Detected ${detected.length} spaces — review and confirm room mapping below`,
+                            "success", 5000
+                          );
 
                         } catch(err) {
                           console.error("Floor plan analysis error:", err);
@@ -3116,20 +3087,121 @@ Critical rules:
                           color:"#fff", border:"none", borderRadius:2, cursor:"pointer",
                           padding:"2px 8px", fontSize:10 }}>✕</button>
                     </div>
-                    {form.floorPlanData && (
-                      <div style={{ background:"#DCFCE7", border:"1px solid #86EFAC",
-                        borderRadius:3, padding:"10px 14px", fontSize:12, color:"#166534" }}>
-                        ✅ {form.floorPlanData.rooms?.length} rooms detected
-                        {form.floorPlanData.notes && ` · ${form.floorPlanData.notes}`}
-                        <div style={{ marginTop:4, fontSize:11 }}>
-                          Rooms auto-populated in <strong>Dimensions tab</strong>
+                    {/* ── Room Mapping UI ── */}
+                    {form.floorPlanPending && form.floorPlanPending.length > 0 && (
+                      <div style={{ marginTop:12, background:C.smoke, borderRadius:3,
+                        border:`1px solid ${C.line}`, padding:14 }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:C.teal,
+                          letterSpacing:2, textTransform:"uppercase", marginBottom:4 }}>
+                          🗂 Match Rooms — {form.floorPlanPending.length} detected
                         </div>
+                        <div style={{ fontSize:11, color:C.muted, marginBottom:12 }}>
+                          AI read these room names from your plan. Select which room in our app each one maps to:
+                        </div>
+
+                        {form.floorPlanPending.map((det, idx) => (
+                          <div key={idx} style={{ marginBottom:10, padding:"8px 12px",
+                            background:C.white, borderRadius:3, border:`1px solid ${C.line}` }}>
+                            <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                              {/* Detected name + dims */}
+                              <div style={{ flex:"0 0 auto" }}>
+                                <div style={{ fontSize:12, fontWeight:700, color:C.ink }}>{det.name}</div>
+                                <div style={{ fontSize:10, color:C.muted }}>
+                                  {det.raw || `${det.length}×${det.width} ft`}
+                                </div>
+                              </div>
+                              <div style={{ color:C.muted, fontSize:14 }}>→</div>
+                              {/* App room selector */}
+                              <select
+                                value={det._mapped || ""}
+                                onChange={e => {
+                                  const updated = form.floorPlanPending.map((d,i) =>
+                                    i===idx ? {...d, _mapped: e.target.value} : d
+                                  );
+                                  setF("floorPlanPending", updated);
+                                }}
+                                style={{ ...S.input, flex:1, minWidth:130, fontSize:12 }}>
+                                <option value="">— skip —</option>
+                                {ROOMS.map(r => <option key={r} value={r}>{r}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Auto-suggest button */}
+                        <button onClick={() => {
+                          // Smart auto-suggest based on keywords
+                          const suggest = (name) => {
+                            const n = name.toLowerCase();
+                            if (n.includes("master"))                          return "Master Bedroom";
+                            if (n.match(/bed.*[23]|bedroom.?[23]|[23].*bed/))  return n.includes("2") ? "Children Bedroom" : "Guest Bedroom";
+                            if (n.includes("bed"))                             return "Master Bedroom";
+                            if (n.includes("living") || n.includes("drawing") || n.includes("sitout")) return "Living Area";
+                            if (n.includes("dining") || n.includes("family")) return "Dining";
+                            if (n.includes("kitchen"))                         return "Kitchen";
+                            if (n.includes("bath") || n.includes("toilet") || n.includes("wc")) return "Bathroom";
+                            if (n.includes("balcon") || n.includes("terrace")) return "Balcony";
+                            if (n.includes("puja") || n.includes("pooja") || n.includes("prayer")) return "Pooja";
+                            if (n.includes("entrance") || n.includes("foyer") || n.includes("hall")) return "Entrance";
+                            if (n.includes("study") || n.includes("office"))  return "Study Room";
+                            return "";
+                          };
+                          const updated = form.floorPlanPending.map(d =>
+                            ({...d, _mapped: d._mapped || suggest(d.name)})
+                          );
+                          setF("floorPlanPending", updated);
+                        }} style={{ ...S.btn("ghost"), fontSize:11, marginBottom:10, width:"100%" }}>
+                          🤖 Auto-suggest mapping
+                        </button>
+
+                        {/* Apply button */}
+                        <button onClick={() => {
+                          const newRoomDetails = {};
+                          const mappedRooms = [];
+                          form.floorPlanPending.forEach(det => {
+                            const target = det._mapped;
+                            if (!target || !ROOMS.includes(target)) return;
+                            mappedRooms.push(target);
+                            newRoomDetails[target] = {
+                              length:      String(parseFloat(det.length||0).toFixed(1)),
+                              width:       String(parseFloat(det.width||0).toFixed(1)),
+                              height:      String(parseFloat(det.height||9).toFixed(1)),
+                              photos:      form.roomDetails?.[target]?.photos || [],
+                              subsections: form.roomDetails?.[target]?.subsections || {},
+                            };
+                          });
+                          const uniqueRooms = [...new Set(mappedRooms)];
+                          setForm(f => ({
+                            ...f,
+                            rooms: uniqueRooms.length > 0 ? uniqueRooms : f.rooms,
+                            roomDetails: { ...f.roomDetails, ...newRoomDetails },
+                            floorPlanPending: null, // clear mapping UI
+                          }));
+                          showToast(
+                            `✅ ${uniqueRooms.length} rooms populated in Dimensions tab`,
+                            "success", 5000
+                          );
+                          setTimeout(() => setActiveTab("dimensions"), 600);
+                        }} style={{ ...S.btn(), fontSize:12, width:"100%" }}>
+                          ✓ Apply to Dimensions Tab →
+                        </button>
                       </div>
                     )}
-                    <button onClick={()=>setActiveTab("dimensions")}
-                      style={{ ...S.btn(), marginTop:10, fontSize:11 }}>
-                      📐 Go to Dimensions →
-                    </button>
+
+                    {/* Already applied — show summary */}
+                    {form.floorPlanData && !form.floorPlanPending && (
+                      <div style={{ marginTop:10, background:"#DCFCE7", border:"1px solid #86EFAC",
+                        borderRadius:3, padding:"10px 14px", fontSize:12, color:"#166534" }}>
+                        ✅ {form.rooms.length} rooms populated
+                        {form.floorPlanData.notes && ` · ${form.floorPlanData.notes}`}
+                      </div>
+                    )}
+                    {!form.floorPlanPending && (
+                      <button onClick={()=>setActiveTab("dimensions")}
+                        style={{ ...S.btn(), marginTop:10, fontSize:11 }}>
+                        📐 Go to Dimensions →
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
