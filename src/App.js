@@ -656,9 +656,8 @@ function Select({ value, onChange, options, placeholder }) {
 
 // ── 3D Room Embed ────────────────────────────────────────────────────
 function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Room", rooms=[], roomDetails={} }) {
-  const mountRef    = useRef(null);
-  const cleanupRef  = useRef(null);
-  const dragRef     = useRef({ active:false, x:0, y:0, theta:0.8, phi:0.65, radius:8 });
+  const mountRef   = useRef(null);
+  const stateRef   = useRef(null); // holds { renderer, camera, scene, raf, drag }
   const [activeRoom, setActiveRoom] = useState(roomType);
   const [wall,  setWall]  = useState('#F0EDE8');
   const [floor, setFloor] = useState('#8B6340');
@@ -668,150 +667,167 @@ function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Roo
   const RW = Math.max(1, parseFloat(rd.width  || W));
   const RH = Math.max(1, parseFloat(rd.height || H));
 
+  // Destroy previous Three.js context
+  const destroyScene = () => {
+    const s = stateRef.current;
+    if (!s) return;
+    cancelAnimationFrame(s.raf);
+    window.removeEventListener('resize', s.onResize);
+    s.renderer.dispose();
+    if (s.mount && s.mount.contains(s.renderer.domElement))
+      s.mount.removeChild(s.renderer.domElement);
+    stateRef.current = null;
+  };
+
   useEffect(() => {
+    destroyScene();
     const mount = mountRef.current;
     if (!mount) return;
 
-    // Cleanup previous scene
-    if (cleanupRef.current) { cleanupRef.current(); cleanupRef.current = null; }
+    // Use setTimeout to ensure the DOM has painted and has real dimensions
+    const timer = setTimeout(() => {
+      const W2 = mount.clientWidth;
+      const H2 = mount.clientHeight;
 
-    const W2 = mount.clientWidth  || 600;
-    const H2 = mount.clientHeight || 400;
+      if (!W2 || !H2) {
+        console.warn('3D mount has no size:', W2, H2);
+        return;
+      }
 
-    // Scene
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#0D1B2A');
+      // Scene
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color('#0D1B2A');
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(50, W2/H2, 0.1, 200);
-    dragRef.current.radius = Math.max(RL, RW) * 1.6 + 2;
+      // Camera
+      const camera = new THREE.PerspectiveCamera(50, W2 / H2, 0.1, 200);
 
-    const updateCamera = () => {
-      const { theta, phi, radius } = dragRef.current;
-      camera.position.set(
-        radius * Math.sin(phi) * Math.sin(theta),
-        radius * Math.cos(phi),
-        radius * Math.sin(phi) * Math.cos(theta)
+      // Drag state
+      const drag = { active:false, x:0, y:0, theta:0.8, phi:0.65, radius: Math.max(RL,RW)*1.6+2 };
+
+      const updateCamera = () => {
+        const { theta, phi, radius } = drag;
+        camera.position.set(
+          radius * Math.sin(phi) * Math.sin(theta),
+          radius * Math.cos(phi),
+          radius * Math.sin(phi) * Math.cos(theta)
+        );
+        camera.lookAt(0, RH * 0.4, 0);
+        camera.updateProjectionMatrix();
+      };
+      drag.update = updateCamera;
+      updateCamera();
+
+      // Renderer
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(W2, H2);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      mount.appendChild(renderer.domElement);
+
+      // Lights
+      scene.add(new THREE.AmbientLight(0xfff5e0, 0.6));
+      const sun = new THREE.DirectionalLight(0xfff8e8, 1.2);
+      sun.position.set(RL, RH * 2, RW);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(1024, 1024);
+      sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 50;
+      sun.shadow.camera.left = sun.shadow.camera.bottom = -15;
+      sun.shadow.camera.right = sun.shadow.camera.top   =  15;
+      scene.add(sun);
+      const fill = new THREE.DirectionalLight(0xd0e8ff, 0.3);
+      fill.position.set(-RL, RH, -RW); scene.add(fill);
+      const pt = new THREE.PointLight(0xffe8c0, 0.4, RH * 5);
+      pt.position.set(0, RH * 0.9, 0); scene.add(pt);
+
+      // Floor
+      const floorMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(RW, RL),
+        new THREE.MeshStandardMaterial({ color: floor, roughness: 0.6 })
       );
-      camera.lookAt(0, RH * 0.4, 0);
-    };
-    dragRef.current.update = updateCamera;
-    updateCamera();
+      floorMesh.rotation.x = -Math.PI / 2;
+      floorMesh.receiveShadow = true;
+      scene.add(floorMesh);
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(W2, H2);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
-    mount.appendChild(renderer.domElement);
+      // Ceiling
+      const ceilMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(RW, RL),
+        new THREE.MeshStandardMaterial({ color: '#FAFAF8', roughness: 1, side: THREE.DoubleSide })
+      );
+      ceilMesh.rotation.x = Math.PI / 2;
+      ceilMesh.position.y = RH;
+      scene.add(ceilMesh);
 
-    // Lights
-    scene.add(new THREE.AmbientLight(0xfff5e0, 0.55));
-    const sun = new THREE.DirectionalLight(0xfff8e8, 1.2);
-    sun.position.set(RL * 0.8, RH * 2, RW * 0.8);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.camera.near = 0.1; sun.shadow.camera.far = 50;
-    sun.shadow.camera.left = sun.shadow.camera.bottom = -20;
-    sun.shadow.camera.right = sun.shadow.camera.top   =  20;
-    scene.add(sun);
-    scene.add(Object.assign(new THREE.DirectionalLight(0xd0e8ff, 0.3), {
-      position: new THREE.Vector3(-RL, RH, -RW)
-    }));
-    const pt = new THREE.PointLight(0xffe8c0, 0.5, RH * 4);
-    pt.position.set(0, RH * 0.9, 0);
-    scene.add(pt);
+      // Walls
+      const wallMat = new THREE.MeshStandardMaterial({ color: wall, roughness: 0.9, side: THREE.DoubleSide });
+      [
+        { w: RW, h: RH, pos: [0, RH/2, -RL/2], rot: [0, 0, 0] },
+        { w: RL, h: RH, pos: [-RW/2, RH/2, 0], rot: [0,  Math.PI/2, 0] },
+        { w: RL, h: RH, pos: [ RW/2, RH/2, 0], rot: [0, -Math.PI/2, 0] },
+      ].forEach(({ w, h, pos, rot }) => {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
+        m.position.set(...pos); m.rotation.set(...rot);
+        m.receiveShadow = true; scene.add(m);
+      });
 
-    // Materials
-    const floorMat = new THREE.MeshStandardMaterial({ color: floor, roughness: 0.6 });
-    const wallMat  = new THREE.MeshStandardMaterial({ color: wall,  roughness: 0.9, side: THREE.DoubleSide });
-    const ceilMat  = new THREE.MeshStandardMaterial({ color: '#FAFAF8', roughness: 1.0, side: THREE.DoubleSide });
-    const skirtMat = new THREE.MeshStandardMaterial({ color: '#D4CFCA', roughness: 0.7 });
+      // Skirting boards
+      const skirtMat = new THREE.MeshStandardMaterial({ color: '#D4CFCA', roughness: 0.7 });
+      [
+        [RW, [0, 0.04, -RL/2 + 0.02], [0, 0, 0]],
+        [RL, [-RW/2 + 0.02, 0.04, 0], [0, Math.PI/2, 0]],
+        [RL, [ RW/2 - 0.02, 0.04, 0], [0, Math.PI/2, 0]],
+      ].forEach(([size, pos, rot]) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(size, 0.08, 0.03), skirtMat);
+        m.position.set(...pos); m.rotation.set(...rot); scene.add(m);
+      });
 
-    // Floor
-    const floorM = new THREE.Mesh(new THREE.PlaneGeometry(RW, RL), floorMat);
-    floorM.rotation.x = -Math.PI / 2;
-    floorM.receiveShadow = true;
-    scene.add(floorM);
+      // Grid
+      const grid = new THREE.GridHelper(Math.max(RW, RL) * 3, 20, 0x1E3A4A, 0x172838);
+      grid.position.y = 0.001; scene.add(grid);
 
-    // Ceiling
-    const ceilM = new THREE.Mesh(new THREE.PlaneGeometry(RW, RL), ceilMat);
-    ceilM.rotation.x = Math.PI / 2;
-    ceilM.position.y = RH;
-    scene.add(ceilM);
+      // Animate
+      let raf;
+      const animate = () => { raf = requestAnimationFrame(animate); renderer.render(scene, camera); };
+      animate();
 
-    // Walls — back, left, right (front open for camera)
-    [
-      [new THREE.PlaneGeometry(RW, RH), [0, RH/2, -RL/2], [0, 0, 0]],
-      [new THREE.PlaneGeometry(RL, RH), [-RW/2, RH/2, 0], [0,  Math.PI/2, 0]],
-      [new THREE.PlaneGeometry(RL, RH), [ RW/2, RH/2, 0], [0, -Math.PI/2, 0]],
-    ].forEach(([geo, pos, rot]) => {
-      const m = new THREE.Mesh(geo, wallMat);
-      m.position.set(...pos); m.rotation.set(...rot);
-      m.receiveShadow = true; scene.add(m);
-    });
+      // Resize
+      const onResize = () => {
+        const nw = mount.clientWidth, nh = mount.clientHeight;
+        if (!nw || !nh) return;
+        camera.aspect = nw / nh; camera.updateProjectionMatrix();
+        renderer.setSize(nw, nh);
+      };
+      window.addEventListener('resize', onResize);
 
-    // Skirting boards
-    [
-      [RW, [0,     0.04, -RL/2 + 0.02], [0, 0, 0]],
-      [RL, [-RW/2 + 0.02, 0.04, 0],     [0, Math.PI/2, 0]],
-      [RL, [ RW/2 - 0.02, 0.04, 0],     [0, Math.PI/2, 0]],
-    ].forEach(([size, pos, rot]) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(size, 0.08, 0.03), skirtMat);
-      m.position.set(...pos); m.rotation.set(...rot); scene.add(m);
-    });
+      stateRef.current = { renderer, camera, scene, drag, mount, onResize,
+        get raf() { return raf; }, set raf(v) { raf = v; } };
 
-    // Grid
-    const grid = new THREE.GridHelper(Math.max(RW, RL) * 3, 24, 0x1E3A4A, 0x172838);
-    grid.position.y = 0.001; scene.add(grid);
+    }, 100); // 100ms delay to ensure DOM has real dimensions
 
-    // Animate loop
-    let raf;
-    const animate = () => { raf = requestAnimationFrame(animate); renderer.render(scene, camera); };
-    animate();
-
-    // Resize handler
-    const onResize = () => {
-      const nw = mount.clientWidth, nh = mount.clientHeight;
-      if (!nw || !nh) return;
-      camera.aspect = nw / nh; camera.updateProjectionMatrix();
-      renderer.setSize(nw, nh);
-    };
-    window.addEventListener('resize', onResize);
-
-    cleanupRef.current = () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', onResize);
-      renderer.dispose();
-      [floorMat, wallMat, ceilMat, skirtMat].forEach(m => m.dispose());
-      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
-    };
-
-    return () => { if (cleanupRef.current) { cleanupRef.current(); cleanupRef.current = null; } };
+    return () => { clearTimeout(timer); destroyScene(); };
   }, [activeRoom, RL, RW, RH, wall, floor]);
 
-  // Pointer events
+  // Pointer handlers
   const onDown = e => {
-    dragRef.current.active = true;
-    dragRef.current.x = e.touches ? e.touches[0].clientX : e.clientX;
-    dragRef.current.y = e.touches ? e.touches[0].clientY : e.clientY;
+    const s = stateRef.current; if (!s) return;
+    s.drag.active = true;
+    s.drag.x = e.touches ? e.touches[0].clientX : e.clientX;
+    s.drag.y = e.touches ? e.touches[0].clientY : e.clientY;
   };
-  const onUp   = () => { dragRef.current.active = false; };
+  const onUp   = () => { if (stateRef.current) stateRef.current.drag.active = false; };
   const onMove = e => {
-    if (!dragRef.current.active) return;
+    const s = stateRef.current; if (!s || !s.drag.active) return;
     const cx = e.touches ? e.touches[0].clientX : e.clientX;
     const cy = e.touches ? e.touches[0].clientY : e.clientY;
-    dragRef.current.theta -= (cx - dragRef.current.x) * 0.009;
-    dragRef.current.phi    = Math.max(0.1, Math.min(1.4, dragRef.current.phi + (cy - dragRef.current.y) * 0.009));
-    dragRef.current.x = cx; dragRef.current.y = cy;
-    dragRef.current.update?.();
+    s.drag.theta -= (cx - s.drag.x) * 0.009;
+    s.drag.phi    = Math.max(0.1, Math.min(1.4, s.drag.phi + (cy - s.drag.y) * 0.009));
+    s.drag.x = cx; s.drag.y = cy;
+    s.drag.update();
   };
   const onWheel = e => {
-    dragRef.current.radius = Math.max(2, Math.min(25, dragRef.current.radius + e.deltaY * 0.02));
-    dragRef.current.update?.();
+    const s = stateRef.current; if (!s) return;
+    s.drag.radius = Math.max(2, Math.min(25, s.drag.radius + e.deltaY * 0.02));
+    s.drag.update();
     e.preventDefault();
   };
 
@@ -819,21 +835,28 @@ function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Roo
   const FLOOR_OPTS = [['#8B6340','Teak'],['#C8A96E','Oak'],['#E8E4DC','Marble'],['#3A3530','Granite'],['#9A9590','Concrete']];
 
   return (
-    <div style={{ display:'flex', height:'calc(100vh - 100px)', background:'#0D1B2A' }}>
-      <div style={{ width:176, background:'#0A1520', padding:12, borderRight:'1px solid #1E2D3A', overflowY:'auto', flexShrink:0 }}>
+    <div style={{ display:'flex', width:'100%', height:'calc(100vh - 100px)', background:'#0D1B2A', overflow:'hidden' }}>
+
+      {/* Sidebar */}
+      <div style={{ width:176, minWidth:176, background:'#0A1520', padding:12,
+        borderRight:'1px solid #1E2D3A', overflowY:'auto', flexShrink:0 }}>
+
         {rooms.length > 1 && (
           <div style={{ marginBottom:14 }}>
             <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Room</div>
             {rooms.map(r=>(
               <button key={r} onClick={()=>setActiveRoom(r)}
-                style={{ display:'block',width:'100%',padding:'5px 8px',marginBottom:3,borderRadius:2,
-                  border:'none',cursor:'pointer',textAlign:'left',fontFamily:'inherit',fontSize:11,
-                  background:activeRoom===r?'#1A5276':'#1E2D3A',color:activeRoom===r?'#fff':'#5A8A9A'}}>
+                style={{ display:'block',width:'100%',padding:'5px 8px',marginBottom:3,
+                  borderRadius:2,border:'none',cursor:'pointer',textAlign:'left',
+                  fontFamily:'inherit',fontSize:11,
+                  background:activeRoom===r?'#1A5276':'#1E2D3A',
+                  color:activeRoom===r?'#fff':'#5A8A9A' }}>
                 {r}
               </button>
             ))}
           </div>
         )}
+
         <div style={{ marginBottom:12 }}>
           <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Wall</div>
           <div style={{ display:'flex',flexWrap:'wrap',gap:4 }}>
@@ -844,6 +867,7 @@ function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Roo
             ))}
           </div>
         </div>
+
         <div style={{ marginBottom:12 }}>
           <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Floor</div>
           <div style={{ display:'flex',flexWrap:'wrap',gap:4 }}>
@@ -854,17 +878,26 @@ function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Roo
             ))}
           </div>
         </div>
-        <div style={{ fontSize:10,color:'#3A5A6A',lineHeight:2,marginTop:12,borderTop:'1px solid #1E2D3A',paddingTop:10 }}>
+
+        <div style={{ fontSize:10,color:'#3A5A6A',lineHeight:2,marginTop:12,
+          borderTop:'1px solid #1E2D3A',paddingTop:10 }}>
           <div style={{ color:'#1A5276',fontWeight:700,marginBottom:4 }}>📐 {activeRoom}</div>
           <div>{RL}m × {RW}m × {RH}m</div>
           <div>{(RL*RW).toFixed(1)} m²</div>
-          <div style={{ marginTop:8,fontSize:9,color:'#2A4A5A',lineHeight:1.9 }}>Drag to orbit<br/>Scroll to zoom</div>
+          <div style={{ marginTop:8,fontSize:9,color:'#2A4A5A',lineHeight:1.9 }}>
+            Drag to orbit<br/>Scroll to zoom
+          </div>
         </div>
       </div>
-      <div ref={mountRef} style={{ flex:1, cursor:'grab', touchAction:'none' }}
+
+      {/* Canvas — explicit width/height so renderer knows size */}
+      <div ref={mountRef}
+        style={{ flex:1, minHeight:400, cursor:'grab', touchAction:'none', position:'relative' }}
         onMouseDown={onDown} onMouseUp={onUp} onMouseMove={onMove} onMouseLeave={onUp}
-        onTouchStart={onDown} onTouchEnd={onUp} onTouchMove={e=>{e.preventDefault();onMove(e);}}
-        onWheel={onWheel}/>
+        onTouchStart={onDown} onTouchEnd={onUp}
+        onTouchMove={e=>{ e.preventDefault(); onMove(e); }}
+        onWheel={onWheel}
+      />
     </div>
   );
 }
