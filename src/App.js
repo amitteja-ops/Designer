@@ -653,197 +653,222 @@ function Select({ value, onChange, options, placeholder }) {
 }
 
 
-// ── Room Planner (2D Floor Plan + 3D link) ──────────────────────────
+// ── Room Planner — Isometric 3D + Floor Plan ─────────────────────────
 function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Room", rooms=[], roomDetails={} }) {
-  const canvasRef  = useRef(null);
+  const isoRef   = useRef(null);
+  const planRef  = useRef(null);
   const [activeRoom, setActiveRoom] = useState(roomType);
-  const [wall,  setWall]  = useState('#F0EDE8');
-  const [floor, setFloor] = useState('#C8A96E');
-  const [scale, setScale]  = useState(60); // pixels per metre
+  const [wallCol,  setWallCol]  = useState('#E8E0D4');
+  const [floorCol, setFloorCol] = useState('#A0784A');
+  const [tab,      setTab]      = useState('iso'); // 'iso' | 'plan'
 
   const rd = roomDetails[activeRoom] || {};
   const RL = Math.max(1, parseFloat(rd.length || L));
   const RW = Math.max(1, parseFloat(rd.width  || W));
   const RH = Math.max(1, parseFloat(rd.height || H));
 
-  // Draw 2D floor plan on canvas
+  // ── Isometric 3D drawing ────────────────────────────────────────────
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = isoRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const CW = canvas.width;
-    const CH = canvas.height;
+    const CW = canvas.width, CH = canvas.height;
+    ctx.clearRect(0, 0, CW, CH);
 
-    const pw = RL * scale;  // plan width in px
-    const pd = RW * scale;  // plan depth in px
-    const ox = (CW - pw) / 2;  // origin x (centre)
-    const oy = (CH - pd) / 2;  // origin y (centre)
+    // Dark background
+    ctx.fillStyle = '#0D1B2A';
+    ctx.fillRect(0, 0, CW, CH);
 
-    // Clear
+    // Isometric projection helpers
+    // Scale: 1 metre = S pixels
+    const S = Math.min(CW / (RL + RW + 2), CH / (RL/2 + RW/2 + RH + 2)) * 1.1;
+    // Iso origin — centre-bottom of scene
+    const ox = CW * 0.5;
+    const oy = CH * 0.72;
+
+    // Convert 3D (x along length, y up, z along width) → 2D isometric
+    const iso = (x, y, z) => ({
+      px: ox + (x - z) * S * Math.cos(Math.PI/6),
+      py: oy - y * S - (x + z) * S * Math.sin(Math.PI/6)
+    });
+
+    const poly = (points, fill, stroke, lineW=1) => {
+      ctx.beginPath();
+      ctx.moveTo(points[0].px, points[0].py);
+      points.slice(1).forEach(p => ctx.lineTo(p.px, p.py));
+      ctx.closePath();
+      if (fill)   { ctx.fillStyle   = fill;  ctx.fill();   }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineW; ctx.stroke(); }
+    };
+
+    // Shade colours
+    const shade = (hex, amt) => {
+      const n = parseInt(hex.slice(1), 16);
+      const r = Math.max(0, Math.min(255, (n>>16) + amt));
+      const g = Math.max(0, Math.min(255, ((n>>8)&0xff) + amt));
+      const b = Math.max(0, Math.min(255, (n&0xff) + amt));
+      return `rgb(${r},${g},${b})`;
+    };
+
+    const wallLeft  = shade(wallCol, -30);   // left face (darker)
+    const wallRight = shade(wallCol, -10);   // right face (medium)
+    const wallTop   = shade(wallCol, 20);    // top/front (lighter)
+    const floorTop  = shade(floorCol, 10);
+    const floorSide = shade(floorCol, -20);
+    const edge = 'rgba(0,0,0,0.25)';
+
+    // ── FLOOR ──
+    poly([iso(0,0,0), iso(RL,0,0), iso(RL,0,RW), iso(0,0,RW)], floorTop, edge);
+
+    // Floor tile lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 0.5;
+    for (let i=1; i<RL; i++) {
+      const a = iso(i,0,0), b = iso(i,0,RW);
+      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
+    }
+    for (let j=1; j<RW; j++) {
+      const a = iso(0,0,j), b = iso(RL,0,j);
+      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
+    }
+
+    // ── BACK-LEFT WALL (along length) ──
+    poly([iso(0,0,0), iso(RL,0,0), iso(RL,RH,0), iso(0,RH,0)], wallLeft, edge);
+
+    // Wall tile lines (horizontal)
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+    ctx.lineWidth = 0.5;
+    for (let h=0.5; h<RH; h+=0.5) {
+      const a = iso(0,h,0), b = iso(RL,h,0);
+      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
+    }
+
+    // ── BACK-RIGHT WALL (along width) ──
+    poly([iso(0,0,0), iso(0,0,RW), iso(0,RH,RW), iso(0,RH,0)], wallRight, edge);
+
+    for (let h=0.5; h<RH; h+=0.5) {
+      const a = iso(0,h,0), b = iso(0,h,RW);
+      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
+    }
+
+    // ── CEILING (semi-transparent) ──
+    ctx.globalAlpha = 0.18;
+    poly([iso(0,RH,0), iso(RL,RH,0), iso(RL,RH,RW), iso(0,RH,RW)], '#ffffff', null);
+    ctx.globalAlpha = 1.0;
+
+    // ── CEILING EDGES ──
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1.5;
+    [[iso(0,RH,0),iso(RL,RH,0)],[iso(0,RH,0),iso(0,RH,RW)],
+     [iso(RL,RH,0),iso(RL,RH,RW)],[iso(0,RH,RW),iso(RL,RH,RW)]].forEach(([a,b]) => {
+      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
+    });
+
+    // ── SKIRTING BOARDS ──
+    const skH = 0.08;
+    poly([iso(0,0,0),iso(RL,0,0),iso(RL,skH,0),iso(0,skH,0)], shade(wallCol,-50), null);
+    poly([iso(0,0,0),iso(0,0,RW),iso(0,skH,RW),iso(0,skH,0)], shade(wallCol,-40), null);
+
+    // ── DIMENSION LABELS ──
+    ctx.fillStyle = '#1A5276';
+    ctx.font = 'bold 13px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+
+    // Length label
+    const lMid = iso(RL/2, 0, 0);
+    ctx.fillText(`${RL}m`, lMid.px, lMid.py + 18);
+
+    // Width label
+    const wMid = iso(0, 0, RW/2);
+    ctx.fillText(`${RW}m`, wMid.px - 18, wMid.py + 8);
+
+    // Height label
+    const hMid = iso(0, RH/2, 0);
+    ctx.save();
+    ctx.translate(hMid.px - 22, hMid.py);
+    ctx.fillStyle = '#1A5276';
+    ctx.fillText(`${RH}m`, 0, 0);
+    ctx.restore();
+
+    // ── ROOM LABEL ──
+    const centre = iso(RL/2, 0.05, RW/2);
+    ctx.fillStyle = 'rgba(15,25,35,0.75)';
+    ctx.beginPath();
+    ctx.roundRect(centre.px - 65, centre.py - 16, 130, 32, 4);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px DM Sans, sans-serif';
+    ctx.fillText(activeRoom, centre.px, centre.py);
+    ctx.fillStyle = '#1A5276';
+    ctx.font = '10px DM Sans, sans-serif';
+    ctx.fillText(`${(RL*RW).toFixed(1)} m²`, centre.px, centre.py + 14);
+
+    // ── FLOOR EDGE (thickness) ──
+    const floorT = 0.05;
+    poly([iso(0,0,0),iso(RL,0,0),iso(RL,-floorT,0),iso(0,-floorT,0)], floorSide, null);
+    poly([iso(0,0,0),iso(0,0,RW),iso(0,-floorT,RW),iso(0,-floorT,0)], floorSide, null);
+
+  }, [activeRoom, RL, RW, RH, wallCol, floorCol]);
+
+  // ── Floor plan 2D ───────────────────────────────────────────────────
+  useEffect(() => {
+    const canvas = planRef.current;
+    if (!canvas || tab !== 'plan') return;
+    const ctx = canvas.getContext('2d');
+    const CW = canvas.width, CH = canvas.height;
     ctx.clearRect(0, 0, CW, CH);
     ctx.fillStyle = '#0D1B2A';
     ctx.fillRect(0, 0, CW, CH);
 
+    const S = Math.min((CW - 100) / RL, (CH - 100) / RW) * 0.82;
+    const ox = (CW - RL*S) / 2;
+    const oy = (CH - RW*S) / 2;
+
     // Grid
-    ctx.strokeStyle = '#1E3A4A';
-    ctx.lineWidth = 0.5;
-    for (let x = 0; x <= CW; x += scale) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CH); ctx.stroke();
-    }
-    for (let y = 0; y <= CH; y += scale) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CW, y); ctx.stroke();
-    }
+    ctx.strokeStyle = '#1E3A4A'; ctx.lineWidth = 0.5;
+    for (let x=0; x<=CW; x+=S) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CH); ctx.stroke(); }
+    for (let y=0; y<=CH; y+=S) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CW,y); ctx.stroke(); }
 
-    // Floor fill
-    ctx.fillStyle = floor;
-    ctx.fillRect(ox, oy, pw, pd);
-
-    // Floor pattern (wood grain lines)
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-    ctx.lineWidth = 1;
-    for (let x = ox; x < ox + pw; x += 12) {
-      ctx.beginPath(); ctx.moveTo(x, oy); ctx.lineTo(x, oy + pd); ctx.stroke();
-    }
-
-    // Walls (thick border)
-    ctx.strokeStyle = wall;
-    ctx.lineWidth = 14;
-    ctx.strokeRect(ox, oy, pw, pd);
-
-    // Wall inner line
-    ctx.strokeStyle = '#888';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(ox + 7, oy + 7, pw - 14, pd - 14);
-
-    // Dimensions — length
-    ctx.fillStyle = '#1A5276';
-    ctx.font = 'bold 13px DM Sans, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${RL}m`, ox + pw/2, oy - 14);
-    // Arrow heads
-    ctx.strokeStyle = '#1A5276';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(ox, oy - 10); ctx.lineTo(ox + pw, oy - 10); ctx.stroke();
-    [ox, ox + pw].forEach(x => {
-      ctx.beginPath(); ctx.moveTo(x, oy - 14); ctx.lineTo(x, oy - 6); ctx.stroke();
-    });
-
-    // Dimensions — width
-    ctx.save();
-    ctx.translate(ox - 14, oy + pd/2);
-    ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = '#1A5276';
-    ctx.fillText(`${RW}m`, 0, 0);
-    ctx.restore();
-    ctx.strokeStyle = '#1A5276';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(ox - 10, oy); ctx.lineTo(ox - 10, oy + pd); ctx.stroke();
-    [oy, oy + pd].forEach(y => {
-      ctx.beginPath(); ctx.moveTo(ox - 14, y); ctx.lineTo(ox - 6, y); ctx.stroke();
-    });
-
-    // Room label
-    ctx.fillStyle = 'rgba(15,25,35,0.7)';
-    ctx.fillRect(ox + pw/2 - 70, oy + pd/2 - 20, 140, 36);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px DM Sans, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(activeRoom, ox + pw/2, oy + pd/2 - 2);
-    ctx.font = '11px DM Sans, sans-serif';
-    ctx.fillStyle = '#1A5276';
-    ctx.fillText(`${(RL*RW).toFixed(1)} m²`, ox + pw/2, oy + pd/2 + 14);
-
-    // North arrow
-    ctx.fillStyle = '#1A5276';
-    ctx.font = 'bold 11px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('N ↑', 12, 24);
-
-    // Scale bar
-    const barW = scale; // 1 metre
-    ctx.fillStyle = '#1A5276';
-    ctx.fillRect(CW - barW - 20, CH - 24, barW, 4);
-    ctx.fillStyle = '#fff';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('1m', CW - barW/2 - 20, CH - 10);
-
-  }, [activeRoom, RL, RW, wall, floor, scale]);
-
-  // 3D view elevation sketch (right side)
-  useEffect(() => {
-    const canvas = document.getElementById('elev-canvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const CW = canvas.width, CH = canvas.height;
-
-    ctx.clearRect(0, 0, CW, CH);
-    ctx.fillStyle = '#0A1520';
-    ctx.fillRect(0, 0, CW, CH);
-
-    const s = Math.min(CW / (RL + 1), CH / (RH + 1)) * 0.7;
-    const ox = (CW - RL * s) / 2;
-    const oy = CH - (CH - RH * s) / 2;
-
-    // Floor line
-    ctx.strokeStyle = '#C8A96E';
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + RL*s, oy); ctx.stroke();
+    // Floor
+    ctx.fillStyle = floorCol; ctx.fillRect(ox, oy, RL*S, RW*S);
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 1;
+    for (let i=1; i<RL; i++) { ctx.beginPath(); ctx.moveTo(ox+i*S,oy); ctx.lineTo(ox+i*S,oy+RW*S); ctx.stroke(); }
+    for (let j=1; j<RW; j++) { ctx.beginPath(); ctx.moveTo(ox,oy+j*S); ctx.lineTo(ox+RL*S,oy+j*S); ctx.stroke(); }
 
     // Walls
-    ctx.strokeStyle = wall;
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    ctx.moveTo(ox, oy);
-    ctx.lineTo(ox, oy - RH*s);
-    ctx.lineTo(ox + RL*s, oy - RH*s);
-    ctx.lineTo(ox + RL*s, oy);
-    ctx.stroke();
+    ctx.strokeStyle = wallCol; ctx.lineWidth = 16;
+    ctx.strokeRect(ox, oy, RL*S, RW*S);
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1;
+    ctx.strokeRect(ox+8, oy+8, RL*S-16, RW*S-16);
 
-    // Ceiling line
-    ctx.strokeStyle = '#FAFAF8';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6,4]);
-    ctx.beginPath(); ctx.moveTo(ox, oy - RH*s); ctx.lineTo(ox + RL*s, oy - RH*s); ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Height dimension
-    ctx.strokeStyle = '#1A5276';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(ox - 20, oy); ctx.lineTo(ox - 20, oy - RH*s); ctx.stroke();
-    [oy, oy - RH*s].forEach(y => {
-      ctx.beginPath(); ctx.moveTo(ox - 24, y); ctx.lineTo(ox - 16, y); ctx.stroke();
-    });
-    ctx.save();
-    ctx.translate(ox - 32, oy - RH*s/2);
-    ctx.rotate(-Math.PI/2);
-    ctx.fillStyle = '#1A5276';
-    ctx.font = 'bold 12px DM Sans, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${RH}m`, 0, 0);
-    ctx.restore();
+    // Dims
+    ctx.fillStyle = '#1A5276'; ctx.font = 'bold 12px DM Sans,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`${RL}m`, ox+RL*S/2, oy-12);
+    ctx.save(); ctx.translate(ox-12, oy+RW*S/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText(`${RW}m`, 0, 0); ctx.restore();
 
     // Label
-    ctx.fillStyle = '#3A5A6A';
-    ctx.font = '10px DM Sans, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Front Elevation', CW/2, CH - 8);
+    ctx.fillStyle = 'rgba(15,25,35,0.75)'; ctx.beginPath();
+    ctx.roundRect(ox+RL*S/2-65, oy+RW*S/2-18, 130, 36, 4); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px DM Sans,sans-serif';
+    ctx.fillText(activeRoom, ox+RL*S/2, oy+RW*S/2-2);
+    ctx.fillStyle = '#1A5276'; ctx.font = '10px DM Sans,sans-serif';
+    ctx.fillText(`${(RL*RW).toFixed(1)} m²`, ox+RL*S/2, oy+RW*S/2+14);
 
-  }, [activeRoom, RL, RH, wall, scale]);
+  }, [activeRoom, RL, RW, wallCol, floorCol, tab]);
 
-  const WALL_OPTS  = [['#F0EDE8','White'],['#E8D5B7','Beige'],['#8FAF8F','Sage'],['#3A3A3A','Charcoal'],['#C0614A','Terracotta'],['#1B2A4A','Navy']];
-  const FLOOR_OPTS = [['#8B6340','Teak'],['#C8A96E','Oak'],['#E8E4DC','Marble'],['#3A3530','Granite'],['#9A9590','Concrete']];
+  const WALL_OPTS  = [['#E8E0D4','White'],['#E8D5B7','Beige'],['#8FAF8F','Sage'],['#5A5A5A','Charcoal'],['#C0614A','Terracotta'],['#1B2A4A','Navy']];
+  const FLOOR_OPTS = [['#A0784A','Teak'],['#C8A96E','Oak'],['#E8E4DC','Marble'],['#4A4540','Granite'],['#9A9590','Concrete']];
 
   return (
     <div style={{ display:'flex', height:'calc(100vh - 100px)', background:'#0D1B2A', overflow:'hidden' }}>
-
       {/* Sidebar */}
       <div style={{ width:180, minWidth:180, background:'#0A1520', padding:14,
         borderRight:'1px solid #1E2D3A', overflowY:'auto', flexShrink:0 }}>
 
         {rooms.length > 1 && (
           <div style={{ marginBottom:14 }}>
-            <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Switch Room</div>
+            <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Room</div>
             {rooms.map(r=>(
               <button key={r} onClick={()=>setActiveRoom(r)}
                 style={{ display:'block',width:'100%',padding:'5px 8px',marginBottom:3,
@@ -861,84 +886,58 @@ function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Roo
           <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Wall Colour</div>
           <div style={{ display:'flex',flexWrap:'wrap',gap:4 }}>
             {WALL_OPTS.map(([c,n])=>(
-              <button key={c} title={n} onClick={()=>setWall(c)}
+              <button key={c} title={n} onClick={()=>setWallCol(c)}
                 style={{ width:26,height:26,borderRadius:2,cursor:'pointer',background:c,
-                  border:wall===c?'2px solid #1A5276':'1px solid #2A3A4A' }}/>
+                  border:wallCol===c?'2px solid #1A5276':'1px solid #2A3A4A' }}/>
             ))}
-          </div>
-          <div style={{ fontSize:9,color:'#3A5A6A',marginTop:4 }}>
-            {WALL_OPTS.find(([c])=>c===wall)?.[1]||''}
           </div>
         </div>
 
         <div style={{ marginBottom:12 }}>
-          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Floor Material</div>
+          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Floor</div>
           <div style={{ display:'flex',flexWrap:'wrap',gap:4 }}>
             {FLOOR_OPTS.map(([c,n])=>(
-              <button key={c} title={n} onClick={()=>setFloor(c)}
+              <button key={c} title={n} onClick={()=>setFloorCol(c)}
                 style={{ width:26,height:26,borderRadius:2,cursor:'pointer',background:c,
-                  border:floor===c?'2px solid #1A5276':'1px solid #2A3A4A' }}/>
+                  border:floorCol===c?'2px solid #1A5276':'1px solid #2A3A4A' }}/>
             ))}
           </div>
-          <div style={{ fontSize:9,color:'#3A5A6A',marginTop:4 }}>
-            {FLOOR_OPTS.find(([c])=>c===floor)?.[1]||''}
-          </div>
         </div>
 
-        <div style={{ marginBottom:12 }}>
-          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Zoom</div>
-          <input type="range" min={30} max={120} value={scale}
-            onChange={e=>setScale(Number(e.target.value))}
-            style={{ width:'100%', accentColor:'#1A5276' }}/>
-        </div>
-
-        <div style={{ fontSize:10,color:'#3A5A6A',lineHeight:1.9,marginTop:12,
+        <div style={{ fontSize:10,color:'#3A5A6A',lineHeight:2,marginTop:12,
           borderTop:'1px solid #1E2D3A',paddingTop:10 }}>
-          <div style={{ color:'#1A5276',fontWeight:700,marginBottom:6 }}>📐 {activeRoom}</div>
-          <div>Length: {RL}m</div>
-          <div>Width:  {RW}m</div>
-          <div>Height: {RH}m</div>
-          <div style={{ marginTop:4,color:'#1A5276',fontWeight:700 }}>{(RL*RW).toFixed(1)} m²</div>
+          <div style={{ color:'#1A5276',fontWeight:700,marginBottom:4 }}>📐 {activeRoom}</div>
+          <div>{RL}m × {RW}m × {RH}m</div>
+          <div>{(RL*RW).toFixed(1)} m²</div>
         </div>
       </div>
 
-      {/* Plans */}
+      {/* Canvas area */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-
         {/* Tab bar */}
-        <div style={{ background:'#0A1520', padding:'8px 16px', display:'flex',
+        <div style={{ background:'#0A1520', padding:'6px 16px', display:'flex',
           gap:8, borderBottom:'1px solid #1E2D3A', alignItems:'center' }}>
-          <span style={{ fontSize:10,color:'#3A5A6A',letterSpacing:2 }}>
-            FLOOR PLAN · {RL}m × {RW}m · {(RL*RW).toFixed(1)} m² · Height {RH}m
-          </span>
+          {[['iso','🏠 3D Isometric'],['plan','📐 Floor Plan']].map(([v,label])=>(
+            <button key={v} onClick={()=>setTab(v)}
+              style={{ padding:'4px 14px', borderRadius:2, cursor:'pointer', border:'none',
+                fontFamily:'inherit', fontSize:10, fontWeight:700, letterSpacing:1,
+                background:tab===v?'#1A5276':'#1E2D3A',
+                color:tab===v?'#fff':'#5A8A9A' }}>
+              {label}
+            </button>
+          ))}
           <span style={{ marginLeft:'auto', fontSize:9, color:'#2A4A5A' }}>
-            Inputs from Dimensions tab
+            Inputs from Dimensions tab · {RL}m × {RW}m × {RH}m high
           </span>
         </div>
 
-        {/* Main canvas area */}
-        <div style={{ flex:1, display:'flex', overflow:'hidden' }}>
-          {/* Floor plan (2D top view) */}
-          <div style={{ flex:2, position:'relative', overflow:'hidden' }}>
-            <canvas ref={canvasRef} width={700} height={500}
-              style={{ width:'100%', height:'100%', display:'block' }}/>
-            <div style={{ position:'absolute', top:8, left:8,
-              fontSize:9,letterSpacing:2,color:'#3A5A6A',textTransform:'uppercase' }}>
-              Floor Plan — Top View
-            </div>
-          </div>
-
-          {/* Elevation (front view) */}
-          <div style={{ flex:1, borderLeft:'1px solid #1E2D3A', position:'relative' }}>
-            <canvas id="elev-canvas" width={350} height={500}
-              style={{ width:'100%', height:'100%', display:'block' }}/>
-            <div style={{ position:'absolute', top:8, left:8,
-              fontSize:9,letterSpacing:2,color:'#3A5A6A',textTransform:'uppercase' }}>
-              Elevation — Front View
-            </div>
-          </div>
+        {/* Canvases */}
+        <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+          <canvas ref={isoRef} width={900} height={600}
+            style={{ width:'100%', height:'100%', display: tab==='iso' ? 'block' : 'none' }}/>
+          <canvas ref={planRef} width={900} height={600}
+            style={{ width:'100%', height:'100%', display: tab==='plan' ? 'block' : 'none' }}/>
         </div>
-
       </div>
     </div>
   );
