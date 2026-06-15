@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
-import * as THREE from "three";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { sb, toRow, fromRow, TABLE } from "./supabase";
 
 const ROOMS = ["Drawing Room","Living Area","Dining","Master Bedroom","Children Bedroom","Guest Bedroom","Kitchen","Pooja","Entrance","Balcony","Bathroom","Study Room"];
@@ -2425,7 +2424,7 @@ High Rise Interiors Team`
           <span>🖱 Drag to orbit</span>
           <span>⚲ Scroll to zoom</span>
           <span>📐 Uses dimensions from <strong style={{color:C.teal}}>Dimensions tab</strong></span>
-          <span style={{marginLeft:"auto"}}>Room: {RL}m × {RW}m × {RH}m high = {(RL*RW).toFixed(1)} m²</span>
+          <span style={{marginLeft:"auto"}}>Room: {L}m × {W}m × {H}m high = {(L*W).toFixed(1)} m²</span>
         </div>
         <Room3DEmbed length={L} width={W} height={H} roomType={firstRoom} rooms={rooms} roomDetails={selected.roomDetails||{}}/>
       </div>
