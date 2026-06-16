@@ -324,18 +324,16 @@ const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
 
 // ── Universal Claude API helper — always goes through /api/claude proxy ──
 const callClaude = async ({ system, user, images=[], maxTokens=1000 }) => {
-  const content = [];
-  // Add images first
+  const msgContent = [];
   images.forEach(({ base64, mediaType }) => {
-    content.push({ type:"image", source:{ type:"base64", media_type:mediaType, data:base64 } });
+    msgContent.push({ type:"image", source:{ type:"base64", media_type:mediaType, data:base64 } });
   });
-  // Add text prompt
-  content.push({ type:"text", text:user });
+  msgContent.push({ type:"text", text:user });
 
   const body = {
     model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
-    messages: [{ role:"user", content }],
+    messages: [{ role:"user", content:msgContent }],
   };
   if (system) body.system = system;
 
@@ -345,8 +343,13 @@ const callClaude = async ({ system, user, images=[], maxTokens=1000 }) => {
     body:    JSON.stringify(body),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || `Claude API error ${res.status}`);
+  // Read as text first — proxy may return HTML error pages
+  const raw = await res.text();
+  let data;
+  try { data = JSON.parse(raw); }
+  catch(_) { throw new Error(`Proxy returned non-JSON (${res.status}): ${raw.slice(0,150)}`); }
+
+  if (!res.ok || data.error) throw new Error(data.error || `Claude API error ${res.status}`);
   const text = data.content?.[0]?.text || "";
   return text;
 };
@@ -3078,14 +3081,11 @@ Rules for reading dimensions:
 
                           console.log("Claude response (first 400 chars):", text.slice(0, 400));
 
-                          // Show raw response so we can debug
-                          showToast("AI replied: " + text.slice(0, 120), "info", 10000);
-                          console.log("FULL Claude response:", text);
-
+                          console.log("Claude floor plan response:", text.slice(0,300));
                           let parsed;
                           try { parsed = parseClaudeJSON(text); }
                           catch(pe) {
-                            showToast("Parse failed: " + text.slice(0, 150), "error", 10000);
+                            showToast("⚠️ AI response format error — " + text.slice(0,100), "error", 8000);
                             throw new Error("Parse error: " + pe.message);
                           }
 
