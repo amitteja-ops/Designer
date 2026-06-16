@@ -540,6 +540,10 @@ const C = {
   violet: "#BF5AF2",
   rust:   "#FF453A",
   red:    "#FF453A",
+  // Legacy aliases — keep blank page away
+  light:  "rgba(255,255,255,0.06)",   // was light smoke bg
+  dark:   "rgba(0,0,0,0.25)",         // was dark overlay
+  border: "rgba(255,255,255,0.18)",   // was border colour
 };
 
 const S = {
