@@ -627,6 +627,32 @@ const S = {
     border:      active ? "1px solid rgba(10,132,255,0.5)" : `1px solid ${IOS.border}`,
     boxShadow:   active ? IOS.glow("#0A84FF")     : IOS.shadow,
   }),
+  // Status badge — coloured pill per status
+  badge: (status) => {
+    const cfg = {
+      Lead:          { bg:"rgba(255,159,10,0.18)",  color:"#FF9F0A", border:"rgba(255,159,10,0.4)"  },
+      Active:        { bg:"rgba(10,132,255,0.18)",  color:"#0A84FF", border:"rgba(10,132,255,0.4)"  },
+      "In Progress": { bg:"rgba(191,90,242,0.18)",  color:"#BF5AF2", border:"rgba(191,90,242,0.4)"  },
+      Completed:     { bg:"rgba(48,209,88,0.18)",   color:"#30D158", border:"rgba(48,209,88,0.4)"   },
+      "On Hold":     { bg:"rgba(255,69,58,0.18)",   color:"#FF453A", border:"rgba(255,69,58,0.4)"   },
+    }[status] || { bg:"rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.6)", border:"rgba(255,255,255,0.2)" };
+    return {
+      display:"inline-block", padding:"3px 10px", borderRadius:20,
+      fontSize:10, fontWeight:700, letterSpacing:0.5,
+      background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}`,
+    };
+  },
+  // Tab button — for list filter tabs and form tabs
+  tab: (active) => ({
+    padding:"7px 14px", borderRadius:10, border:"none",
+    cursor:"pointer", fontFamily:"inherit", fontSize:12, fontWeight:600,
+    transition:"all 0.18s ease",
+    backdropFilter:IOS.blur, WebkitBackdropFilter:IOS.blur,
+    background: active ? "rgba(10,132,255,0.25)" : "rgba(255,255,255,0.07)",
+    color:       active ? "#0A84FF"               : "rgba(255,255,255,0.45)",
+    boxShadow:   active ? IOS.glow("#0A84FF")     : "none",
+    border:      active ? "1px solid rgba(10,132,255,0.4)" : "1px solid rgba(255,255,255,0.12)",
+  }),
 };
 
 // ── Signature Pad Component ──────────────────────────────────────────
