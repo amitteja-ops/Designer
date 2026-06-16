@@ -3078,9 +3078,16 @@ Rules for reading dimensions:
 
                           console.log("Claude response (first 400 chars):", text.slice(0, 400));
 
+                          // Show raw response so we can debug
+                          showToast("AI replied: " + text.slice(0, 120), "info", 10000);
+                          console.log("FULL Claude response:", text);
+
                           let parsed;
                           try { parsed = parseClaudeJSON(text); }
-                          catch(pe) { throw new Error("Could not read AI response: " + pe.message + " | Got: " + text.slice(0,80)); }
+                          catch(pe) {
+                            showToast("Parse failed: " + text.slice(0, 150), "error", 10000);
+                            throw new Error("Parse error: " + pe.message);
+                          }
 
                           const detected = (parsed.detected || []).filter(d => d.name);
                           if (!detected.length) throw new Error("No rooms detected. Check browser console for AI response.");
