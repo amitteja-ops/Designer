@@ -1611,147 +1611,135 @@ Hyderabad, Telangana`
 
   // ── Status Change Email Agent ─────────────────────────────────────────
   // Triggered automatically whenever client status changes
-  const statusEmailAgent = async (client, oldStatus, newStatus) => {
+  const statusEmailAgent = (client, oldStatus, newStatus) => {
     if (!client.email) {
-      showToast("No email address for this client", "error");
-      return;
+      showToast("No email — add client email first", "error"); return;
     }
 
-    // Compute doc term locally — don't rely on outer scope
-    const agentDocTerm = (!newStatus || newStatus === "Lead") ? "Quotation" : "Order";
-    const refPrefix    = (!newStatus || newStatus === "Lead") ? "HRI-Q" : "HRI-O";
+    const agentDocTerm = (!newStatus||newStatus==="Lead") ? "Quotation" : "Order";
+    const refPrefix    = (!newStatus||newStatus==="Lead") ? "HRI-Q" : "HRI-O";
     const quoteRef     = `${refPrefix}-${String(client.id||"").slice(-6).padStart(6,"0")}-${new Date().getFullYear()}`;
     const quotation    = client.quotation ? `₹${Number(client.quotation).toLocaleString("en-IN")}` : "As discussed";
     const validTill    = new Date(); validTill.setDate(validTill.getDate()+3);
     const validDate    = validTill.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+    const advance      = client.quotation ? `₹${Math.round(Number(client.quotation)*0.35).toLocaleString("en-IN")}` : "35% of total";
+    const project      = `${client.projectType||"Interior"} at ${client.address||"your property"}`;
 
-    showToast(`📧 Composing ${newStatus} email for ${client.name}…`, "info");
+    // Context-rich templates per status
+    const EMAILS = {
+      Lead: {
+        sub: `Your Interior Design Quotation — ${quoteRef} | High Rise Interiors`,
+        body:
+`Dear ${client.name},
 
-    let emailBody    = "";
-    let emailSubject = "";
+Thank you for choosing High Rise Interiors! We are delighted to present your quotation.
 
-    // Try AI first via proxy, fall back to templates
-    try {
-      const emailText = await callClaude({
-        maxTokens: 500,
-        system: `You are the email agent for High Rise Interiors, Hyderabad. Write professional warm emails under 100 words. Respond with JSON only: { "subject": "...", "body": "..." }`,
-        user: `Write a ${newStatus} status email for ${client.name}. ${agentDocTerm} ref: ${quoteRef}. Value: ${quotation}. ${newStatus==="Lead"?"Quotation expires "+validDate+".":""} Sign as "High Rise Interiors Team".`
-      });
-      const ep = parseClaudeJSON(emailText);
-      if (ep.subject && ep.body) {
-        emailSubject = ep.subject;
-        emailBody    = ep.body;
-      }
-    } catch(aiErr) {
-      console.warn("AI email failed, using template:", aiErr.message);
-    }
+Quotation Ref : ${quoteRef}
+Project       : ${project}
+Total Value   : ${quotation}
+Valid Until   : ${validDate} (3 days only)
 
-    if (!emailSubject) {
-      const templates = {
-        Lead: {
-          subject: `High Rise Interiors — Your Quotation ${quoteRef} (Valid till ${validDate})`,
-          body: `Dear ${client.name},
-
-Thank you for your interest in High Rise Interiors.
-
-${docTerm} Ref: ${quoteRef}
-Value: ${quotation}
-
-⚠️ This quotation is valid until ${validDate}. Please confirm at the earliest to lock in the pricing.
-
+To confirm, please make the advance payment of ${advance}.
 Kindly find the detailed project report attached.
 
 Warm regards,
-High Rise Interiors Team`
-        },
-        Active: {
-          subject: `Project Confirmed — ${quoteRef} | High Rise Interiors`,
-          body: `Dear ${client.name},
+High Rise Interiors, Hyderabad`
+      },
+      Active: {
+        sub: `Project Confirmed — ${quoteRef} | High Rise Interiors`,
+        body:
+`Dear ${client.name},
 
-Welcome aboard! Your project is now confirmed.
+Your project is confirmed! We are excited to begin.
 
-${docTerm} Ref: ${quoteRef}
-Value: ${quotation}
+Order Ref     : ${quoteRef}
+Project       : ${project}
+Total Value   : ${quotation}
 
-To commence work, please make the advance payment (35%). Our team will contact you within 48 hours to schedule the kickoff.
+Next Steps:
+1. Make advance payment of ${advance} to start work
+2. Our team will call you within 24 hours
+3. Site visit within 48 hours
 
-Kindly find the detailed project report attached.
-
-Warm regards,
-High Rise Interiors Team`
-        },
-        "In Progress": {
-          subject: `Project Update — ${quoteRef} | High Rise Interiors`,
-          body: `Dear ${client.name},
-
-Your interior project is in progress. Our team is working diligently to deliver the best results.
-
-${docTerm} Ref: ${quoteRef}
-
-For any queries or to schedule a site visit, please feel free to reach out.
+Please find the project report attached.
 
 Warm regards,
-High Rise Interiors Team`
-        },
-        Completed: {
-          subject: `Project Completed — ${quoteRef} | High Rise Interiors`,
-          body: `Dear ${client.name},
+High Rise Interiors, Hyderabad`
+      },
+      "In Progress": {
+        sub: `Project Update — ${quoteRef} | High Rise Interiors`,
+        body:
+`Dear ${client.name},
 
-Congratulations! Your project is now complete. It has been a pleasure working with you.
+Your interior project (${quoteRef}) is progressing well.
 
-${agentDocTerm} Ref: ${quoteRef}
+Project : ${project}
 
-We would love to hear your feedback. A referral from you would mean the world to us — your referral code is: ${client.referralCode||"Contact us for your code"}.
-
-Warm regards,
-High Rise Interiors Team`
-        },
-        "On Hold": {
-          subject: `Project On Hold — ${quoteRef} | High Rise Interiors`,
-          body: `Dear ${client.name},
-
-We acknowledge that your project (${quoteRef}) is currently on hold.
-
-We completely understand and will keep your requirements on record. Whenever you are ready to resume, we are here for you.
+Our team is working hard to deliver your dream space on schedule. Please feel free to call us anytime for a site visit or update.
 
 Warm regards,
-High Rise Interiors Team`
-        },
-      };
-      const t = templates[newStatus] || templates.Lead;
-      emailSubject = t.subject;
-      emailBody = t.body;
-    } // end fallback
+High Rise Interiors, Hyderabad`
+      },
+      Completed: {
+        sub: `Project Complete! 🎉 — ${quoteRef} | High Rise Interiors`,
+        body:
+`Dear ${client.name},
 
-    // iOS Safari has ~2000 char limit on mailto URLs — truncate body if needed
-    const subject    = encodeURIComponent(emailSubject);
-    const bodyEncoded = encodeURIComponent(emailBody);
-    // If too long, use shortened version
-    const shortBody  = bodyEncoded.length > 1800
-      ? encodeURIComponent(emailBody.slice(0, 600) + "\n\n[See attached report for full details]")
-      : bodyEncoded;
+Congratulations! Your project (${quoteRef}) is complete. We hope you love your new space!
 
-    const mailLink = document.createElement("a");
-    mailLink.href   = `mailto:${client.email}?subject=${subject}&body=${shortBody}`;
-    mailLink.target = "_blank";
-    mailLink.rel    = "noopener";
-    mailLink.style.display = "none";
-    document.body.appendChild(mailLink);
-    mailLink.click();
-    setTimeout(() => {
-      try { document.body.removeChild(mailLink); } catch(_) {}
-    }, 1000);
-    // Log in audit trail
-    const emailEntry = makeEntry("note",
-      `🤖 Agent sent ${newStatus} email to ${client.email}`,
+Project : ${project}
+
+We'd love your feedback. Share us with friends using your referral code: ${client.referralCode||"contact us"} and earn 5% cashback!
+
+Thank you for trusting High Rise Interiors.
+
+Warm regards,
+High Rise Interiors, Hyderabad`
+      },
+      "On Hold": {
+        sub: `Project On Hold — ${quoteRef} | High Rise Interiors`,
+        body:
+`Dear ${client.name},
+
+We acknowledge that your project (${quoteRef}) is on hold.
+
+Your details are safely saved. Whenever you are ready to resume, we will pick up right where we left off.
+
+We are here whenever you need us.
+
+Warm regards,
+High Rise Interiors, Hyderabad`
+      },
+    };
+
+    const tmpl = EMAILS[newStatus] || EMAILS.Lead;
+
+    // Open Mail app immediately with template — no async, no waiting
+    const subEnc  = encodeURIComponent(tmpl.sub);
+    const bodyEnc = encodeURIComponent(tmpl.body);
+    const href    = `mailto:${client.email}?subject=${subEnc}&body=${bodyEnc}`;
+
+    // Must append to body for iOS Safari
+    const a = document.createElement("a");
+    a.href   = href;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { try { document.body.removeChild(a); } catch(_){} }, 500);
+
+    showToast(`📧 Mail app opened for ${client.name} — attach report PDF`, "success", 6000);
+
+    // Log to audit trail
+    const entry = makeEntry("note",
+      `Email sent: ${newStatus} — ${client.email}`,
       { status: newStatus, quotation: client.quotation, quoteRef }
     );
-    saveAuditEntry(client.id, client.auditLog, emailEntry);
+    saveAuditEntry(client.id, client.auditLog, entry);
     setCustomers(prev => prev.map(c =>
-      c.id===client.id ? {...c, auditLog:[...(c.auditLog||[]), emailEntry]} : c
+      c.id===client.id ? {...c, auditLog:[...(c.auditLog||[]), entry]} : c
     ));
-    showToast(`📧 ${newStatus} email ready — attach PDF report before sending`, "success", 6000);
   };
+
 
   const openEdit = (c) => {
     setForm({
