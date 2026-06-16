@@ -351,10 +351,31 @@ const callClaude = async ({ system, user, images=[], maxTokens=1000 }) => {
   return text;
 };
 
-// Parse JSON from Claude response safely
+// Parse JSON from Claude response — handles all response formats robustly
 const parseClaudeJSON = (text) => {
-  const clean = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(clean);
+  if (!text) throw new Error("Empty response from AI");
+  // Try 1: direct parse
+  try { return JSON.parse(text.trim()); } catch(_) {}
+  // Try 2: strip markdown fences
+  try { return JSON.parse(text.replace(/```json|```/gi,"").trim()); } catch(_) {}
+  // Try 3: extract first { ... } block
+  const match = text.match(/\{[\s\S]*\}/);
+  if (match) { try { return JSON.parse(match[0]); } catch(_) {} }
+  // Try 4: extract first [ ... ] block
+  const arrMatch = text.match(/\[[\s\S]*\]/);
+  if (arrMatch) { try { return JSON.parse(arrMatch[0]); } catch(_) {} }
+  // Try 5: fix common issues — trailing commas, single quotes
+  try {
+    const fixed = text
+      .replace(/```json|```/gi,"")
+      .replace(/,\s*([}\]])/g,"$1")   // trailing commas
+      .replace(/'/g,'"')               // single → double quotes
+      .replace(/(\w+):/g,'"$1":')      // unquoted keys
+      .trim();
+    const m2 = fixed.match(/\{[\s\S]*\}/);
+    if (m2) return JSON.parse(m2[0]);
+  } catch(_) {}
+  throw new Error(`Could not parse AI response: ${text.slice(0,120)}`);
 };
 
 // Returns "Quotation" for Lead, "Order" for all other statuses
@@ -1678,7 +1699,7 @@ High Rise Interiors Team`
 
 Congratulations! Your project is now complete. It has been a pleasure working with you.
 
-${docTerm} Ref: ${quoteRef}
+${agentDocTerm} Ref: ${quoteRef}
 
 We would love to hear your feedback. A referral from you would mean the world to us — your referral code is: ${client.referralCode||"Contact us for your code"}.
 
@@ -1702,17 +1723,24 @@ High Rise Interiors Team`
       emailBody = t.body;
     } // end fallback
 
-    // Open mail app — must append to body on iOS Safari or click is swallowed
-    const subject = encodeURIComponent(emailSubject);
-    const body    = encodeURIComponent(emailBody);
+    // iOS Safari has ~2000 char limit on mailto URLs — truncate body if needed
+    const subject    = encodeURIComponent(emailSubject);
+    const bodyEncoded = encodeURIComponent(emailBody);
+    // If too long, use shortened version
+    const shortBody  = bodyEncoded.length > 1800
+      ? encodeURIComponent(emailBody.slice(0, 600) + "\n\n[See attached report for full details]")
+      : bodyEncoded;
+
     const mailLink = document.createElement("a");
-    mailLink.href   = `mailto:${client.email}?subject=${subject}&body=${body}`;
+    mailLink.href   = `mailto:${client.email}?subject=${subject}&body=${shortBody}`;
+    mailLink.target = "_blank";
+    mailLink.rel    = "noopener";
     mailLink.style.display = "none";
     document.body.appendChild(mailLink);
     mailLink.click();
-    setTimeout(() => document.body.removeChild(mailLink), 500);
-    showToast(`📧 Mail app opening — attach PDF report before sending`, "success", 6000);
-
+    setTimeout(() => {
+      try { document.body.removeChild(mailLink); } catch(_) {}
+    }, 1000);
     // Log in audit trail
     const emailEntry = makeEntry("note",
       `🤖 Agent sent ${newStatus} email to ${client.email}`,
@@ -1835,12 +1863,12 @@ High Rise Interiors Team`
         showToast("✓ Client updated", "success");
 
         if (statusChanged) {
-          // Show status change toast then trigger agent
-          showToast(`🔄 Status changed to ${formToSave.status} — composing email…`, "info");
+          showToast(`🔄 Status → ${formToSave.status} · Preparing email…`, "info");
           setView("list");
+          // Small delay to let navigation settle before opening mail
           setTimeout(() => {
             statusEmailAgent(formToSave, existingClient.status, formToSave.status);
-          }, 600);
+          }, 800);
         } else {
           setView("list");
         }
@@ -3046,9 +3074,15 @@ Dimension conversion:
 - Include ALL spaces: bedrooms, toilets, kitchen, living, dining, balcony, utility, puja, sitout, dressing, entrance`
                           });
 
-                          const parsed = parseClaudeJSON(text);
+                          console.log("Claude floor plan response:", text.slice(0, 300));
+                          let parsed;
+                          try {
+                            parsed = parseClaudeJSON(text);
+                          } catch(parseErr) {
+                            throw new Error(`AI response format error: ${parseErr.message}`);
+                          }
                           const detected = parsed.detected || [];
-                          if (!detected.length) throw new Error("No rooms detected in this image");
+                          if (!detected.length) throw new Error(`No rooms found. AI said: ${text.slice(0,100)}`);
 
                           // Step 2: Show user a mapping dialog — they confirm which app-room each detected room maps to
                           // Store raw detected data so the mapping UI can use it
