@@ -3023,66 +3023,100 @@ High Rise Interiors, Hyderabad`
                         showToast("🤖 Analysing floor plan…", "info");
 
                         try {
-                          // Convert to base64
+                          // Step 1: Compress image (floor plans can be 3-5MB — reduce to ~300KB)
+                          showToast("📐 Compressing and analysing floor plan…", "info");
                           const base64 = await new Promise((res, rej) => {
-                            const reader = new FileReader();
-                            reader.onload  = () => res(reader.result.split(",")[1]);
-                            reader.onerror = rej;
-                            reader.readAsDataURL(file);
+                            const img = new Image();
+                            const objUrl = URL.createObjectURL(file);
+                            img.onload = () => {
+                              const MAX = 1200;
+                              let w = img.width, h = img.height;
+                              if (w > MAX || h > MAX) {
+                                if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                                else       { w = Math.round(w * MAX / h); h = MAX; }
+                              }
+                              const cv = document.createElement("canvas");
+                              cv.width = w; cv.height = h;
+                              cv.getContext("2d").drawImage(img, 0, 0, w, h);
+                              URL.revokeObjectURL(objUrl);
+                              const data = cv.toDataURL("image/jpeg", 0.82).split(",")[1];
+                              console.log("Floor plan compressed:", w+"x"+h, "base64 size:", data.length);
+                              res(data);
+                            };
+                            img.onerror = rej;
+                            img.src = objUrl;
                           });
 
-                          // Use shared Claude helper — no CORS, no scattered API keys
-                          // Step 1: Claude reads the plan AS-IS — no mapping
+                          // Step 2: Send to Claude via proxy
                           const text = await callClaude({
                             maxTokens: 2000,
-                            images: [{ base64, mediaType: file.type || "image/jpeg" }],
-                            user: `Read this floor plan image carefully.
+                            images: [{ base64, mediaType: "image/jpeg" }],
+                            user: `You are reading a floor plan image. Extract every room name and its printed dimensions.
 
-Extract EVERY room/space you can see, using the EXACT label text printed on the plan.
-Also read the dimension text printed inside or next to each room.
-
-Return ONLY valid JSON:
+Return ONLY this JSON format (no other text):
 {
   "detected": [
     { "name": "MASTER BEDROOM", "length": "14.83", "width": "12.42", "height": "9", "raw": "14'10 x 12'5" },
-    { "name": "BEDROOM-2",      "length": "13.25", "width": "11.67", "height": "9", "raw": "13'3 x 11'8" },
-    { "name": "LIVING",         "length": "13.75", "width": "12.5",  "height": "9", "raw": "13'9 x 12'6" },
-    { "name": "KITCHEN",        "length": "8.0",   "width": "12.42", "height": "9", "raw": "8'0 x 12'5"  },
-    { "name": "TOILET",         "length": "5.75",  "width": "8.17",  "height": "9", "raw": "5'9 x 8'2"   }
+    { "name": "BEDROOM 2",      "length": "13.25", "width": "11.67", "height": "9", "raw": "13'3 x 11'8"  },
+    { "name": "LIVING",         "length": "13.75", "width": "12.5",  "height": "9", "raw": "13'9 x 12'6"  },
+    { "name": "KITCHEN",        "length": "8.0",   "width": "12.42", "height": "9", "raw": "8'0 x 12'5"   },
+    { "name": "TOILET",         "length": "5.75",  "width": "8.17",  "height": "9", "raw": "5'9 x 8'2"    }
   ],
-  "notes": "3 BHK flat, approx 1780 sq ft"
+  "notes": "summary of what you see"
 }
 
-Dimension conversion:
-- 13'3" → 13.25 (feet + inches/12)
-- 11'8" → 11.67
-- 14'10" → 14.83
-- If only width shown (e.g. "5'0 WIDE"), set length = width
-- Default height = 9 feet
-- Include ALL spaces: bedrooms, toilets, kitchen, living, dining, balcony, utility, puja, sitout, dressing, entrance`
+Rules for reading dimensions:
+- 14'10" means 14 + 10/12 = 14.83 feet
+- 13'3" means 13 + 3/12 = 13.25 feet  
+- 11'8" means 11 + 8/12 = 11.67 feet
+- "5'0 WIDE" — use 5.0 for both length and width
+- If no dimensions visible for a room, still include the room with length:"0" width:"0"
+- Default height: 9 feet
+- Include every labelled space even small ones like TOILET, PUJA, UTILITY, DRESS, SITOUT
+- Use EXACT names from the plan`
                           });
 
-                          console.log("Claude floor plan response:", text.slice(0, 300));
-                          let parsed;
-                          try {
-                            parsed = parseClaudeJSON(text);
-                          } catch(parseErr) {
-                            throw new Error(`AI response format error: ${parseErr.message}`);
-                          }
-                          const detected = parsed.detected || [];
-                          if (!detected.length) throw new Error(`No rooms found. AI said: ${text.slice(0,100)}`);
+                          console.log("Claude response (first 400 chars):", text.slice(0, 400));
 
-                          // Step 2: Show user a mapping dialog — they confirm which app-room each detected room maps to
-                          // Store raw detected data so the mapping UI can use it
-                          setForm(f => ({
-                            ...f,
-                            floorPlanData: { detected, notes: parsed.notes },
-                            floorPlanPending: detected, // waiting for user to map
+                          let parsed;
+                          try { parsed = parseClaudeJSON(text); }
+                          catch(pe) { throw new Error("Could not read AI response: " + pe.message + " | Got: " + text.slice(0,80)); }
+
+                          const detected = (parsed.detected || []).filter(d => d.name);
+                          if (!detected.length) throw new Error("No rooms detected. Check browser console for AI response.");
+
+                          // Step 3: Auto-suggest mapping then show confirmation UI
+                          const suggest = (name) => {
+                            const n = name.toLowerCase();
+                            if (n.includes("master"))                                    return "Master Bedroom";
+                            if (n.match(/bed.*2|2.*bed|bedroom.?2|b2/))                 return "Children Bedroom";
+                            if (n.match(/bed.*3|3.*bed|bedroom.?3|b3/))                 return "Guest Bedroom";
+                            if (n.includes("bed"))                                       return "Master Bedroom";
+                            if (n.includes("living")||n.includes("drawing")||n.includes("sitout")) return "Living Area";
+                            if (n.includes("dining")||n.includes("family"))              return "Dining";
+                            if (n.includes("kitchen"))                                   return "Kitchen";
+                            if (n.includes("bath")||n.includes("toilet")||n.includes("wc")) return "Bathroom";
+                            if (n.includes("balcon")||n.includes("terrace"))             return "Balcony";
+                            if (n.includes("puja")||n.includes("pooja")||n.includes("prayer")) return "Pooja";
+                            if (n.includes("entrance")||n.includes("foyer")||n.includes("lobby")) return "Entrance";
+                            if (n.includes("study")||n.includes("office"))               return "Study Room";
+                            return "";
+                          };
+
+                          const withSuggestions = detected.map(d => ({
+                            ...d, _mapped: suggest(d.name)
                           }));
 
+                          setForm(f => ({
+                            ...f,
+                            floorPlanData:    { detected: withSuggestions, notes: parsed.notes },
+                            floorPlanPending: withSuggestions,
+                          }));
+
+                          const autoMapped = withSuggestions.filter(d => d._mapped).length;
                           showToast(
-                            `✅ Detected ${detected.length} spaces — review and confirm room mapping below`,
-                            "success", 5000
+                            `✅ ${detected.length} spaces detected · ${autoMapped} auto-mapped · Confirm below`,
+                            "success", 6000
                           );
 
                         } catch(err) {
