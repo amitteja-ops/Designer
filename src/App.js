@@ -393,23 +393,6 @@ const parseClaudeJSON = (text) => {
 const getDocTerm = (status) =>
   (!status || status === "Lead") ? "Quotation" : "Order";
 
-// ── iOS Glass visual helpers ─────────────────────────────────────────
-const Orbs = () => (
-  <div style={{position:"fixed",inset:0,zIndex:0,overflow:"hidden",pointerEvents:"none"}}>
-    <div style={{position:"absolute",top:"-20%",left:"-10%",width:"70%",height:"70%",
-      background:"radial-gradient(ellipse,rgba(10,100,255,0.4) 0%,transparent 70%)",filter:"blur(80px)"}}/>
-    <div style={{position:"absolute",top:"5%",right:"-15%",width:"60%",height:"60%",
-      background:"radial-gradient(ellipse,rgba(120,40,220,0.3) 0%,transparent 70%)",filter:"blur(80px)"}}/>
-    <div style={{position:"absolute",bottom:"-10%",left:"20%",width:"60%",height:"50%",
-      background:"radial-gradient(ellipse,rgba(0,140,200,0.2) 0%,transparent 70%)",filter:"blur(80px)"}}/>
-  </div>
-);
-const Shine = () => (
-  <div style={{position:"absolute",top:0,left:0,right:0,height:"50%",pointerEvents:"none",
-    background:"linear-gradient(180deg,rgba(255,255,255,0.13) 0%,rgba(255,255,255,0) 100%)",
-    borderRadius:"20px 20px 0 0",zIndex:0}}/>
-);
-
 // ── Audit log helpers ─────────────────────────────────────────────────
 const AUDIT_ICONS = {
   created:    "🆕", updated:   "✏️",  status:    "🔄",
@@ -563,7 +546,7 @@ const S = {
   app: {
     minHeight:"100vh",
     background:"linear-gradient(160deg,#0D1B3E 0%,#0A0A1A 40%,#1A0D2E 100%)",
-    fontFamily:"'-apple-system','BlinkMacSystemFont','SF Pro Text','Helvetica Neue',sans-serif",
+    fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif",
     color:"rgba(255,255,255,0.95)",
     position:"relative",
   },
@@ -1556,6 +1539,23 @@ Hyderabad`);
   }
 
 
+
+// ── iOS Glass visual helpers ─────────────────────────────────────────
+const Orbs = () => (
+  <div style={{position:"fixed",inset:0,zIndex:0,overflow:"hidden",pointerEvents:"none"}}>
+    <div style={{position:"absolute",top:"-20%",left:"-10%",width:"70%",height:"70%",
+      background:"radial-gradient(ellipse,rgba(10,100,255,0.4) 0%,transparent 70%)",filter:"blur(80px)"}}/>
+    <div style={{position:"absolute",top:"5%",right:"-15%",width:"60%",height:"60%",
+      background:"radial-gradient(ellipse,rgba(120,40,220,0.3) 0%,transparent 70%)",filter:"blur(80px)"}}/>
+    <div style={{position:"absolute",bottom:"-10%",left:"20%",width:"60%",height:"50%",
+      background:"radial-gradient(ellipse,rgba(0,140,200,0.2) 0%,transparent 70%)",filter:"blur(80px)"}}/>
+  </div>
+);
+const Shine = () => (
+  <div style={{position:"absolute",top:0,left:0,right:0,height:"50%",pointerEvents:"none",
+    background:"linear-gradient(180deg,rgba(255,255,255,0.13) 0%,rgba(255,255,255,0) 100%)",
+    borderRadius:"20px 20px 0 0",zIndex:0}}/>
+);
 
 export default function App({ token, user, onLogout, onSessionExpired }) {
   const [customers,    setCustomers]    = useState([]);
@@ -2755,6 +2755,7 @@ High Rise Interiors, Hyderabad`
   // ── DETAIL ────────────────────────────────────────────────────────────
   if (view==="detail" && selected) return (
     <div style={S.app}>
+      <Orbs/>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
