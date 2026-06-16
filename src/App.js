@@ -3065,7 +3065,12 @@ Dimension conversion:
 
                         } catch(err) {
                           console.error("Floor plan analysis error:", err);
-                          showToast("⚠️ Could not analyse floor plan: " + err.message, "error");
+                          const msg = err.message || "Unknown error";
+                          if (msg.includes("404") || msg.includes("fetch")) {
+                            showToast("⚠️ API not configured — add ANTHROPIC_API_KEY to Vercel environment variables", "error", 8000);
+                          } else {
+                            showToast("⚠️ Floor plan analysis failed: " + msg, "error", 6000);
+                          }
                         }
                       }}/>
                     <div style={{ fontSize:28, marginBottom:8 }}>🏗</div>
