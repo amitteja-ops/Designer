@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { sb, toRow, fromRow, TABLE } from "./supabase";
 
-const ROOMS = ["Drawing Room","Living Area","Dining","Master Bedroom","Children Bedroom","Guest Bedroom","Kitchen","Pooja","Entrance","Balcony","Bathroom","Study Room"];
+// Default rooms — extended dynamically when floor plan is uploaded
+const DEFAULT_ROOMS = ["Drawing Room","Living Area","Dining","Master Bedroom","Children Bedroom","Guest Bedroom","Kitchen","Pooja","Entrance","Balcony","Bathroom","Study Room"];
+// ROOMS is computed from form — see getRooms(form) helper below
+const getRooms = (form) => {
+  const extra = (form.customRooms || []).filter(r => r && !DEFAULT_ROOMS.includes(r));
+  return [...DEFAULT_ROOMS, ...extra];
+};
+const ROOMS = DEFAULT_ROOMS; // fallback for places that don't have form context
 const STYLES = ["Modern Contemporary","Classic Traditional","Minimalist","Luxury","Scandinavian","Industrial","Bohemian","Art Deco","Mediterranean","Rustic"];
 const STATUSES = ["Lead","Active","In Progress","Completed","On Hold"];
 const BUDGETS = ["Under ₹5L","₹5L–₹10L","₹10L–₹15L","₹15L–₹20L","₹20L–₹25L","₹25L–₹30L","Above ₹30L"];
@@ -310,6 +317,7 @@ const EMPTY = {
   rebateType:"amount", rebateValue:"", labourPct:50,
   auditLog:[],              // [{ts, type, user, summary, snapshot, signatures}]
   inventory:{},             // per-material status: { key: {status, orderedDate, deliveredDate, notes} }
+  customRooms:[],          // room names extracted from floor plan
   floorPlanUrl:"",         // uploaded floor plan image URL
   floorPlanData:null,       // analysed room data from AI
   floorPlanPending:null,    // detected rooms awaiting user mapping
@@ -384,6 +392,23 @@ const parseClaudeJSON = (text) => {
 // Returns "Quotation" for Lead, "Order" for all other statuses
 const getDocTerm = (status) =>
   (!status || status === "Lead") ? "Quotation" : "Order";
+
+// ── iOS Glass visual helpers ─────────────────────────────────────────
+const Orbs = () => (
+  <div style={{position:"fixed",inset:0,zIndex:0,overflow:"hidden",pointerEvents:"none"}}>
+    <div style={{position:"absolute",top:"-20%",left:"-10%",width:"70%",height:"70%",
+      background:"radial-gradient(ellipse,rgba(10,100,255,0.4) 0%,transparent 70%)",filter:"blur(80px)"}}/>
+    <div style={{position:"absolute",top:"5%",right:"-15%",width:"60%",height:"60%",
+      background:"radial-gradient(ellipse,rgba(120,40,220,0.3) 0%,transparent 70%)",filter:"blur(80px)"}}/>
+    <div style={{position:"absolute",bottom:"-10%",left:"20%",width:"60%",height:"50%",
+      background:"radial-gradient(ellipse,rgba(0,140,200,0.2) 0%,transparent 70%)",filter:"blur(80px)"}}/>
+  </div>
+);
+const Shine = () => (
+  <div style={{position:"absolute",top:0,left:0,right:0,height:"50%",pointerEvents:"none",
+    background:"linear-gradient(180deg,rgba(255,255,255,0.13) 0%,rgba(255,255,255,0) 100%)",
+    borderRadius:"20px 20px 0 0",zIndex:0}}/>
+);
 
 // ── Audit log helpers ─────────────────────────────────────────────────
 const AUDIT_ICONS = {
@@ -507,84 +532,114 @@ const genReferralCode = (id) => {
 // Typeface pairing: DM Sans (utility) + DM Serif Display (brand moments)
 // Accent: deep teal #1A5276 — rare, deliberate, never decorative red.
 
+// ── iOS Glass Design Tokens ──────────────────────────────────────────
+const IOS = {
+  blur:    "blur(40px) saturate(200%) brightness(1.1)",
+  blurNav: "blur(60px) saturate(220%)",
+  glass:   "rgba(255,255,255,0.10)",
+  border:  "rgba(255,255,255,0.18)",
+  shadow:  "0 8px 32px rgba(0,0,0,0.4),0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.18)",
+  glow:    (c) => `0 0 0 1px ${c}55,0 4px 24px ${c}44,inset 0 1px 0 rgba(255,255,255,0.3)`,
+};
+
 const C = {
-  ink:    "#0F1923",   // near-black
-  teal:   "#1A5276",   // signature accent
-  tealL:  "#C5DCF0",   // teal tint — darkened for visibility
-  sand:   "#F5F1EA",   // linen background
-  white:  "#FFFFFF",
-  line:   "#C8C2BA",   // darker hairline for visibility
-  muted:  "#5A564F",   // darkened — was too light
-  smoke:  "#ECEAE4",   // card background
-  green:  "#145235",   // darker green for contrast
-  amber:  "#7A500A",   // darker amber
-  violet: "#4A2E78",   // darker violet
-  rust:   "#7A2208",   // darker rust
+  // Dark glass palette
+  ink:    "rgba(255,255,255,0.95)",
+  teal:   "#0A84FF",
+  tealL:  "rgba(10,132,255,0.20)",
+  sand:   "#0A0A1A",
+  white:  "rgba(255,255,255,0.12)",
+  line:   "rgba(255,255,255,0.18)",
+  muted:  "rgba(255,255,255,0.50)",
+  smoke:  "rgba(255,255,255,0.08)",
+  green:  "#30D158",
+  amber:  "#FF9F0A",
+  violet: "#BF5AF2",
+  rust:   "#FF453A",
+  red:    "#FF453A",
 };
 
 const S = {
-  app:   { minHeight:"100vh", background:C.sand,
-           fontFamily:"'DM Sans','Inter',system-ui,sans-serif", color:C.ink },
-  hdr:   { background:C.ink, padding:"0 36px", height:64,
-           display:"flex", alignItems:"center", justifyContent:"space-between",
-           borderBottom:`3px solid ${C.teal}` },
-  logo:  { color:"#fff", fontSize:16, fontWeight:700, letterSpacing:4,
-           textTransform:"uppercase", fontFamily:"'DM Sans',sans-serif" },
-  sub:   { color:C.teal, fontSize:9, letterSpacing:6, marginTop:2, display:"block", textTransform:"uppercase" },
-  main:  { maxWidth:1140, margin:"0 auto", padding:"28px 24px" },
-  card:  { background:C.white, borderRadius:4, padding:"20px 24px",
-           boxShadow:"0 1px 4px rgba(15,25,35,0.08)", border:`1px solid ${C.line}` },
-  input: { width:"100%", padding:"10px 14px", borderRadius:3,
-           border:`1.5px solid ${C.line}`, fontFamily:"inherit", fontSize:14,
-           color:C.ink, background:C.white, outline:"none", boxSizing:"border-box",
-           transition:"border-color 0.15s" },
-  label: { fontSize:10, letterSpacing:2, color:C.muted, textTransform:"uppercase",
-           marginBottom:5, display:"block", fontWeight:600 },
-  row:   { display:"flex", gap:16, marginBottom:18, flexWrap:"wrap" },
-  sec:   { fontSize:10, fontWeight:700, letterSpacing:3, color:C.teal,
-           textTransform:"uppercase", borderBottom:`2px solid ${C.teal}`,
-           paddingBottom:6, marginBottom:16, marginTop:4 },
-  btn:   (v="primary") => ({
-    padding:"9px 20px", borderRadius:3, border:"none", cursor:"pointer",
-    fontFamily:"inherit", fontSize:11, letterSpacing:2, textTransform:"uppercase",
-    fontWeight:700, transition:"all 0.15s",
-    ...(v==="primary" ? { background:C.teal, color:"#fff" }
-      : v==="dark"    ? { background:"rgba(255,255,255,0.1)", color:"#fff",
-                          border:"1px solid rgba(255,255,255,0.25)" }
-      : v==="ghost"   ? { background:"transparent", color:C.teal,
-                          border:`1.5px solid ${C.teal}` }
-      : v==="danger"  ? { background:C.rust, color:"#fff" }
-      :                 { background:C.smoke, color:C.ink,
-                          border:`1px solid ${C.line}` })
-  }),
-  tab:   (a) => ({
-    padding:"8px 16px", borderRadius:3, cursor:"pointer", fontSize:10,
-    letterSpacing:2, textTransform:"uppercase", fontWeight:700, border:"none",
-    fontFamily:"inherit", transition:"all 0.15s",
-    background: a ? C.teal     : C.smoke,
-    color:       a ? "#fff"     : C.ink,
-    borderBottom: a ? `2px solid ${C.teal}` : "2px solid transparent",
-  }),
-  pill:  (a) => ({
-    padding:"5px 14px", borderRadius:2, fontSize:11, cursor:"pointer",
-    border:`1.5px solid ${a ? C.teal : C.line}`,
-    background: a ? C.teal   : "transparent",
-    color:       a ? "#fff"   : C.muted,
-    fontFamily:"inherit", fontWeight: a ? 700 : 400,
-    transition:"all 0.12s",
-  }),
-  badge: (status) => {
-    const m = {
-      Lead:         { bg:"#FDE68A", c:"#5C3A00" },
-      Active:       { bg:"#6EE7B7", c:"#064E3B" },
-      "In Progress":{ bg:"#C4B5FD", c:"#2D1B69" },
-      Completed:    { bg:"#6EE7B7", c:"#064E3B" },
-      "On Hold":    { bg:"#FCA5A5", c:"#5C0A0A" },
-    };
-    const s = m[status]||m.Lead;
-    return { background:s.bg, color:s.c, padding:"3px 10px", borderRadius:2,
-             fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase" };
+  app: {
+    minHeight:"100vh",
+    background:"linear-gradient(160deg,#0D1B3E 0%,#0A0A1A 40%,#1A0D2E 100%)",
+    fontFamily:"'-apple-system','BlinkMacSystemFont','SF Pro Text','Helvetica Neue',sans-serif",
+    color:"rgba(255,255,255,0.95)",
+    position:"relative",
   },
+  hdr: {
+    background:"rgba(10,10,30,0.6)",
+    backdropFilter:IOS.blurNav, WebkitBackdropFilter:IOS.blurNav,
+    borderBottom:`1px solid ${IOS.border}`,
+    padding:"0 24px", height:54,
+    display:"flex", alignItems:"center", justifyContent:"space-between",
+    position:"sticky", top:0, zIndex:200,
+  },
+  logo:  { color:"#fff", fontSize:15, fontWeight:700, letterSpacing:0.3 },
+  sub:   { color:"rgba(255,255,255,0.45)", fontSize:9, letterSpacing:3,
+           marginTop:2, display:"block", textTransform:"uppercase" },
+  main:  { maxWidth:1140, margin:"0 auto", padding:"24px 20px", position:"relative", zIndex:1 },
+  card:  {
+    background: IOS.glass,
+    backdropFilter: IOS.blur, WebkitBackdropFilter: IOS.blur,
+    borderRadius: 20,
+    border: `1px solid ${IOS.border}`,
+    boxShadow: IOS.shadow,
+    position:"relative", overflow:"hidden",
+  },
+  input: {
+    width:"100%", padding:"11px 14px", borderRadius:12,
+    border:`1px solid ${IOS.border}`,
+    fontFamily:"inherit", fontSize:14,
+    color:"rgba(255,255,255,0.95)",
+    background:"rgba(255,255,255,0.08)",
+    backdropFilter:IOS.blur, WebkitBackdropFilter:IOS.blur,
+    outline:"none", boxSizing:"border-box",
+    transition:"border-color 0.18s,box-shadow 0.18s",
+  },
+  label: {
+    fontSize:10, letterSpacing:1.5, color:"rgba(255,255,255,0.5)",
+    textTransform:"uppercase", marginBottom:6, display:"block", fontWeight:600,
+  },
+  row:   { display:"flex", gap:16, marginBottom:18, flexWrap:"wrap" },
+  sec:   {
+    fontSize:10, fontWeight:700, letterSpacing:2,
+    color:"rgba(255,255,255,0.5)", textTransform:"uppercase",
+    borderBottom:`1px solid rgba(255,255,255,0.12)`,
+    paddingBottom:8, marginBottom:16, marginTop:4,
+  },
+  btn: (v="primary") => ({
+    padding:"10px 22px", borderRadius:12, border:"none",
+    cursor:"pointer", fontFamily:"inherit", fontSize:12,
+    letterSpacing:0.4, fontWeight:600,
+    transition:"all 0.18s cubic-bezier(0.25,0.1,0.25,1)",
+    backdropFilter:IOS.blur, WebkitBackdropFilter:IOS.blur,
+    ...(v==="primary"
+      ? { background:"linear-gradient(135deg,#0A84FF,#BF5AF2)", color:"#fff",
+          boxShadow:"0 0 20px rgba(10,132,255,0.4),0 4px 12px rgba(0,0,0,0.3)" }
+    : v==="dark"
+      ? { background:"rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.9)",
+          border:`1px solid ${IOS.border}` }
+    : v==="ghost"
+      ? { background:"rgba(255,255,255,0.06)", color:"rgba(255,255,255,0.6)",
+          border:`1px solid ${IOS.border}` }
+    : v==="danger"
+      ? { background:"rgba(255,69,58,0.18)", color:"#FF453A",
+          border:"1px solid rgba(255,69,58,0.35)" }
+    : { background:"rgba(10,132,255,0.15)", color:"#0A84FF",
+        border:"1px solid rgba(10,132,255,0.35)" }),
+  }),
+  pill: (active) => ({
+    padding:"7px 16px", borderRadius:20, border:"none",
+    cursor:"pointer", fontFamily:"inherit", fontSize:12, fontWeight:600,
+    letterSpacing:0.3, whiteSpace:"nowrap",
+    transition:"all 0.18s cubic-bezier(0.25,0.1,0.25,1)",
+    backdropFilter:IOS.blur, WebkitBackdropFilter:IOS.blur,
+    background: active ? "rgba(10,132,255,0.25)" : "rgba(255,255,255,0.08)",
+    color:       active ? "#0A84FF"               : "rgba(255,255,255,0.5)",
+    border:      active ? "1px solid rgba(10,132,255,0.5)" : `1px solid ${IOS.border}`,
+    boxShadow:   active ? IOS.glow("#0A84FF")     : IOS.shadow,
+  }),
 };
 
 // ── Signature Pad Component ──────────────────────────────────────────
@@ -1778,6 +1833,7 @@ High Rise Interiors, Hyderabad`
       roomMaterials:     c.roomMaterials     || {},
       rebateType:        c.rebateType        || "amount",
       rebateValue:       c.rebateValue       || "",
+      customRooms:         c.customRooms         || [],
       floorPlanUrl:        c.floorPlanUrl        || "",
       floorPlanData:       c.floorPlanData       || null,
       floorPlanPending:    c.floorPlanPending    || null,
@@ -3008,7 +3064,7 @@ High Rise Interiors, Hyderabad`
               <div style={{ marginBottom:24 }}>
                 <div style={S.sec}>Floor Plan</div>
                 <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>
-                  Upload any floor plan — AI reads the room names and dimensions exactly as printed, then you confirm the mapping.
+                  Upload a floor plan image for reference, then enter room dimensions manually or use AI analysis (requires API credits).
                 </div>
 
                 {/* Upload box */}
@@ -3020,14 +3076,14 @@ High Rise Interiors, Hyderabad`
                       onChange={async e => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        // Preview
                         const url = URL.createObjectURL(file);
                         setF("floorPlanUrl", url);
-                        showToast("🤖 Analysing floor plan…", "info");
+                        setF("floorPlanPending", []);
+                        showToast("🔍 Reading floor plan…", "info");
 
+                        let detected = [];
                         try {
-                          // Step 1: Compress image (floor plans can be 3-5MB — reduce to ~300KB)
-                          showToast("📐 Compressing and analysing floor plan…", "info");
+                          // Compress image
                           const base64 = await new Promise((res, rej) => {
                             const img = new Image();
                             const objUrl = URL.createObjectURL(file);
@@ -3035,107 +3091,60 @@ High Rise Interiors, Hyderabad`
                               const MAX = 1200;
                               let w = img.width, h = img.height;
                               if (w > MAX || h > MAX) {
-                                if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-                                else       { w = Math.round(w * MAX / h); h = MAX; }
+                                if (w > h) { h = Math.round(h*MAX/w); w = MAX; }
+                                else       { w = Math.round(w*MAX/h); h = MAX; }
                               }
                               const cv = document.createElement("canvas");
                               cv.width = w; cv.height = h;
                               cv.getContext("2d").drawImage(img, 0, 0, w, h);
                               URL.revokeObjectURL(objUrl);
-                              const data = cv.toDataURL("image/jpeg", 0.82).split(",")[1];
-                              console.log("Floor plan compressed:", w+"x"+h, "base64 size:", data.length);
-                              res(data);
+                              res(cv.toDataURL("image/jpeg", 0.82).split(",")[1]);
                             };
                             img.onerror = rej;
                             img.src = objUrl;
                           });
 
-                          // Step 2: Send to Claude via proxy
+                          // Ask Claude to read rooms AS-IS from plan — no mapping
                           const text = await callClaude({
-                            maxTokens: 2000,
+                            maxTokens: 1500,
                             images: [{ base64, mediaType: "image/jpeg" }],
-                            user: `You are reading a floor plan image. Extract every room name and its printed dimensions.
+                            user: `Read this floor plan. Extract every labelled room/space using the EXACT name printed on the plan.
 
-Return ONLY this JSON format (no other text):
+Return ONLY this JSON (start with {):
 {
   "detected": [
-    { "name": "MASTER BEDROOM", "length": "14.83", "width": "12.42", "height": "9", "raw": "14'10 x 12'5" },
-    { "name": "BEDROOM 2",      "length": "13.25", "width": "11.67", "height": "9", "raw": "13'3 x 11'8"  },
-    { "name": "LIVING",         "length": "13.75", "width": "12.5",  "height": "9", "raw": "13'9 x 12'6"  },
-    { "name": "KITCHEN",        "length": "8.0",   "width": "12.42", "height": "9", "raw": "8'0 x 12'5"   },
-    { "name": "TOILET",         "length": "5.75",  "width": "8.17",  "height": "9", "raw": "5'9 x 8'2"    }
-  ],
-  "notes": "summary of what you see"
+    { "name": "MASTER BEDROOM", "length": "14.83", "width": "12.42", "raw": "14'10 x 12'5" },
+    { "name": "BEDROOM 2",      "length": "13.25", "width": "11.67", "raw": "13'3 x 11'8"  },
+    { "name": "FAMILY / DINING","length": "18.67", "width": "12.5",  "raw": "18'8 x 12'6"  },
+    { "name": "KITCHEN",        "length": "8.0",   "width": "12.42", "raw": "8'0 x 12'5"   },
+    { "name": "TOILET",         "length": "5.75",  "width": "8.17",  "raw": "5'9 x 8'2"    }
+  ]
 }
 
-Rules for reading dimensions:
-- 14'10" means 14 + 10/12 = 14.83 feet
-- 13'3" means 13 + 3/12 = 13.25 feet  
-- 11'8" means 11 + 8/12 = 11.67 feet
-- "5'0 WIDE" — use 5.0 for both length and width
-- If no dimensions visible for a room, still include the room with length:"0" width:"0"
-- Default height: 9 feet
-- Include every labelled space even small ones like TOILET, PUJA, UTILITY, DRESS, SITOUT
-- Use EXACT names from the plan`
+Dimension rules:
+- 14'10" = 14.83 feet,  13'3" = 13.25,  11'8" = 11.67,  8'2" = 8.17
+- "5'0 WIDE" → use 5.0 for width, estimate depth
+- Include ALL spaces: bedrooms, toilets, kitchen, living, dining, balcony, utility, puja, sitout, dressing
+- Use EXACT label text from the plan — do not rename or translate`
                           });
 
-                          console.log("Claude response (first 400 chars):", text.slice(0, 400));
-
-                          console.log("Claude floor plan response:", text.slice(0,300));
-                          let parsed;
-                          try { parsed = parseClaudeJSON(text); }
-                          catch(pe) {
-                            showToast("⚠️ AI response format error — " + text.slice(0,100), "error", 8000);
-                            throw new Error("Parse error: " + pe.message);
-                          }
-
-                          const detected = (parsed.detected || []).filter(d => d.name);
-                          if (!detected.length) throw new Error("No rooms detected. Check browser console for AI response.");
-
-                          // Step 3: Auto-suggest mapping then show confirmation UI
-                          const suggest = (name) => {
-                            const n = name.toLowerCase();
-                            if (n.includes("master"))                                    return "Master Bedroom";
-                            if (n.match(/bed.*2|2.*bed|bedroom.?2|b2/))                 return "Children Bedroom";
-                            if (n.match(/bed.*3|3.*bed|bedroom.?3|b3/))                 return "Guest Bedroom";
-                            if (n.includes("bed"))                                       return "Master Bedroom";
-                            if (n.includes("living")||n.includes("drawing")||n.includes("sitout")) return "Living Area";
-                            if (n.includes("dining")||n.includes("family"))              return "Dining";
-                            if (n.includes("kitchen"))                                   return "Kitchen";
-                            if (n.includes("bath")||n.includes("toilet")||n.includes("wc")) return "Bathroom";
-                            if (n.includes("balcon")||n.includes("terrace"))             return "Balcony";
-                            if (n.includes("puja")||n.includes("pooja")||n.includes("prayer")) return "Pooja";
-                            if (n.includes("entrance")||n.includes("foyer")||n.includes("lobby")) return "Entrance";
-                            if (n.includes("study")||n.includes("office"))               return "Study Room";
-                            return "";
-                          };
-
-                          const withSuggestions = detected.map(d => ({
-                            ...d, _mapped: suggest(d.name)
+                          const parsed = parseClaudeJSON(text);
+                          detected = (parsed.detected || []).filter(d => d.name).map(d => ({
+                            ...d, height: d.height || "9"
                           }));
-
-                          setForm(f => ({
-                            ...f,
-                            floorPlanData:    { detected: withSuggestions, notes: parsed.notes },
-                            floorPlanPending: withSuggestions,
-                          }));
-
-                          const autoMapped = withSuggestions.filter(d => d._mapped).length;
-                          showToast(
-                            `✅ ${detected.length} spaces detected · ${autoMapped} auto-mapped · Confirm below`,
-                            "success", 6000
-                          );
+                          showToast(`✅ ${detected.length} rooms read from plan — review below`, "success", 5000);
 
                         } catch(err) {
-                          console.error("Floor plan analysis error:", err);
-                          const msg = err.message || "Unknown error";
-                          if (msg.includes("404") || msg.includes("fetch")) {
-                            showToast("⚠️ API not configured — add ANTHROPIC_API_KEY to Vercel environment variables", "error", 8000);
-                          } else {
-                            showToast("⚠️ Floor plan analysis failed: " + msg, "error", 6000);
-                          }
+                          console.warn("AI failed:", err.message);
+                          // 3 blank rows for manual entry
+                          detected = [{name:"",length:"",width:"",height:"9"},{name:"",length:"",width:"",height:"9"},{name:"",length:"",width:"",height:"9"}];
+                          showToast("📐 Enter room names and dimensions from your plan below", "info", 5000);
                         }
+
+                        setF("floorPlanPending", detected);
                       }}/>
+
+
                     <div style={{ fontSize:28, marginBottom:8 }}>🏗</div>
                     <div style={{ fontSize:13, color:C.ink, fontWeight:600, marginBottom:4 }}>
                       Upload Floor Plan
@@ -3161,97 +3170,92 @@ Rules for reading dimensions:
                         border:`1px solid ${C.line}`, padding:14 }}>
                         <div style={{ fontSize:11, fontWeight:700, color:C.teal,
                           letterSpacing:2, textTransform:"uppercase", marginBottom:4 }}>
-                          🗂 Match Rooms — {form.floorPlanPending.length} detected
+                          📐 Enter Dimensions from Floor Plan
                         </div>
                         <div style={{ fontSize:11, color:C.muted, marginBottom:12 }}>
-                          AI read these room names from your plan. Select which room in our app each one maps to:
+                          Look at your floor plan and type the dimensions for each room (in feet). Leave blank to skip.
                         </div>
 
                         {form.floorPlanPending.map((det, idx) => (
                           <div key={idx} style={{ marginBottom:10, padding:"8px 12px",
                             background:C.white, borderRadius:3, border:`1px solid ${C.line}` }}>
                             <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-                              {/* Detected name + dims */}
-                              <div style={{ flex:"0 0 auto" }}>
-                                <div style={{ fontSize:12, fontWeight:700, color:C.ink }}>{det.name}</div>
-                                <div style={{ fontSize:10, color:C.muted }}>
-                                  {det.raw || `${det.length}×${det.width} ft`}
-                                </div>
+                              {/* Room name */}
+                              <div style={{ fontSize:12, fontWeight:700, color:C.ink, minWidth:110 }}>
+                                {det.name}
                               </div>
-                              <div style={{ color:C.muted, fontSize:14 }}>→</div>
-                              {/* App room selector */}
-                              <select
-                                value={det._mapped || ""}
+                              {/* Length */}
+                              <input
+                                type="number" placeholder="L (ft)" min="0" step="0.1"
+                                value={det.length||""}
                                 onChange={e => {
                                   const updated = form.floorPlanPending.map((d,i) =>
-                                    i===idx ? {...d, _mapped: e.target.value} : d
+                                    i===idx ? {...d, length: e.target.value} : d
                                   );
                                   setF("floorPlanPending", updated);
                                 }}
-                                style={{ ...S.input, flex:1, minWidth:130, fontSize:12 }}>
-                                <option value="">— skip —</option>
-                                {ROOMS.map(r => <option key={r} value={r}>{r}</option>)}
-                              </select>
+                                style={{ ...S.input, width:70, fontSize:11, padding:"5px 8px" }}/>
+                              {/* Width */}
+                              <input
+                                type="number" placeholder="W (ft)" min="0" step="0.1"
+                                value={det.width||""}
+                                onChange={e => {
+                                  const updated = form.floorPlanPending.map((d,i) =>
+                                    i===idx ? {...d, width: e.target.value} : d
+                                  );
+                                  setF("floorPlanPending", updated);
+                                }}
+                                style={{ ...S.input, width:70, fontSize:11, padding:"5px 8px" }}/>
+                              <span style={{ fontSize:10, color:C.muted }}>ft</span>
                             </div>
                           </div>
                         ))}
 
-                        {/* Auto-suggest button */}
-                        <button onClick={() => {
-                          // Smart auto-suggest based on keywords
-                          const suggest = (name) => {
-                            const n = name.toLowerCase();
-                            if (n.includes("master"))                          return "Master Bedroom";
-                            if (n.match(/bed.*[23]|bedroom.?[23]|[23].*bed/))  return n.includes("2") ? "Children Bedroom" : "Guest Bedroom";
-                            if (n.includes("bed"))                             return "Master Bedroom";
-                            if (n.includes("living") || n.includes("drawing") || n.includes("sitout")) return "Living Area";
-                            if (n.includes("dining") || n.includes("family")) return "Dining";
-                            if (n.includes("kitchen"))                         return "Kitchen";
-                            if (n.includes("bath") || n.includes("toilet") || n.includes("wc")) return "Bathroom";
-                            if (n.includes("balcon") || n.includes("terrace")) return "Balcony";
-                            if (n.includes("puja") || n.includes("pooja") || n.includes("prayer")) return "Pooja";
-                            if (n.includes("entrance") || n.includes("foyer") || n.includes("hall")) return "Entrance";
-                            if (n.includes("study") || n.includes("office"))  return "Study Room";
-                            return "";
-                          };
-                          const updated = form.floorPlanPending.map(d =>
-                            ({...d, _mapped: d._mapped || suggest(d.name)})
-                          );
-                          setF("floorPlanPending", updated);
-                        }} style={{ ...S.btn("ghost"), fontSize:11, marginBottom:10, width:"100%" }}>
-                          🤖 Auto-suggest mapping
-                        </button>
+
 
                         {/* Apply button */}
                         <button onClick={() => {
                           const newRoomDetails = {};
-                          const mappedRooms = [];
+                          const addedRooms    = [];
+                          const newCustom     = [];
+
                           form.floorPlanPending.forEach(det => {
-                            const target = det._mapped;
-                            if (!target || !ROOMS.includes(target)) return;
-                            mappedRooms.push(target);
-                            newRoomDetails[target] = {
-                              length:      String(parseFloat(det.length||0).toFixed(1)),
-                              width:       String(parseFloat(det.width||0).toFixed(1)),
+                            const roomName = (det.name || "").trim();
+                            if (!roomName) return;
+                            const l = parseFloat(det.length || 0);
+                            const w = parseFloat(det.width  || 0);
+                            if (l <= 0 && w <= 0) return; // skip rooms with no dims
+
+                            addedRooms.push(roomName);
+                            // If not in default list, add to customRooms so it works in Dimensions tab
+                            if (!DEFAULT_ROOMS.includes(roomName)) newCustom.push(roomName);
+                            newRoomDetails[roomName] = {
+                              length:      String(l.toFixed(1)),
+                              width:       String(w.toFixed(1)),
                               height:      String(parseFloat(det.height||9).toFixed(1)),
-                              photos:      form.roomDetails?.[target]?.photos || [],
-                              subsections: form.roomDetails?.[target]?.subsections || {},
+                              photos:      form.roomDetails?.[roomName]?.photos || [],
+                              subsections: form.roomDetails?.[roomName]?.subsections || {},
                             };
                           });
-                          const uniqueRooms = [...new Set(mappedRooms)];
+
+                          if (!addedRooms.length) {
+                            showToast("Enter at least one room with dimensions", "error"); return;
+                          }
+
+                          const allCustom = [...new Set([...(form.customRooms||[]), ...newCustom])];
+
                           setForm(f => ({
                             ...f,
-                            rooms: uniqueRooms.length > 0 ? uniqueRooms : f.rooms,
-                            roomDetails: { ...f.roomDetails, ...newRoomDetails },
-                            floorPlanPending: null, // clear mapping UI
+                            rooms:        [...new Set(addedRooms)],
+                            customRooms:  allCustom,
+                            roomDetails:  { ...f.roomDetails, ...newRoomDetails },
+                            floorPlanPending: null,
                           }));
-                          showToast(
-                            `✅ ${uniqueRooms.length} rooms populated in Dimensions tab`,
-                            "success", 5000
-                          );
+
+                          showToast(`✅ ${addedRooms.length} rooms applied — go to Dimensions tab`, "success", 5000);
                           setTimeout(() => setActiveTab("dimensions"), 600);
                         }} style={{ ...S.btn(), fontSize:12, width:"100%" }}>
-                          ✓ Apply to Dimensions Tab →
+                          ✓ Apply to Dimensions →
                         </button>
                       </div>
                     )}
@@ -3333,7 +3337,7 @@ Rules for reading dimensions:
 
               {/* Room selector */}
               <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:24 }}>
-                {ROOMS.map(r=>(
+                {getRooms(form).map(r=>(
                   <button key={r} style={S.pill(form.rooms.includes(r))} onClick={()=>toggleRoom(r)}>{r}</button>
                 ))}
               </div>
