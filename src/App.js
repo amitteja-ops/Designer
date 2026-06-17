@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import "./index.css";
 import { sb, toRow, fromRow, TABLE } from "./supabase";
 
 // Default rooms — extended dynamically when floor plan is uploaded
@@ -1123,7 +1124,7 @@ function ClientReport({ selected, setView, customers }) {
     <div style={{ background:C.white,minHeight:"100vh",
                   fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
                   color:C.ink,paddingBottom:60 }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
       <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
         <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
         <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
@@ -2785,6 +2786,10 @@ High Rise Interiors, Hyderabad`
   // ── DETAIL ────────────────────────────────────────────────────────────
   if (view==="detail" && selected) return (
     <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)",color:"rgba(255,255,255,0.92)",fontFamily:"Inter,-apple-system,BlinkMacSystemFont,sans-serif",position:"relative"}}>
+      {/* Glow orbs */}
+      <div className="orb" style={{top:"-20%",left:"-10%",width:"60%",height:"60%",background:"radial-gradient(ellipse,rgba(10,100,255,0.35) 0%,transparent 65%)"}}/>
+      <div className="orb" style={{top:"10%",right:"-15%",width:"55%",height:"55%",background:"radial-gradient(ellipse,rgba(120,40,220,0.28) 0%,transparent 65%)"}}/>
+      <div className="orb" style={{bottom:"-15%",left:"25%",width:"50%",height:"45%",background:"radial-gradient(ellipse,rgba(0,130,190,0.18) 0%,transparent 65%)"}}/>
       <Orbs/>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -3138,33 +3143,43 @@ High Rise Interiors, Hyderabad`
       </div>
       <div style={S.main}>
         {/* Stats */}
-        <div style={{ display:"flex",gap:14,marginBottom:28,flexWrap:"wrap" }}>
-          {[["Total",stats.total,"👥"],["Active",stats.active,"🔨"],["Leads",stats.leads,"📋"],["Completed",stats.completed,"✅"]].map(([l,n,i])=>(
-            <div key={l} style={{ ...S.card,flex:1 }}>
-              <div style={{ fontSize:34,fontWeight:700,color:C.red,lineHeight:1 }}>{loading?"…":n}</div>
-              <div style={{ fontSize:11,letterSpacing:2,color:C.muted,textTransform:"uppercase",marginTop:4 }}>{i} {l}</div>
+        <div style={{display:"flex",gap:12,marginBottom:24,flexWrap:"wrap"}}>
+          {[
+            {l:"Total",    n:stats.total,     i:"👥", cls:"stat-blue",   col:"#0A84FF"},
+            {l:"Active",   n:stats.active,    i:"⚡", cls:"stat-purple", col:"#BF5AF2"},
+            {l:"Leads",    n:stats.leads,     i:"🌱", cls:"stat-amber",  col:"#FF9F0A"},
+            {l:"Completed",n:stats.completed, i:"✅", cls:"stat-green",  col:"#30D158"},
+          ].map(({l,n,i,cls,col})=>(
+            <div key={l} className={`stat-card ${cls} slide-up`} style={{flex:1,minWidth:120}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                <span style={{fontSize:10,letterSpacing:1.8,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",fontWeight:600}}>{l}</span>
+                <span style={{fontSize:18}}>{i}</span>
+              </div>
+              <div style={{fontSize:32,fontWeight:700,color:col,letterSpacing:-1,lineHeight:1}}>{loading?"…":n}</div>
+              <div style={{marginTop:10,height:2,borderRadius:2,background:`linear-gradient(90deg,${col} 0%,${col}00 100%)`}}/>
             </div>
           ))}
-          <div style={{ ...S.card,flex:1,background:C.light }}>
-            <div style={{ fontSize:22,fontWeight:700,color:C.red,lineHeight:1 }}>{loading?"…":fmt(stats.revenue)}</div>
-            <div style={{ fontSize:11,letterSpacing:2,color:C.muted,textTransform:"uppercase",marginTop:4 }}>💰 Pipeline</div>
+          <div className="stat-card slide-up" style={{flex:1,minWidth:140,
+            background:"linear-gradient(135deg,rgba(255,159,10,0.15),rgba(255,159,10,0.05))",
+            borderColor:"rgba(255,159,10,0.3)",
+            boxShadow:"0 8px 32px rgba(255,159,10,0.2),inset 0 1px 0 rgba(255,255,255,0.12)"}}>
+            <div style={{fontSize:10,letterSpacing:1.8,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",fontWeight:600,marginBottom:8}}>💰 Pipeline</div>
+            <div style={{fontSize:20,fontWeight:700,color:"#FF9F0A",letterSpacing:-0.5,lineHeight:1}}>{loading?"…":fmt(stats.revenue)}</div>
+            <div style={{marginTop:10,height:2,borderRadius:2,background:"linear-gradient(90deg,#FF9F0A 0%,#FF9F0A00 100%)"}}/>
           </div>
         </div>
         {/* Search */}
         <div style={{ display:"flex",gap:12,marginBottom:20,flexWrap:"wrap",alignItems:"center" }}>
-          <input style={{ ...S.input,width:280,marginBottom:0 }} placeholder="Search name, phone, address…" value={search} onChange={e=>setSearch(e.target.value)}/>
-          <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+          <input className="glass-input" style={{width:280,marginBottom:0}} placeholder="Search name, phone, address…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {["All",...STATUSES].map(s=>{
-              const cfg={Lead:["rgba(255,159,10,0.28)","#FF9F0A","rgba(255,159,10,0.45)"],Active:["rgba(10,132,255,0.28)","#0A84FF","rgba(10,132,255,0.45)"],"In Progress":["rgba(191,90,242,0.28)","#BF5AF2","rgba(191,90,242,0.45)"],Completed:["rgba(48,209,88,0.28)","#30D158","rgba(48,209,88,0.45)"],"On Hold":["rgba(255,69,58,0.28)","#FF453A","rgba(255,69,58,0.45)"],All:["rgba(10,132,255,0.28)","#0A84FF","rgba(10,132,255,0.45)"]}[s]||["rgba(255,255,255,0.1)","#fff","rgba(255,255,255,0.3)"];
+              const cls={"All":"pill-all","Lead":"pill-lead","Active":"pill-active","In Progress":"pill-progress","Completed":"pill-completed","On Hold":"pill-onhold"}[s]||"";
               const active=filterStatus===s;
               return (
-                <button key={s} className="pill" onClick={()=>setFilterStatus(s)} style={{
-                  background: active ? cfg[0] : "rgba(255,255,255,0.08)",
-                  color:      active ? cfg[1] : "rgba(255,255,255,0.75)",
-                  border:     active ? `1px solid ${cfg[2]}` : "1px solid rgba(255,255,255,0.15)",
-                  boxShadow:  active ? `0 0 16px ${cfg[0]}` : "none",
-                  fontSize:13, padding:"8px 20px",
-                }}>{s}</button>
+                <button key={s} className={`pill ${active?cls:""}`}
+                  onClick={()=>setFilterStatus(s)}>
+                  {s}
+                </button>
               );
             })}
           </div>
@@ -3177,9 +3192,8 @@ High Rise Interiors, Hyderabad`
             {customers.length===0 && <button style={{ ...S.btn(),marginTop:24 }} onClick={openNew}>+ Add First Client</button>}
           </div>
         ) : filtered.map(c=>(
-          <div key={c.id} style={{ ...S.card,cursor:"pointer",transition:"all 0.2s",marginBottom:12 }}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=C.teal;e.currentTarget.style.boxShadow=`0 4px 20px rgba(26,82,118,0.10)`}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=C.line;e.currentTarget.style.boxShadow="0 1px 4px rgba(15,25,35,0.08)"}}
+          <div key={c.id} className="client-row slide-up"
+            style={{padding:"16px 20px",marginBottom:6}}
             onClick={()=>openDetail(c)}>
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10 }}>
               <div>
@@ -3188,8 +3202,8 @@ High Rise Interiors, Hyderabad`
                 {c.address && <div style={{ fontSize:12,color:"#B0A0A0",marginTop:2 }}>📍 {c.address}</div>}
               </div>
               <div style={{ display:"flex",gap:10,alignItems:"center",flexWrap:"wrap" }}>
-                {c.quotation && <span style={{ background:C.light,color:C.red,fontWeight:700,fontSize:13,padding:"4px 12px",borderRadius:20,border:`1px solid ${C.line}` }}>{fmt(c.quotation)}</span>}
-                <span style={S.badge(c.status)}>{c.status}</span>
+                {c.quotation && <span style={{fontWeight:700,fontSize:13,color:"#30D158"}}>{fmt(c.quotation)}</span>}
+                <span className={{"Lead":"badge badge-lead","Active":"badge badge-active","In Progress":"badge badge-inprogress","Completed":"badge badge-completed","On Hold":"badge badge-onhold"}[c.status]||"badge"}>{c.status}</span>
                 <button style={{ ...S.btn("ghost"),padding:"6px 14px",fontSize:11 }} onClick={e=>{e.stopPropagation();openEdit(c);}}>Edit</button>
               </div>
             </div>
