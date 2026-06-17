@@ -2802,7 +2802,6 @@ High Rise Interiors, Hyderabad`
       <div className="orb" style={{top:"-20%",left:"-10%",width:"60%",height:"60%",background:"radial-gradient(ellipse,rgba(10,100,255,0.35) 0%,transparent 65%)"}}/>
       <div className="orb" style={{top:"10%",right:"-15%",width:"55%",height:"55%",background:"radial-gradient(ellipse,rgba(120,40,220,0.28) 0%,transparent 65%)"}}/>
       <div className="orb" style={{bottom:"-15%",left:"25%",width:"50%",height:"45%",background:"radial-gradient(ellipse,rgba(0,130,190,0.18) 0%,transparent 65%)"}}/>
-      <Orbs/>
       {/* Styles from index.css */}
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div className="crm-nav" style={{height:54,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -2818,40 +2817,43 @@ High Rise Interiors, Hyderabad`
         </div>
       </div>
       <div style={S.main}>
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:20 }}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:16}}>
           <div>
-            <div className="glass" style={{marginBottom:16}}>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16 }}>
-                <div><div style={{ fontSize:22,fontWeight:700 }}>{selected.name}</div><div style={{ color:C.muted,fontSize:13,marginTop:2 }}>{selected.projectType}</div></div>
-                <span style={S.badge(selected.status)}>{selected.status}</span>
+            <div className="glass" style={{marginBottom:16,padding:"24px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+                <div>
+                  <div style={{fontSize:24,fontWeight:700,letterSpacing:-0.5,marginBottom:4}}>{selected.name}</div>
+                  <div style={{color:"rgba(255,255,255,0.5)",fontSize:13}}>{selected.projectType}</div>
+                </div>
+                <span className={{"Lead":"badge badge-lead","Active":"badge badge-active","In Progress":"badge badge-inprogress","Completed":"badge badge-completed","On Hold":"badge badge-onhold"}[selected.status]||"badge"} style={{fontSize:11}}>{selected.status}</span>
               </div>
               {[["📞",selected.phone],["📧",selected.email],["📍",selected.address],["📅","Start: "+selected.startDate],["⏱",selected.timeline],["💰",fmt(selected.quotation)]].filter(([,v])=>v&&!v.includes("Start: ")).map(([i,v])=>(
-                <div key={i} style={{ fontSize:13,marginBottom:6 }}><span style={{ color:C.muted }}>{i} </span>{v}</div>
+                <div key={i} style={{ fontSize:13,marginBottom:6 }}><span style={{ color:"rgba(255,255,255,0.5)" }}>{i} </span>{v}</div>
               ))}
-              {selected.startDate && <div style={{ fontSize:13,marginBottom:6 }}><span style={{ color:C.muted }}>📅 </span>Start: {selected.startDate}</div>}
+              {selected.startDate && <div style={{ fontSize:13,marginBottom:6 }}><span style={{ color:"rgba(255,255,255,0.5)" }}>📅 </span>Start: {selected.startDate}</div>}
             </div>
-            {selected.notes && <div className="glass" style={{padding:"20px 24px"}}><div style={S.sec}>Notes</div><div style={{ fontSize:14,lineHeight:1.8 }}>{selected.notes}</div></div>}
+            {selected.notes && <div className="glass" style={{padding:"20px 24px"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Notes</div><div style={{ fontSize:14,lineHeight:1.8 }}>{selected.notes}</div></div>}
           </div>
           <div>
             <div className="glass" style={{marginBottom:16}}>
-              <div style={S.sec}>Design & Scope</div>
-              {selected.style && <div style={{ marginBottom:12 }}><span style={{ color:C.muted,fontSize:13 }}>Style: </span><strong>{selected.style}</strong></div>}
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Design & Scope</div>
+              {selected.style && <div style={{ marginBottom:12 }}><span style={{ color:"rgba(255,255,255,0.5)",fontSize:13 }}>Style: </span><strong>{selected.style}</strong></div>}
               {(selected.rooms||[]).length>0 && (
                 <div>
                   {selected.rooms.map(r => {
                     const rd = selected.roomDetails?.[r] || {};
                     const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : null;
                     return (
-                      <div key={r} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}` }}>
+                      <div key={r} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-                          <span style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</span>
-                          {area && <span style={{ fontSize:12, color:C.muted }}>{rd.length} × {rd.width} ft = <strong>{area} sq ft</strong></span>}
+                          <span style={{ fontWeight:700, fontSize:13, color:"rgba(255,255,255,0.92)" }}>🏠 {r}</span>
+                          {area && <span style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>{rd.length} × {rd.width} ft = <strong>{area} sq ft</strong></span>}
                         </div>
-                        {rd.height && <div style={{ fontSize:12, color:C.muted, marginBottom:4 }}>Ceiling: {rd.height} ft</div>}
+                        {rd.height && <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)", marginBottom:4 }}>Ceiling: {rd.height} ft</div>}
                         {rd.notes && <div style={{ fontSize:12, color:C.dark }}>{rd.notes}</div>}
                         {(rd.photos||[]).length>0 && (
                           <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginTop:8 }}>
-                            {rd.photos.map((p,i)=>(<img key={i} src={p} alt={r} style={{ width:80, height:80, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.line}` }}/>))}
+                            {rd.photos.map((p,i)=>(<img key={i} src={p} alt={r} style={{ width:80, height:80, objectFit:"cover", borderRadius:8, border:"1px solid rgba(255,255,255,0.18)" }}/>))}
                           </div>
                         )}
                       </div>
@@ -2862,7 +2864,7 @@ High Rise Interiors, Hyderabad`
             </div>
             {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
               <div className="glass" style={{marginBottom:16}}>
-                <div style={S.sec}>Room Materials & Cost</div>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Room Materials & Cost</div>
                 {Object.entries(selected.roomMaterials).map(([room, mats]) => {
                   const roomCost = Object.entries(mats).reduce((total, [matType, sel]) => {
                     if (!sel?.name) return total;
@@ -2870,16 +2872,16 @@ High Rise Interiors, Hyderabad`
                     return total + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
                   }, 0);
                   return (
-                    <div key={room} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}` }}>
+                    <div key={room} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                        <span style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {room}</span>
-                        {roomCost > 0 && <span style={{ fontWeight:700, fontSize:13, color:C.red }}>{fmt(Math.round(roomCost))}</span>}
+                        <span style={{ fontWeight:700, fontSize:13, color:"rgba(255,255,255,0.92)" }}>🏠 {room}</span>
+                        {roomCost > 0 && <span style={{ fontWeight:700, fontSize:13, color:"#FF453A" }}>{fmt(Math.round(roomCost))}</span>}
                       </div>
                       {Object.entries(mats).filter(([,v])=>v?.name).map(([matType, sel]) => (
                         <div key={matType} style={{ fontSize:12, color:C.dark, marginBottom:3 }}>
-                          <span style={{ color:C.muted }}>{MATERIAL_LABELS[matType]}: </span>
+                          <span style={{ color:"rgba(255,255,255,0.5)" }}>{MATERIAL_LABELS[matType]}: </span>
                           <strong>{sel.name}</strong>
-                          {sel.qty && <span style={{ color:C.muted }}> × {sel.qty} {getCatalog(matType).find(m=>m.name===sel.name)?.unit}</span>}
+                          {sel.qty && <span style={{ color:"rgba(255,255,255,0.5)" }}> × {sel.qty} {getCatalog(matType).find(m=>m.name===sel.name)?.unit}</span>}
                         </div>
                       ))}
                     </div>
@@ -2893,7 +2895,7 @@ High Rise Interiors, Hyderabad`
                       return rt + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
                     }, 0), 0);
                   return grand > 0 ? (
-                    <div style={{ display:"flex", justifyContent:"space-between", background:C.red, borderRadius:10, padding:"10px 16px" }}>
+                    <div className="glass" style={{display:"flex",justifyContent:"space-between",padding:"12px 16px",borderRadius:12,background:"rgba(255,69,58,0.2)",borderColor:"rgba(255,69,58,0.4)"}}>
                       <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>Total Material Cost</span>
                       <span style={{ color:"#fff", fontWeight:700, fontSize:16 }}>{fmt(Math.round(grand))}</span>
                     </div>
@@ -2903,19 +2905,19 @@ High Rise Interiors, Hyderabad`
             )}
             {selected.quotation && (
               <div style={S.card}>
-                <div style={S.sec}>{getDocTerm(selected.status)}</div>
-                {selected.previousQuotation && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:C.muted }}>Previous: </span><span style={{ textDecoration:"line-through" }}>{fmt(selected.previousQuotation)}</span></div>}
-                {selected.revisedQuotation  && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:C.muted }}>Revised: </span>{fmt(selected.revisedQuotation)}</div>}
-                <div style={{ fontSize:20,fontWeight:700,color:C.teal,marginTop:8 }}>Final: {fmt(selected.quotation)}</div>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>{getDocTerm(selected.status)}</div>
+                {selected.previousQuotation && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:"rgba(255,255,255,0.5)" }}>Previous: </span><span style={{ textDecoration:"line-through" }}>{fmt(selected.previousQuotation)}</span></div>}
+                {selected.revisedQuotation  && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:"rgba(255,255,255,0.5)" }}>Revised: </span>{fmt(selected.revisedQuotation)}</div>}
+                <div style={{ fontSize:20,fontWeight:700,color:"#0A84FF",marginTop:8 }}>Final: {fmt(selected.quotation)}</div>
               </div>
             )}
           </div>
         </div>
         {/* ── Audit Trail Timeline ── */}
         <div className="glass" style={{ marginTop:20}}>
-          <div style={S.sec}>Audit Trail</div>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Audit Trail</div>
           {(selected.auditLog||[]).length === 0 ? (
-            <div style={{ textAlign:"center", color:C.muted, fontSize:13, padding:"12px 0" }}>
+            <div style={{ textAlign:"center", color:"rgba(255,255,255,0.5)", fontSize:13, padding:"12px 0" }}>
               No activity logged yet — edits and report prints will appear here
             </div>
           ) : (
@@ -2938,15 +2940,15 @@ High Rise Interiors, Hyderabad`
                     </div>
                     <div style={{ flex:1, paddingTop:4 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:C.ink }}>{entry.summary}</div>
-                        <div style={{ fontSize:10, color:C.muted, textAlign:"right", marginLeft:12, flexShrink:0 }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{entry.summary}</div>
+                        <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", textAlign:"right", marginLeft:12, flexShrink:0 }}>
                           <div>{date}</div><div>{time}</div>
                         </div>
                       </div>
                       {entry.snapshot?.changes?.length > 0 && (
-                        <div style={{ marginTop:6, background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"8px 12px", border:`1px solid ${C.line}` }}>
+                        <div style={{ marginTop:6, background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"8px 12px", border:"1px solid rgba(255,255,255,0.12)" }}>
                           {entry.snapshot.changes.map((c,j)=>(
-                            <div key={j} style={{ fontSize:11, color:C.muted, lineHeight:1.8 }}>• {c}</div>
+                            <div key={j} style={{ fontSize:11, color:"rgba(255,255,255,0.5)", lineHeight:1.8 }}>• {c}</div>
                           ))}
                         </div>
                       )}
@@ -2954,29 +2956,29 @@ High Rise Interiors, Hyderabad`
                         <div style={{ marginTop:8 }}>
                           <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
                             {entry.signatures?.client && <span style={{ background:"rgba(48,209,88,0.15)", color:"#30D158", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ Client signed</span>}
-                            {entry.signatures?.hri    && <span style={{ background:C.tealL, color:C.teal, fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ HRI signed</span>}
+                            {entry.signatures?.hri    && <span className="glass" style={{background:"rgba(10,132,255,0.12)", color:"#0A84FF", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ HRI signed</span>}
                           </div>
                           {/* Show signature images from audit log */}
                           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                             {entry.signatures?.clientImg && (
                               <div>
-                                <div style={{ fontSize:9, color:C.muted, marginBottom:2 }}>{selected.name}</div>
+                                <div style={{ fontSize:9, color:"rgba(255,255,255,0.5)", marginBottom:2 }}>{selected.name}</div>
                                 <img src={entry.signatures.clientImg} alt="Client sig"
-                                  style={{ height:48, border:`1px solid ${C.line}`, borderRadius:3, background:"rgba(255,255,255,0.06)" }}/>
+                                  style={{ height:48, border:"1px solid rgba(255,255,255,0.12)", borderRadius:3, background:"rgba(255,255,255,0.06)" }}/>
                               </div>
                             )}
                             {entry.signatures?.hriImg && (
                               <div>
-                                <div style={{ fontSize:9, color:C.muted, marginBottom:2 }}>High Rise Interiors</div>
+                                <div style={{ fontSize:9, color:"rgba(255,255,255,0.5)", marginBottom:2 }}>High Rise Interiors</div>
                                 <img src={entry.signatures.hriImg} alt="HRI sig"
-                                  style={{ height:48, border:`1px solid ${C.line}`, borderRadius:3, background:"rgba(255,255,255,0.06)" }}/>
+                                  style={{ height:48, border:"1px solid rgba(255,255,255,0.12)", borderRadius:3, background:"rgba(255,255,255,0.06)" }}/>
                               </div>
                             )}
                           </div>
                         </div>
                       )}
                       {isPrint && (
-                        <div style={{ fontSize:11, color:C.muted, marginTop:4 }}>
+                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", marginTop:4 }}>
                           {entry.snapshot?.sigClient && entry.snapshot?.sigHRI ? "✓ Both signatures captured"
                             : entry.snapshot?.sigClient ? "Client signed only"
                             : entry.snapshot?.sigHRI   ? "HRI signed only"
@@ -2984,9 +2986,9 @@ High Rise Interiors, Hyderabad`
                         </div>
                       )}
                       {(entry.snapshot?.quotation || entry.snapshot?.ref) && (
-                        <div style={{ fontSize:11, color:C.muted, marginTop:4, display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
-                          {entry.snapshot.ref && <span style={{ background:"rgba(255,255,255,0.07)", color:C.teal, padding:"1px 8px", borderRadius:2, fontWeight:700, fontSize:10, letterSpacing:1 }}>{entry.snapshot.ref}</span>}
-                          {entry.snapshot.quotation && <span>{getDocTerm(entry.snapshot.status)}: <strong style={{ color:C.teal }}>{fmt(entry.snapshot.quotation)}</strong></span>}
+                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", marginTop:4, display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
+                          {entry.snapshot.ref && <span style={{ background:"rgba(255,255,255,0.07)", color:"#0A84FF", padding:"1px 8px", borderRadius:2, fontWeight:700, fontSize:10, letterSpacing:1 }}>{entry.snapshot.ref}</span>}
+                          {entry.snapshot.quotation && <span>{getDocTerm(entry.snapshot.status)}: <strong style={{ color:"#0A84FF" }}>{fmt(entry.snapshot.quotation)}</strong></span>}
                           {entry.snapshot.status && <span style={{ ...S.badge(entry.snapshot.status), fontSize:9 }}>{entry.snapshot.status}</span>}
                         </div>
                       )}
@@ -3081,7 +3083,7 @@ High Rise Interiors, Hyderabad`
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10 }}>
               <div>
                 <div style={{ fontSize:18,fontWeight:700,marginBottom:3 }}>{c.name}</div>
-                <div style={{ fontSize:13,color:C.muted }}>{c.phone}{c.email?` · ${c.email}`:""}</div>
+                <div style={{ fontSize:13,color:"rgba(255,255,255,0.5)" }}>{c.phone}{c.email?` · ${c.email}`:""}</div>
                 {c.address && <div style={{ fontSize:12,color:"#B0A0A0",marginTop:2 }}>📍 {c.address}</div>}
               </div>
               <div style={{ display:"flex",gap:10,alignItems:"center",flexWrap:"wrap" }}>
@@ -3091,10 +3093,10 @@ High Rise Interiors, Hyderabad`
               </div>
             </div>
             <div style={{ marginTop:10,display:"flex",gap:16,flexWrap:"wrap" }}>
-              {c.style && <span style={{ fontSize:12,color:C.red }}>✦ {c.style}</span>}
-              {(c.rooms||[]).length>0 && <span style={{ fontSize:12,color:C.muted }}>🏠 {c.rooms.slice(0,3).join(", ")}{c.rooms.length>3?` +${c.rooms.length-3}`:""}</span>}
-              {c.timeline && <span style={{ fontSize:12,color:C.muted }}>⏱ {c.timeline}</span>}
-              {c.startDate && <span style={{ fontSize:12,color:C.muted }}>📅 {c.startDate}</span>}
+              {c.style && <span style={{ fontSize:12,color:"#FF453A" }}>✦ {c.style}</span>}
+              {(c.rooms||[]).length>0 && <span style={{ fontSize:12,color:"rgba(255,255,255,0.5)" }}>🏠 {c.rooms.slice(0,3).join(", ")}{c.rooms.length>3?` +${c.rooms.length-3}`:""}</span>}
+              {c.timeline && <span style={{ fontSize:12,color:"rgba(255,255,255,0.5)" }}>⏱ {c.timeline}</span>}
+              {c.startDate && <span style={{ fontSize:12,color:"rgba(255,255,255,0.5)" }}>📅 {c.startDate}</span>}
             </div>
           </div>
         ))}
@@ -3133,16 +3135,16 @@ High Rise Interiors, Hyderabad`
           {activeTab==="personal" && (
             <div>
               {form.id && (
-                <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"10px 16px", marginBottom:16, display:"flex", alignItems:"center", gap:12, border:`1px solid ${C.line}` }}>
-                  <span style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase" }}>Client ID</span>
-                  <span style={{ fontSize:13, fontWeight:700, color:C.red, fontFamily:"monospace" }}>{form.id}</span>
-                  <span style={{ fontSize:11, color:C.muted }}>(Read only — cannot be changed)</span>
+                <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"10px 16px", marginBottom:16, display:"flex", alignItems:"center", gap:12, border:"1px solid rgba(255,255,255,0.12)" }}>
+                  <span style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase" }}>Client ID</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:"#FF453A", fontFamily:"monospace" }}>{form.id}</span>
+                  <span style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>(Read only — cannot be changed)</span>
                 </div>
               )}
               {/* ── Floor Plan Upload ── */}
               <div style={{ marginBottom:24 }}>
-                <div style={S.sec}>Floor Plan</div>
-                <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Floor Plan</div>
+                <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)", marginBottom:12 }}>
                   Upload a floor plan image for reference, then enter room dimensions manually or use AI analysis (requires API credits).
                 </div>
 
@@ -3225,10 +3227,10 @@ Dimension rules:
 
 
                     <div style={{ fontSize:28, marginBottom:8 }}>🏗</div>
-                    <div style={{ fontSize:13, color:C.ink, fontWeight:600, marginBottom:4 }}>
+                    <div style={{ fontSize:13, color:"rgba(255,255,255,0.92)", fontWeight:600, marginBottom:4 }}>
                       Upload Floor Plan
                     </div>
-                    <div style={{ fontSize:11, color:C.muted }}>
+                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>
                       JPG, PNG — AI will extract room names and dimensions automatically
                     </div>
                   </label>
@@ -3237,7 +3239,7 @@ Dimension rules:
                     <div style={{ position:"relative", display:"inline-block", marginBottom:8 }}>
                       <img src={form.floorPlanUrl} alt="Floor plan"
                         style={{ maxWidth:"100%", maxHeight:200, borderRadius:3,
-                          border:`1px solid ${C.line}`, objectFit:"contain", background:C.smoke }}/>
+                          border:"1px solid rgba(255,255,255,0.12)", objectFit:"contain", background:C.smoke }}/>
                       <button onClick={()=>setForm(f=>({...f,floorPlanUrl:"",floorPlanData:null}))}
                         style={{ position:"absolute", top:4, right:4, background:"rgba(0,0,0,0.6)",
                           color:"#fff", border:"none", borderRadius:2, cursor:"pointer",
@@ -3246,21 +3248,21 @@ Dimension rules:
                     {/* ── Room Mapping UI ── */}
                     {form.floorPlanPending && form.floorPlanPending.length > 0 && (
                       <div style={{ marginTop:12, background:"rgba(255,255,255,0.07)", borderRadius:3,
-                        border:`1px solid ${C.line}`, padding:14 }}>
-                        <div style={{ fontSize:11, fontWeight:700, color:C.teal,
+                        border:"1px solid rgba(255,255,255,0.12)", padding:14 }}>
+                        <div style={{ fontSize:11, fontWeight:700, color:"#0A84FF",
                           letterSpacing:2, textTransform:"uppercase", marginBottom:4 }}>
                           📐 Enter Dimensions from Floor Plan
                         </div>
-                        <div style={{ fontSize:11, color:C.muted, marginBottom:12 }}>
+                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", marginBottom:12 }}>
                           Look at your floor plan and type the dimensions for each room (in feet). Leave blank to skip.
                         </div>
 
                         {form.floorPlanPending.map((det, idx) => (
                           <div key={idx} style={{ marginBottom:10, padding:"8px 12px",
-                            background:C.white, borderRadius:3, border:`1px solid ${C.line}` }}>
+                            background:C.white, borderRadius:3, border:"1px solid rgba(255,255,255,0.12)" }}>
                             <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
                               {/* Room name */}
-                              <div style={{ fontSize:12, fontWeight:700, color:C.ink, minWidth:110 }}>
+                              <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.92)", minWidth:110 }}>
                                 {det.name}
                               </div>
                               {/* Length */}
@@ -3285,7 +3287,7 @@ Dimension rules:
                                   setF("floorPlanPending", updated);
                                 }}
                                 style={{ ...S.input, width:70, fontSize:11, padding:"5px 8px" }}/>
-                              <span style={{ fontSize:10, color:C.muted }}>ft</span>
+                              <span style={{ fontSize:10, color:"rgba(255,255,255,0.5)" }}>ft</span>
                             </div>
                           </div>
                         ))}
@@ -3357,7 +3359,7 @@ Dimension rules:
                 )}
               </div>
 
-              <div style={S.sec}>Client Information</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Client Information</div>
               <div style={S.row}>
                 <Field label="Full Name *">
                   <input className="glass-input" style={{}} value={form.name} onChange={e=>setF("name",e.target.value)} placeholder="Mr. Sashi Kanth"/>
@@ -3375,7 +3377,7 @@ Dimension rules:
                 </Field>
               </div>
               <div style={{ marginBottom:18 }}>
-                <label style={S.label}>Project Address</label>
+                <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Project Address</label>
                 <input className="glass-input" style={{}} value={form.address} onChange={e=>setF("address",e.target.value)} placeholder="EIPL Cornerstone T2, 803, Hyderabad, Telangana"/>
               </div>
               <div style={S.row}>
@@ -3387,18 +3389,18 @@ Dimension rules:
                 </Field>
               </div>
               <div style={{ marginBottom:18 }}>
-                <label style={S.label}>Start Date</label>
+                <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Start Date</label>
                 <input className="glass-input" style={{}} type="date" value={form.startDate} onChange={e=>setF("startDate",e.target.value)}/>
               </div>
               <div style={{ marginBottom:18 }}>
-                <label style={S.label}>Duration</label>
+                <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Duration</label>
                 <select className="glass-input" style={{}} value={form.timeline} onChange={e=>setF("timeline",e.target.value)}>
                   <option value="">Select duration</option>
                   {TIMELINES.map(t=><option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div style={{ marginBottom:18 }}>
-                <label style={S.label}>Interior Style</label>
+                <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Interior Style</label>
                 <div style={{ display:"flex",flexWrap:"wrap",gap:8,marginTop:8 }}>
                   {STYLES.map(s=><button key={s} style={S.pill(form.style===s)} onClick={()=>setF("style",s)}>{s}</button>)}
                 </div>
@@ -3409,8 +3411,8 @@ Dimension rules:
           {/* ── DIMENSIONS ── */}
           {activeTab==="dimensions" && (
             <div>
-              <div style={S.sec}>Select Rooms & Enter Dimensions</div>
-              <div style={{ fontSize:13, color:C.muted, marginBottom:16, lineHeight:1.7 }}>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Select Rooms & Enter Dimensions</div>
+              <div style={{ fontSize:13, color:"rgba(255,255,255,0.5)", marginBottom:16, lineHeight:1.7 }}>
                 Select each room, enter its dimensions and upload a photo. All measurements in feet.
               </div>
 
@@ -3423,7 +3425,7 @@ Dimension rules:
 
               {/* Per-room dimension + photo cards */}
               {form.rooms.length === 0 && (
-                <div style={{ textAlign:"center", padding:"32px", background:C.light, borderRadius:12, color:C.muted, fontSize:13 }}>
+                <div style={{ textAlign:"center", padding:"32px", background:"rgba(255,255,255,0.05)", borderRadius:12, color:"rgba(255,255,255,0.5)", fontSize:13 }}>
                   ☝️ Select rooms above to enter their dimensions
                 </div>
               )}
@@ -3437,25 +3439,25 @@ Dimension rules:
                 const area = rd.length && rd.width ? (parseFloat(rd.length) * parseFloat(rd.width)).toFixed(0) : null;
 
                 return (
-                  <div key={room} style={{ background:"rgba(255,255,255,0.08)", border:`1.5px solid ${C.line}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
+                  <div key={room} className="glass" style={{borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
                     {/* Room header */}
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-                      <div style={{ fontSize:15, fontWeight:700, color:C.ink }}>🏠 {room}</div>
-                      {area && <span style={{ background:C.light, color:C.red, fontSize:12, fontWeight:700, padding:"3px 12px", borderRadius:20 }}>{area} sq ft</span>}
+                      <div style={{ fontSize:15, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>🏠 {room}</div>
+                      {area && <span className="glass" style={{ color:"#FF453A", fontSize:12, fontWeight:700, padding:"3px 12px", borderRadius:20 }}>{area} sq ft</span>}
                     </div>
 
                     {/* Dimensions */}
                     <div style={{ display:"flex", gap:12, marginBottom:14, flexWrap:"wrap" }}>
                       <div style={{ flex:1 }}>
-                        <label style={S.label}>Length (ft)</label>
+                        <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Length (ft)</label>
                         <input className="glass-input" style={{}} type="number" value={rd.length||""} onChange={e=>setRD("length",e.target.value)} placeholder="0"/>
                       </div>
                       <div style={{ flex:1 }}>
-                        <label style={S.label}>Width (ft)</label>
+                        <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Width (ft)</label>
                         <input className="glass-input" style={{}} type="number" value={rd.width||""} onChange={e=>setRD("width",e.target.value)} placeholder="0"/>
                       </div>
                       <div style={{ flex:1 }}>
-                        <label style={S.label}>Height (ft)</label>
+                        <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Height (ft)</label>
                         <input className="glass-input" style={{}} type="number" value={rd.height||""} onChange={e=>setRD("height",e.target.value)} placeholder="0"/>
                       </div>
                     </div>
@@ -3463,8 +3465,8 @@ Dimension rules:
                     {/* Subsections from Excel */}
                     {ROOM_SUBSECTIONS[room] && (
                       <div style={{ marginBottom:14 }}>
-                        <label style={S.label}>Work Items</label>
-                        <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                        <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Work Items</label>
+                        <div style={{ border:"1px solid rgba(255,255,255,0.12)", borderRadius:3, overflow:"hidden" }}>
                           <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:0,
                             padding:"6px 12px", background:"#060812", fontSize:10, fontWeight:700,
                             color:"#fff", letterSpacing:1.5, textTransform:"uppercase" }}>
@@ -3490,8 +3492,8 @@ Dimension rules:
                               <div key={key} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr",
                                 padding:"8px 12px", background:idx%2===0?C.white:C.smoke,
                                 borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
-                                <span style={{ fontSize:12, fontWeight:600, color:C.ink }}>{item.name}</span>
-                                <span style={{ fontSize:11, color:C.muted }}>{item.type}</span>
+                                <span style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.92)" }}>{item.name}</span>
+                                <span style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>{item.type}</span>
                                 <input style={{ ...S.input, padding:"4px 8px", fontSize:12, width:"80px" }}
                                   type="number" value={sub.qty||""}
                                   onChange={e=>setSub("qty",e.target.value)}
@@ -3513,25 +3515,25 @@ Dimension rules:
 
                     {/* Notes for this room */}
                     <div style={{ marginBottom:14 }}>
-                      <label style={S.label}>Room Notes</label>
+                      <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Room Notes</label>
                       <input className="glass-input" style={{}} value={rd.notes||""} onChange={e=>setRD("notes",e.target.value)} placeholder={`Special requirements for ${room}…`}/>
                     </div>
 
                     {/* Photo upload */}
                     <div>
-                      <label style={S.label}>Room Photo(s)</label>
+                      <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Room Photo(s)</label>
                       <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"flex-start", marginTop:6 }}>
                         {/* Photo previews */}
                         {(rd.photos||[]).map((photo, idx) => (
                           <div key={idx} style={{ position:"relative", width:100, height:100 }}>
-                            <img src={photo} alt={`${room} ${idx+1}`} style={{ width:100, height:100, objectFit:"cover", borderRadius:10, border:`1.5px solid ${C.line}` }}/>
+                            <img src={photo} alt={`${room} ${idx+1}`} style={{ width:100, height:100, objectFit:"cover", borderRadius:10, border:"1px solid rgba(255,255,255,0.18)" }}/>
                             <button
                               onClick={() => setRD("photos", (rd.photos||[]).filter((_,i)=>i!==idx))}
                               style={{ position:"absolute", top:-6, right:-6, background:C.red, color:"#fff", border:"none", borderRadius:"50%", width:20, height:20, cursor:"pointer", fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit" }}>✕</button>
                           </div>
                         ))}
                         {/* Upload button */}
-                        <label style={{ width:100, height:100, border:`2px dashed ${C.border}`, borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", color:C.muted, fontSize:11, letterSpacing:1, textAlign:"center", background:C.light }}>
+                        <label style={{ width:100, height:100, border:`2px dashed ${C.border}`, borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"rgba(255,255,255,0.5)", fontSize:11, letterSpacing:1, textAlign:"center", background:C.light }}>
                           <span style={{ fontSize:24, marginBottom:4 }}>📷</span>
                           <span>Add Photo</span>
                           <input type="file" accept="image/*" multiple style={{ display:"none" }}
@@ -3568,20 +3570,20 @@ Dimension rules:
 
               {/* Total summary */}
               {form.rooms.length > 0 && (
-                <div style={{ background:C.light, borderRadius:12, padding:"16px 20px", border:`1px solid ${C.line}`, marginTop:8 }}>
-                  <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Total Summary</div>
+                <div className="glass" style={{ borderRadius:12, padding:"16px 20px", border:"1px solid rgba(255,255,255,0.12)", marginTop:8 }}>
+                  <div style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:10 }}>Total Summary</div>
                   <div style={{ display:"flex", gap:32, flexWrap:"wrap" }}>
-                    <div><span style={{ color:C.muted, fontSize:13 }}>Rooms: </span><strong>{form.rooms.length}</strong></div>
+                    <div><span style={{ color:"rgba(255,255,255,0.5)", fontSize:13 }}>Rooms: </span><strong>{form.rooms.length}</strong></div>
                     {(() => {
                       const totalArea = form.rooms.reduce((sum, r) => {
                         const rd = form.roomDetails?.[r] || {};
                         return sum + (rd.length && rd.width ? parseFloat(rd.length)*parseFloat(rd.width) : 0);
                       }, 0);
-                      return totalArea > 0 ? <div><span style={{ color:C.muted, fontSize:13 }}>Total Area: </span><strong>{totalArea.toFixed(0)} sq ft</strong></div> : null;
+                      return totalArea > 0 ? <div><span style={{ color:"rgba(255,255,255,0.5)", fontSize:13 }}>Total Area: </span><strong>{totalArea.toFixed(0)} sq ft</strong></div> : null;
                     })()}
                     {(() => {
                       const photos = form.rooms.reduce((sum, r) => sum + ((form.roomDetails?.[r]?.photos)||[]).length, 0);
-                      return photos > 0 ? <div><span style={{ color:C.muted, fontSize:13 }}>Photos: </span><strong>{photos} uploaded</strong></div> : null;
+                      return photos > 0 ? <div><span style={{ color:"rgba(255,255,255,0.5)", fontSize:13 }}>Photos: </span><strong>{photos} uploaded</strong></div> : null;
                     })()}
                   </div>
                 </div>
@@ -3592,9 +3594,9 @@ Dimension rules:
           {/* ── MATERIALS ── */}
           {activeTab==="materials" && (
             <div>
-              <div style={S.sec}>Room-wise Material Selection</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Room-wise Material Selection</div>
               {form.rooms.length === 0 ? (
-                <div style={{ textAlign:"center", padding:"32px", background:C.light, borderRadius:12, color:C.muted, fontSize:13 }}>
+                <div style={{ textAlign:"center", padding:"32px", background:"rgba(255,255,255,0.05)", borderRadius:12, color:"rgba(255,255,255,0.5)", fontSize:13 }}>
                   ☝️ Please select rooms in the Dimensions tab first
                 </div>
               ) : (
@@ -3624,10 +3626,10 @@ Dimension rules:
                     }, 0);
 
                     return (
-                      <div key={room} style={{ background:"rgba(255,255,255,0.08)", border:`1.5px solid ${C.line}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
+                      <div key={room} className="glass" style={{borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
                         {/* Room header */}
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, paddingBottom:12, borderBottom:`1px solid ${C.line}` }}>
-                          <div style={{ fontSize:15, fontWeight:700, color:C.ink }}>🏠 {room}</div>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, paddingBottom:12, borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
+                          <div style={{ fontSize:15, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>🏠 {room}</div>
                           {roomCost > 0 && <span style={{ background:C.red, color:"#fff", fontSize:13, fontWeight:700, padding:"4px 14px", borderRadius:20 }}>Est. {fmt(Math.round(roomCost))}</span>}
                         </div>
 
@@ -3642,12 +3644,12 @@ Dimension rules:
                           const lineTotal = selectedItem && sel.qty ? Math.round(parseFloat(sel.qty) * selectedItem.price) : null;
 
                           return (
-                            <div key={matType} style={{ marginBottom:14, background:"rgba(255,255,255,0.07)", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}` }}>
-                              <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10, fontWeight:700 }}>{MATERIAL_LABELS[matType]}</div>
+                            <div key={matType} style={{ marginBottom:14, background:"rgba(255,255,255,0.07)", borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
+                              <div style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:10, fontWeight:700 }}>{MATERIAL_LABELS[matType]}</div>
                               <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
                                 {/* Material selector */}
                                 <div style={{ flex:2 }}>
-                                  <label style={S.label}>Brand / Type</label>
+                                  <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Brand / Type</label>
                                   <select className="glass-input" style={{}} value={sel.name||""} onChange={e => setRM(matType, "name", e.target.value)}>
                                     <option value="">Select {MATERIAL_LABELS[matType]}</option>
                                     {matType==="hardware" ? (
@@ -3670,19 +3672,19 @@ Dimension rules:
                                 </div>
                                 {/* Quantity */}
                                 <div style={{ flex:1 }}>
-                                  <label style={S.label}>Qty ({selectedItem?.unit||"unit"})</label>
+                                  <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Qty ({selectedItem?.unit||"unit"})</label>
                                   <input className="glass-input" style={{}} type="number" value={sel.qty||""} onChange={e => setRM(matType, "qty", e.target.value)} placeholder="0"/>
                                 </div>
                                 {/* Rate display */}
                                 <div style={{ flex:1 }}>
-                                  <label style={S.label}>Rate</label>
-                                  <div style={{ ...S.input, background:"rgba(255,255,255,0.08)", color:C.muted, cursor:"default" }}>
+                                  <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Rate</label>
+                                  <div style={{ ...S.input, background:"rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.5)", cursor:"default" }}>
                                     {selectedItem ? `₹${selectedItem.price}/${selectedItem.unit}` : "—"}
                                   </div>
                                 </div>
                                 {/* Line total */}
                                 <div style={{ flex:1 }}>
-                                  <label style={S.label}>Total</label>
+                                  <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Total</label>
                                   <div style={{ ...S.input, background:lineTotal?C.light:"#F5F5F5", color:lineTotal?C.red:C.muted, fontWeight:700, cursor:"default" }}>
                                     {lineTotal ? fmt(lineTotal) : "—"}
                                   </div>
@@ -3727,17 +3729,17 @@ Dimension rules:
           {/* ── QUOTATION ── */}
           {activeTab==="quotation" && (
             <div>
-              <div style={S.sec}>{getDocTerm(form.status)} (INR ₹)</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>{getDocTerm(form.status)} (INR ₹)</div>
 
               {/* Configurable Labour % */}
-              <div style={{ display:"flex", alignItems:"center", gap:16, background:C.light, borderRadius:10, padding:"12px 18px", marginBottom:16, border:`1px solid ${C.line}` }}>
-                <div style={{ fontSize:12, fontWeight:700, color:C.red, letterSpacing:1 }}>⚙ LABOUR COST %</div>
+              <div style={{ display:"flex", alignItems:"center", gap:16, background:"rgba(255,255,255,0.05)", borderRadius:10, padding:"12px 18px", marginBottom:16, border:"1px solid rgba(255,255,255,0.12)" }}>
+                <div style={{ fontSize:12, fontWeight:700, color:"#FF453A", letterSpacing:1 }}>⚙ LABOUR COST %</div>
                 <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                   <input style={{ ...S.input, width:80, textAlign:"center", fontWeight:700 }} type="number" min="0" max="100"
                     value={form.labourPct} onChange={e=>setF("labourPct", parseFloat(e.target.value)||0)}/>
-                  <span style={{ fontSize:13, color:C.muted }}>% of material cost</span>
+                  <span style={{ fontSize:13, color:"rgba(255,255,255,0.5)" }}>% of material cost</span>
                 </div>
-                <div style={{ fontSize:12, color:C.muted }}>
+                <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>
                   Total = Material × {1 + (form.labourPct != null ? form.labourPct : 50)/100}x
                 </div>
                 <div style={{ display:"flex", gap:6, marginLeft:"auto" }}>
@@ -3758,10 +3760,10 @@ Dimension rules:
                 const labourMult = 1 + (form.labourPct != null ? form.labourPct : 50)/100;
                 const withLabour = Math.round(matCost * labourMult);
                 return matCost > 0 ? (
-                  <div style={{ background:C.light, borderRadius:12, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.line}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div className="glass" style={{ borderRadius:12, padding:"14px 18px", marginBottom:20, border:"1px solid rgba(255,255,255,0.12)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div>
-                      <div style={{ fontSize:12, fontWeight:700, color:C.red, letterSpacing:1 }}>AUTO-CALCULATED FROM MATERIALS</div>
-                      <div style={{ fontSize:13, color:C.muted, marginTop:4 }}>Material cost {fmt(Math.round(matCost))} + Labour ({form.labourPct||50}%) = <strong style={{ color:C.teal }}>{fmt(withLabour)}</strong></div>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#FF453A", letterSpacing:1 }}>AUTO-CALCULATED FROM MATERIALS</div>
+                      <div style={{ fontSize:13, color:"rgba(255,255,255,0.5)", marginTop:4 }}>Material cost {fmt(Math.round(matCost))} + Labour ({form.labourPct||50}%) = <strong style={{ color:"#0A84FF" }}>{fmt(withLabour)}</strong></div>
                     </div>
                     <button style={{ ...S.btn(), fontSize:11, padding:"8px 16px" }}
                       onClick={() => {
@@ -3786,11 +3788,11 @@ Dimension rules:
               </div>
 
               {/* Rebate & Coupon — two separate discounts */}
-              <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:12, padding:"18px 20px", border:`1px solid ${C.line}`, marginBottom:20 }}>
-                <div style={S.sec}>Rebate & Coupon Discount</div>
+              <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:12, padding:"18px 20px", border:"1px solid rgba(255,255,255,0.12)", marginBottom:20 }}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Rebate & Coupon Discount</div>
 
                 {/* Row 1: Rebate */}
-                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8, fontWeight:700 }}>Step 1 — Rebate</div>
+                <div style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:8, fontWeight:700 }}>Step 1 — Rebate</div>
                 <div style={S.row}>
                   <Field label="Rebate Type">
                     <select className="glass-input" style={{}} value={form.rebateType} onChange={e=>{
@@ -3821,7 +3823,7 @@ Dimension rules:
                       placeholder={form.rebateType==="percent"?"max 5%":"e.g. 25000"}/>
                   </Field>
                   <Field label="Rebate Amount">
-                    <div style={{ ...S.input, background:"rgba(255,255,255,0.08)", color:C.red, fontWeight:700, cursor:"default" }}>
+                    <div style={{ ...S.input, background:"rgba(255,255,255,0.08)", color:"#FF453A", fontWeight:700, cursor:"default" }}>
                       {form.previousQuotation && form.rebateValue
                         ? `- ${form.rebateType==="percent"
                             ? fmt(Math.round(parseFloat(form.previousQuotation)*Math.min(parseFloat(form.rebateValue||0),5)/100))
@@ -3832,8 +3834,8 @@ Dimension rules:
                 </div>
 
                 {/* This client's own referral code */}
-                <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.line}` }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:C.teal, letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>
+                <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"14px 18px", marginBottom:20, border:"1px solid rgba(255,255,255,0.12)" }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:"#0A84FF", letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>
                     This Client's Referral Code
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
@@ -3843,15 +3845,15 @@ Dimension rules:
                       borderRadius:3, border:`2px solid ${form.referralCode ? C.teal : C.line}` }}>
                       {form.referralCode || "— auto-generated on save —"}
                     </div>
-                    <div style={{ fontSize:12, color:C.muted, lineHeight:1.8 }}>
-                      <div>Share with friends to earn <strong style={{ color:C.teal }}>5% cashback</strong></div>
-                      <div>Friends get <strong style={{ color:C.teal }}>5% off</strong> their project</div>
+                    <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)", lineHeight:1.8 }}>
+                      <div>Share with friends to earn <strong style={{ color:"#0A84FF" }}>5% cashback</strong></div>
+                      <div>Friends get <strong style={{ color:"#0A84FF" }}>5% off</strong> their project</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Row 2: Apply another customer's referral code */}
-                <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8, fontWeight:700, marginTop:4 }}>Step 2 — Apply Referral Code (from another client)</div>
+                <div style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:8, fontWeight:700, marginTop:4 }}>Step 2 — Apply Referral Code (from another client)</div>
                 <div style={S.row}>
                   <Field label="Referral Code Used">
                     <input className="glass-input" style={{}}
@@ -3936,7 +3938,7 @@ Dimension rules:
 
                 {/* Live Summary */}
                 {form.previousQuotation && (
-                  <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}`, marginTop:4 }}>
+                  <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)", marginTop:4 }}>
                     {(() => {
                       const base = parseFloat(form.previousQuotation||0);
                       const rebateAmt = form.rebateType==="percent"
@@ -3947,10 +3949,10 @@ Dimension rules:
                       const final = afterRebate - couponAmt;
                       return (
                         <div style={{ display:"flex", gap:16, flexWrap:"wrap", fontSize:13, alignItems:"center" }}>
-                          <div><span style={{ color:C.muted }}>Base: </span><strong>{fmt(base)}</strong></div>
-                          {rebateAmt>0 && <div><span style={{ color:C.muted }}>Rebate: </span><strong style={{ color:C.teal }}>-{fmt(rebateAmt)}</strong></div>}
-                          {couponAmt>0 && <div><span style={{ color:C.muted }}>Coupon 5%: </span><strong style={{ color:"#30D158" }}>-{fmt(couponAmt)}</strong></div>}
-                          <div style={{ marginLeft:"auto" }}><span style={{ color:C.muted }}>Final: </span><strong style={{ color:C.teal, fontSize:16 }}>{fmt(final)}</strong></div>
+                          <div><span style={{ color:"rgba(255,255,255,0.5)" }}>Base: </span><strong>{fmt(base)}</strong></div>
+                          {rebateAmt>0 && <div><span style={{ color:"rgba(255,255,255,0.5)" }}>Rebate: </span><strong style={{ color:"#0A84FF" }}>-{fmt(rebateAmt)}</strong></div>}
+                          {couponAmt>0 && <div><span style={{ color:"rgba(255,255,255,0.5)" }}>Coupon 5%: </span><strong style={{ color:"#30D158" }}>-{fmt(couponAmt)}</strong></div>}
+                          <div style={{ marginLeft:"auto" }}><span style={{ color:"rgba(255,255,255,0.5)" }}>Final: </span><strong style={{ color:"#0A84FF", fontSize:16 }}>{fmt(final)}</strong></div>
                         </div>
                       );
                     })()}
@@ -3972,10 +3974,10 @@ Dimension rules:
 
               {/* Final Quotation */}
               <div style={{ marginBottom:24 }}>
-                <label style={S.label}>Final {getDocTerm(form.status)} ₹ (Client sees this)</label>
+                <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Final {getDocTerm(form.status)} ₹ (Client sees this)</label>
                 <input style={{ ...S.input, fontSize:18, fontWeight:700, borderColor:C.red }} type="number" value={form.quotation}
                   onChange={e=>setF("quotation",e.target.value)} placeholder="e.g. 2504040"/>
-                <div style={{ fontSize:11, color:C.muted, marginTop:6, letterSpacing:1 }}>
+                <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", marginTop:6, letterSpacing:1 }}>
                   💡 Tip: Set Final = Revised Quotation after applying rebate
                 </div>
               </div>
@@ -3983,11 +3985,11 @@ Dimension rules:
               {/* Payment Schedule */}
               {form.quotation && (
                 <div>
-                  <div style={S.sec}>{getDocTerm(form.status)} Payment Schedule</div>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>{getDocTerm(form.status)} Payment Schedule</div>
                   {PAYMENT_PHASES.map((p,i)=>(
-                    <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.light,borderRadius:12,padding:"14px 18px",marginBottom:10,border:`1px solid ${C.line}` }}>
-                      <div><div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.day} — {p.pct}% — {p.label}</div></div>
-                      <div style={{ fontSize:18,fontWeight:700,color:C.teal }}>{fmt(Math.round(Number(form.quotation)*p.pct/100))}</div>
+                    <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,0.05)",borderRadius:12,padding:"14px 18px",marginBottom:10,border:"1px solid rgba(255,255,255,0.12)" }}>
+                      <div><div style={{ fontWeight:700,fontSize:13,color:"#0A84FF" }}>{p.day} — {p.pct}% — {p.label}</div></div>
+                      <div style={{ fontSize:18,fontWeight:700,color:"#0A84FF" }}>{fmt(Math.round(Number(form.quotation)*p.pct/100))}</div>
                     </div>
                   ))}
                 </div>
@@ -3998,9 +4000,9 @@ Dimension rules:
           {/* ── INVENTORY ── */}
           {activeTab==="inventory" && (
             <div>
-              <div style={S.sec}>Project Material Inventory</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Project Material Inventory</div>
               {!form.roomMaterials || Object.keys(form.roomMaterials).length===0 ? (
-                <div style={{ textAlign:"center", padding:40, background:"rgba(255,255,255,0.07)", borderRadius:3, color:C.muted, fontSize:13, border:`1px solid ${C.line}` }}>
+                <div style={{ textAlign:"center", padding:40, background:"rgba(255,255,255,0.07)", borderRadius:3, color:"rgba(255,255,255,0.5)", fontSize:13, border:"1px solid rgba(255,255,255,0.12)" }}>
                   ☝️ Add materials in the <strong>Materials</strong> tab first, then track them here
                 </div>
               ) : (
@@ -4010,7 +4012,7 @@ Dimension rules:
                     {[["Pending","rgba(255,159,10,0.15)","#92400E"],["Ordered","rgba(10,132,255,0.15)","#1E40AF"],["Delivered","rgba(48,209,88,0.12)","#065F46"],["Installed","rgba(191,90,242,0.15)","#4C1D95"]].map(([s,bg,c])=>(
                       <span key={s} style={{ background:bg, color:c, padding:"4px 12px", borderRadius:2, fontSize:11, fontWeight:700, letterSpacing:1 }}>{s}</span>
                     ))}
-                    <span style={{ fontSize:11, color:C.muted }}>— tap status to cycle through stages</span>
+                    <span style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>— tap status to cycle through stages</span>
                   </div>
 
                   {/* Per-room material inventory */}
@@ -4022,7 +4024,7 @@ Dimension rules:
                       return form.inventory?.[k]?.status==="Installed";
                     }).length;
                     return (
-                      <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                      <div key={room} style={{ marginBottom:16, border:"1px solid rgba(255,255,255,0.12)", borderRadius:3, overflow:"hidden" }}>
                         {/* Room header */}
                         <div style={{ background:"#060812", padding:"10px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                           <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
@@ -4094,9 +4096,9 @@ Dimension rules:
                             <div key={invKey} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
                               padding:"10px 14px", background:i%2===0?C.white:C.smoke,
                               borderTop:`1px solid ${C.line}`, alignItems:"center", gap:8 }}>
-                              <div style={{ fontSize:11, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
-                              <div style={{ fontSize:12, fontWeight:700, color:C.ink }}>{sel.name}</div>
-                              <div style={{ fontSize:12, color:C.muted }}>{sel.qty} {item?.unit||""}</div>
+                              <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", fontWeight:600, textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
+                              <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{sel.name}</div>
+                              <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>{sel.qty} {item?.unit||""}</div>
                               {/* Clickable status */}
                               <div onClick={cycleStatus} title="Click to update status"
                                 style={{ ...sc, padding:"5px 8px", borderRadius:2, fontSize:10,
@@ -4106,7 +4108,7 @@ Dimension rules:
                                 {inv.status||"Pending"}
                               </div>
                               {/* Auto-stamped dates */}
-                              <div style={{ fontSize:10, color:C.muted, lineHeight:1.8 }}>
+                              <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", lineHeight:1.8 }}>
                                 {inv.orderedDate   && <div>📦 {inv.orderedDate}</div>}
                                 {inv.deliveredDate && <div>🚚 {inv.deliveredDate}</div>}
                                 {inv.installedDate && <div>✅ {inv.installedDate}</div>}
@@ -4132,8 +4134,8 @@ Dimension rules:
                     allKeys.forEach(k=>{ const s=form.inventory?.[k]?.status||"Pending"; counts[s]=(counts[s]||0)+1; });
                     const total = allKeys.length;
                     return total>0?(
-                      <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, marginTop:8 }}>
-                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Overall Progress</div>
+                      <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"16px 20px", border:"1px solid rgba(255,255,255,0.12)", marginTop:8 }}>
+                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:10 }}>Overall Progress</div>
                         <div style={{ display:"flex", height:8, borderRadius:4, overflow:"hidden", marginBottom:12, background:C.line }}>
                           {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#FF9F0A"]].map(([s,col])=>(
                             counts[s]>0 ? <div key={s} style={{ flex:counts[s], background:col }}/> : null
@@ -4141,9 +4143,9 @@ Dimension rules:
                         </div>
                         <div style={{ display:"flex", gap:16, fontSize:12, flexWrap:"wrap" }}>
                           {[["Pending","#92400E","rgba(255,159,10,0.15)"],["Ordered","#1E40AF","rgba(10,132,255,0.15)"],["Delivered","#065F46","rgba(48,209,88,0.12)"],["Installed","#4C1D95","rgba(191,90,242,0.15)"]].map(([s,c,bg])=>(
-                            <div key={s}><span style={{ background:bg, color:c, padding:"2px 8px", borderRadius:2, fontSize:10, fontWeight:700 }}>{counts[s]}</span> <span style={{ color:C.muted }}>{s}</span></div>
+                            <div key={s}><span style={{ background:bg, color:c, padding:"2px 8px", borderRadius:2, fontSize:10, fontWeight:700 }}>{counts[s]}</span> <span style={{ color:"rgba(255,255,255,0.5)" }}>{s}</span></div>
                           ))}
-                          <div style={{ marginLeft:"auto", fontWeight:700, color:C.ink }}>{counts.Installed}/{total} Complete</div>
+                          <div style={{ marginLeft:"auto", fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{counts.Installed}/{total} Complete</div>
                         </div>
                       </div>
                     ):null;
@@ -4156,7 +4158,7 @@ Dimension rules:
           {/* ── NOTES ── */}
           {activeTab==="notes" && (
             <div>
-              <div style={S.sec}>Scope of Work & Notes</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Scope of Work & Notes</div>
               <textarea
                 style={{ ...S.input,minHeight:220,resize:"vertical",lineHeight:1.8 }}
                 value={form.notes}
