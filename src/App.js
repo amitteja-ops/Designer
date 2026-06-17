@@ -2816,10 +2816,10 @@ High Rise Interiors, Hyderabad`
           <button style={S.btn()} onClick={()=>openEdit(selected)}>Edit</button>
         </div>
       </div>
-      <div style={S.main}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:16}}>
-          <div>
-            <div className="glass" style={{marginBottom:16,padding:"24px"}}>
+      <div style={{maxWidth:1140,margin:"0 auto",padding:"20px 20px 80px",position:"relative",zIndex:1,overflow:"hidden"}}>
+        <div style={{display:"grid",gridTemplateColumns:"minmax(0,2fr) minmax(0,3fr)",gap:16,alignItems:"start"}}>
+          <div style={{minWidth:0,overflow:"hidden"}}>
+            <div className="glass" style={{marginBottom:16,padding:"22px",background:"rgba(255,255,255,0.08)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
                 <div>
                   <div style={{fontSize:24,fontWeight:700,letterSpacing:-0.5,marginBottom:4}}>{selected.name}</div>
@@ -2832,11 +2832,11 @@ High Rise Interiors, Hyderabad`
               ))}
               {selected.startDate && <div style={{ fontSize:13,marginBottom:6 }}><span style={{ color:"rgba(255,255,255,0.5)" }}>📅 </span>Start: {selected.startDate}</div>}
             </div>
-            {selected.notes && <div className="glass" style={{padding:"20px 24px"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Notes</div><div style={{ fontSize:14,lineHeight:1.8 }}>{selected.notes}</div></div>}
+            {selected.notes && <div className="glass" style={{padding:"20px 24px"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Notes</div><div style={{ fontSize:14,lineHeight:1.8 }}>{selected.notes}</div></div>}
           </div>
-          <div>
-            <div className="glass" style={{marginBottom:16}}>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Design & Scope</div>
+          <div style={{minWidth:0,overflow:"hidden"}}>
+            <div className="glass" style={{padding:"20px",marginBottom:12,overflow:"hidden"}}>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Design & Scope</div>
               {selected.style && <div style={{ marginBottom:12 }}><span style={{ color:"rgba(255,255,255,0.5)",fontSize:13 }}>Style: </span><strong>{selected.style}</strong></div>}
               {(selected.rooms||[]).length>0 && (
                 <div>
@@ -2863,8 +2863,8 @@ High Rise Interiors, Hyderabad`
               )}
             </div>
             {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
-              <div className="glass" style={{marginBottom:16}}>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Room Materials & Cost</div>
+              <div className="glass" style={{padding:"20px",marginBottom:16,overflow:"hidden"}}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Room Materials & Cost</div>
                 {Object.entries(selected.roomMaterials).map(([room, mats]) => {
                   const roomCost = Object.entries(mats).reduce((total, [matType, sel]) => {
                     if (!sel?.name) return total;
@@ -2905,7 +2905,7 @@ High Rise Interiors, Hyderabad`
             )}
             {selected.quotation && (
               <div style={S.card}>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>{getDocTerm(selected.status)}</div>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>{getDocTerm(selected.status)}</div>
                 {selected.previousQuotation && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:"rgba(255,255,255,0.5)" }}>Previous: </span><span style={{ textDecoration:"line-through" }}>{fmt(selected.previousQuotation)}</span></div>}
                 {selected.revisedQuotation  && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:"rgba(255,255,255,0.5)" }}>Revised: </span>{fmt(selected.revisedQuotation)}</div>}
                 <div style={{ fontSize:20,fontWeight:700,color:"#0A84FF",marginTop:8 }}>Final: {fmt(selected.quotation)}</div>
@@ -2914,8 +2914,8 @@ High Rise Interiors, Hyderabad`
           </div>
         </div>
         {/* ── Audit Trail Timeline ── */}
-        <div className="glass" style={{ marginTop:20}}>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Audit Trail</div>
+        <div className="glass" style={{padding:"20px", marginTop:20}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Audit Trail</div>
           {(selected.auditLog||[]).length === 0 ? (
             <div style={{ textAlign:"center", color:"rgba(255,255,255,0.5)", fontSize:13, padding:"12px 0" }}>
               No activity logged yet — edits and report prints will appear here
@@ -3143,7 +3143,7 @@ High Rise Interiors, Hyderabad`
               )}
               {/* ── Floor Plan Upload ── */}
               <div style={{ marginBottom:24 }}>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Floor Plan</div>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Floor Plan</div>
                 <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)", marginBottom:12 }}>
                   Upload a floor plan image for reference, then enter room dimensions manually or use AI analysis (requires API credits).
                 </div>
@@ -3359,7 +3359,7 @@ Dimension rules:
                 )}
               </div>
 
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Client Information</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Client Information</div>
               <div style={S.row}>
                 <Field label="Full Name *">
                   <input className="glass-input" style={{}} value={form.name} onChange={e=>setF("name",e.target.value)} placeholder="Mr. Sashi Kanth"/>
@@ -3411,7 +3411,7 @@ Dimension rules:
           {/* ── DIMENSIONS ── */}
           {activeTab==="dimensions" && (
             <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Select Rooms & Enter Dimensions</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Select Rooms & Enter Dimensions</div>
               <div style={{ fontSize:13, color:"rgba(255,255,255,0.5)", marginBottom:16, lineHeight:1.7 }}>
                 Select each room, enter its dimensions and upload a photo. All measurements in feet.
               </div>
@@ -3594,7 +3594,7 @@ Dimension rules:
           {/* ── MATERIALS ── */}
           {activeTab==="materials" && (
             <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Room-wise Material Selection</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Room-wise Material Selection</div>
               {form.rooms.length === 0 ? (
                 <div style={{ textAlign:"center", padding:"32px", background:"rgba(255,255,255,0.05)", borderRadius:12, color:"rgba(255,255,255,0.5)", fontSize:13 }}>
                   ☝️ Please select rooms in the Dimensions tab first
@@ -3729,7 +3729,7 @@ Dimension rules:
           {/* ── QUOTATION ── */}
           {activeTab==="quotation" && (
             <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>{getDocTerm(form.status)} (INR ₹)</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>{getDocTerm(form.status)} (INR ₹)</div>
 
               {/* Configurable Labour % */}
               <div style={{ display:"flex", alignItems:"center", gap:16, background:"rgba(255,255,255,0.05)", borderRadius:10, padding:"12px 18px", marginBottom:16, border:"1px solid rgba(255,255,255,0.12)" }}>
@@ -3789,7 +3789,7 @@ Dimension rules:
 
               {/* Rebate & Coupon — two separate discounts */}
               <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:12, padding:"18px 20px", border:"1px solid rgba(255,255,255,0.12)", marginBottom:20 }}>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Rebate & Coupon Discount</div>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Rebate & Coupon Discount</div>
 
                 {/* Row 1: Rebate */}
                 <div style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:8, fontWeight:700 }}>Step 1 — Rebate</div>
@@ -3985,7 +3985,7 @@ Dimension rules:
               {/* Payment Schedule */}
               {form.quotation && (
                 <div>
-                  <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>{getDocTerm(form.status)} Payment Schedule</div>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>{getDocTerm(form.status)} Payment Schedule</div>
                   {PAYMENT_PHASES.map((p,i)=>(
                     <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,0.05)",borderRadius:12,padding:"14px 18px",marginBottom:10,border:"1px solid rgba(255,255,255,0.12)" }}>
                       <div><div style={{ fontWeight:700,fontSize:13,color:"#0A84FF" }}>{p.day} — {p.pct}% — {p.label}</div></div>
@@ -4000,7 +4000,7 @@ Dimension rules:
           {/* ── INVENTORY ── */}
           {activeTab==="inventory" && (
             <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Project Material Inventory</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Project Material Inventory</div>
               {!form.roomMaterials || Object.keys(form.roomMaterials).length===0 ? (
                 <div style={{ textAlign:"center", padding:40, background:"rgba(255,255,255,0.07)", borderRadius:3, color:"rgba(255,255,255,0.5)", fontSize:13, border:"1px solid rgba(255,255,255,0.12)" }}>
                   ☝️ Add materials in the <strong>Materials</strong> tab first, then track them here
@@ -4158,7 +4158,7 @@ Dimension rules:
           {/* ── NOTES ── */}
           {activeTab==="notes" && (
             <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.6)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:8,marginBottom:16}}>Scope of Work & Notes</div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Scope of Work & Notes</div>
               <textarea
                 style={{ ...S.input,minHeight:220,resize:"vertical",lineHeight:1.8 }}
                 value={form.notes}
