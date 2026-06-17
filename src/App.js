@@ -761,7 +761,7 @@ function SignaturePad({ onSave, onClose, label }) {
 function Toast({ msg, type }) {
   const bg = { success:C.green, error:C.rust, info:C.teal, warning:C.amber }[type]||C.teal;
   return (
-    <div style={{ position:"fixed", bottom:28, right:28, zIndex:9999, background:C.ink,
+    <div style={{ position:"fixed", bottom:28, right:28, zIndex:9999, background:"#060812",
       color:"#fff", padding:"14px 20px", borderRadius:3, fontSize:13,
       boxShadow:"0 8px 32px rgba(15,25,35,0.25)", fontFamily:"inherit",
       maxWidth:360, lineHeight:1.5, animation:"slideIn 0.25s ease",
@@ -1133,11 +1133,11 @@ function ClientReport({ selected, setView, customers }) {
                       fontFamily:"'DM Sans',sans-serif" }),
   };
     return (
-    <div style={{ background:C.white,minHeight:"100vh",
+    <div style={{ background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)",minHeight:"100vh",
                   fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
                   color:C.ink,paddingBottom:60 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
-      <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
+      <div className="np" style={{ background:"rgba(6,8,18,0.85)",padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
         <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
         <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
         <button onClick={()=>{
@@ -1168,7 +1168,7 @@ Hyderabad`);
             :"Sign below before printing"}
         </span>
       </div>
-      <div style={{ background:C.ink,padding:"28px 48px",marginBottom:36,borderBottom:`3px solid ${C.teal}` }}>
+      <div style={{ background:"#060812",padding:"28px 48px",marginBottom:36,borderBottom:`3px solid ${C.teal}` }}>
         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
           <div>
             <div style={{ color:"#fff",fontSize:20,fontWeight:700,letterSpacing:4,textTransform:"uppercase",fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
@@ -1297,7 +1297,7 @@ Hyderabad`);
                 <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
                   {/* Room header */}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                    background:C.ink, padding:"10px 16px" }}>
+                    background:"#060812", padding:"10px 16px" }}>
                     <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
                     {roomTotal>0 && <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{fmt(roomTotal)}</span>}
                   </div>
@@ -2066,13 +2066,13 @@ High Rise Interiors, Hyderabad`
     });
 
     const IR = {
-      page:   { background:C.white, minHeight:"100vh", fontFamily:"'DM Sans',system-ui,sans-serif", color:C.ink, paddingBottom:60 },
-      hdr:    { background:C.ink, padding:"20px 48px", marginBottom:0, borderBottom:`3px solid ${C.teal}` },
+      page:   { background:"#fff", minHeight:"100vh", fontFamily:"'DM Sans',system-ui,sans-serif", color:"#0F1923", paddingBottom:60 },
+      hdr:    { background:"#060812", padding:"20px 48px", marginBottom:0, borderBottom:`3px solid ${C.teal}` },
       body:   { maxWidth:920, margin:"0 auto", padding:"32px 48px" },
       sec:    { fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase", color:C.teal,
                borderBottom:`2px solid ${C.teal}`, paddingBottom:6, marginBottom:14, marginTop:28 },
       th:     { padding:"8px 12px", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase",
-               background:C.ink, color:"#fff" },
+               background:"#060812", color:"#fff" },
       td:     (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?C.white:C.smoke, borderBottom:`1px solid ${C.line}` }),
       tag:    (c) => ({ background:c, color:"#fff", padding:"2px 8px", borderRadius:2, fontSize:9, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }),
     };
@@ -2082,7 +2082,7 @@ High Rise Interiors, Hyderabad`
         <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
 
         {/* Toolbar */}
-        <div className="np" style={{ background:C.ink, padding:"12px 36px", display:"flex", gap:12, alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
+        <div className="np" style={{ background:"#060812", padding:"12px 36px", display:"flex", gap:12, alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
           <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print</button>
           <span style={{ background:"rgba(255,159,10,0.15)", color:"#5C3A00", padding:"3px 10px", borderRadius:2, fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>🔒 INTERNAL — Do not share with client</span>
@@ -2262,7 +2262,7 @@ High Rise Interiors, Hyderabad`
                 }));
                 return (
                   <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
-                    <div style={{ background:C.ink, padding:"8px 14px", display:"flex", justifyContent:"space-between" }}>
+                    <div style={{ background:"#060812", padding:"8px 14px", display:"flex", justifyContent:"space-between" }}>
                       <span style={{ color:"#fff", fontWeight:700, fontSize:12 }}>🏠 {room}</span>
                       <span style={{ color:C.teal, fontSize:10, letterSpacing:1 }}>
                         {roomItems.filter(({inv})=>inv.status==="Installed").length}/{roomItems.length} installed
@@ -2369,7 +2369,7 @@ High Rise Interiors, Hyderabad`
     const installed = orderItems.filter(o=>o.status==="Installed");
 
     const VR = {
-      page:  { background:"rgba(255,255,255,0.08)", minHeight:"100vh", fontFamily:"'DM Sans',system-ui,sans-serif", color:"rgba(255,255,255,0.95)", paddingBottom:60 },
+      page:  { background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)", minHeight:"100vh", fontFamily:"Inter,-apple-system,sans-serif", color:"rgba(255,255,255,0.92)", paddingBottom:60 },
       body:  { maxWidth:920, margin:"0 auto", padding:"32px 48px" },
       sec:   { fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase",
                color:C.teal, borderBottom:`2px solid ${C.teal}`, paddingBottom:6, marginBottom:14, marginTop:28 },
@@ -2432,7 +2432,7 @@ High Rise Interiors, Hyderabad`
         <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
 
         {/* Toolbar */}
-        <div className="np" style={{ background:C.ink, padding:"12px 36px", display:"flex", gap:12,
+        <div className="np" style={{ background:"#060812", padding:"12px 36px", display:"flex", gap:12,
           alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
           <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
@@ -2449,7 +2449,7 @@ High Rise Interiors, Hyderabad`
         </div>
 
         {/* Header */}
-        <div style={{ background:C.ink, padding:"24px 48px", borderBottom:`3px solid ${C.teal}` }}>
+        <div style={{ background:"#060812", padding:"24px 48px", borderBottom:`3px solid ${C.teal}` }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
             <div>
               <div style={{ color:"#fff", fontSize:18, fontWeight:700, letterSpacing:4, textTransform:"uppercase" }}>High Rise Interiors</div>
@@ -2575,8 +2575,8 @@ High Rise Interiors, Hyderabad`
     const W = parseFloat(rd.width||4);
     const H = parseFloat(rd.height||2.8);
     return (
-      <div style={{ minHeight:"100vh", background:C.ink, fontFamily:"'DM Sans',system-ui,sans-serif" }}>
-        <div style={{ background:C.ink, padding:"12px 24px", display:"flex",
+      <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)", fontFamily:"Inter,-apple-system,sans-serif" }}>
+        <div style={{ background:"rgba(6,8,18,0.85)", padding:"12px 24px", display:"flex",
           alignItems:"center", gap:12, borderBottom:`3px solid ${C.teal}` }}>
           <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <div style={{ color:"#fff", fontSize:13, fontWeight:700, letterSpacing:2 }}>
@@ -2634,11 +2634,11 @@ High Rise Interiors, Hyderabad`
                         fontFamily:"'DM Sans',sans-serif" }),
     };
     return (
-      <div style={{ background:C.white,minHeight:"100vh",
+      <div style={{ background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)",minHeight:"100vh",
                     fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
                     color:C.ink,paddingBottom:60 }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
-        <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
+        <div className="np" style={{ background:"rgba(6,8,18,0.85)",padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
           <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
           <span style={{ color:C.muted,fontSize:11,letterSpacing:1 }}>Tip: Save as PDF in print dialog</span>
@@ -2723,7 +2723,7 @@ High Rise Interiors, Hyderabad`
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Payment Schedule</div>
             <div style={{ border:`1.5px solid ${C.line}`,borderRadius:12,overflow:"hidden" }}>
-              <div style={{ ...IV.tRow,background:C.ink,color:"#fff",fontWeight:700,fontSize:11,letterSpacing:1 }}>
+              <div style={{ ...IV.tRow,background:"#060812",color:"#fff",fontWeight:700,fontSize:11,letterSpacing:1 }}>
                 <span style={{ flex:1 }}>Phase</span><span style={{ flex:2 }}>Milestone</span>
                 <span style={{ flex:1,textAlign:"center" }}>%</span><span style={{ flex:1,textAlign:"right" }}>Amount</span>
                 <span style={{ flex:1,textAlign:"right" }}>Status</span>
@@ -2803,141 +2803,7 @@ High Rise Interiors, Hyderabad`
       <div className="orb" style={{top:"10%",right:"-15%",width:"55%",height:"55%",background:"radial-gradient(ellipse,rgba(120,40,220,0.28) 0%,transparent 65%)"}}/>
       <div className="orb" style={{bottom:"-15%",left:"25%",width:"50%",height:"45%",background:"radial-gradient(ellipse,rgba(0,130,190,0.18) 0%,transparent 65%)"}}/>
       <Orbs/>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        * { box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-
-        /* Glass card */
-        .glass {
-          background: rgba(255,255,255,0.07);
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
-          border: 1px solid rgba(255,255,255,0.14);
-          border-radius: 18px;
-          position: relative;
-          overflow: hidden;
-        }
-        .glass::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
-          z-index: 1;
-        }
-        .glass::after {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 45%;
-          background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 100%);
-          border-radius: 18px 18px 0 0;
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        /* Hover lift */
-        .glass-hover { transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1); cursor: pointer; }
-        .glass-hover:hover {
-          background: rgba(255,255,255,0.12) !important;
-          border-color: rgba(255,255,255,0.24) !important;
-          transform: translateY(-2px);
-          box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
-        }
-        .glass-hover:active { transform: scale(0.97); transition: all 0.1s ease; }
-
-        /* Pill */
-        .pill {
-          border: none; cursor: pointer;
-          font-family: inherit; font-weight: 600; font-size: 13px;
-          padding: 8px 20px; border-radius: 100px;
-          transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
-          backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        }
-        .pill:active { transform: scale(0.93); }
-
-        /* Input */
-        .glass-input {
-          background: rgba(255,255,255,0.08);
-          border: 1px solid rgba(255,255,255,0.16);
-          border-radius: 12px;
-          color: rgba(255,255,255,0.95);
-          font-family: inherit; font-size: 14px;
-          padding: 11px 14px; outline: none; width: 100%;
-          transition: all 0.2s ease;
-          backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        }
-        .glass-input:focus {
-          border-color: rgba(10,132,255,0.7) !important;
-          background: rgba(10,132,255,0.08) !important;
-          box-shadow: 0 0 0 3px rgba(10,132,255,0.18) !important;
-        }
-        .glass-input::placeholder { color: rgba(255,255,255,0.32); }
-        select.glass-input option { background: #1a1a2e; color: #fff; }
-
-        /* Client rows */
-        .client-row { transition: all 0.2s cubic-bezier(0.34,1.4,0.64,1); cursor: pointer; }
-        .client-row:hover {
-          background: rgba(255,255,255,0.11) !important;
-          border-color: rgba(255,255,255,0.22) !important;
-          transform: translateX(4px);
-        }
-        .client-row:active { transform: scale(0.99) translateX(2px); }
-
-        /* Status badges */
-        .badge { display:inline-block; padding: 3px 12px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
-        .badge-lead        { background:rgba(255,159,10,0.18);  color:#FF9F0A; border:1px solid rgba(255,159,10,0.35);  }
-        .badge-active      { background:rgba(10,132,255,0.18);  color:#0A84FF; border:1px solid rgba(10,132,255,0.35);  }
-        .badge-inprogress  { background:rgba(191,90,242,0.18);  color:#BF5AF2; border:1px solid rgba(191,90,242,0.35); }
-        .badge-completed   { background:rgba(48,209,88,0.18);   color:#30D158; border:1px solid rgba(48,209,88,0.35);  }
-        .badge-onhold      { background:rgba(255,69,58,0.18);   color:#FF453A; border:1px solid rgba(255,69,58,0.35);  }
-
-        /* Animations */
-        @keyframes slideUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
-        @keyframes spin      { to{transform:rotate(360deg)} }
-        @keyframes countUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-
-        .slide-up  { animation: slideUp 0.35s cubic-bezier(0.34,1.2,0.64,1) both; }
-        .fade-in   { animation: fadeIn 0.25s ease both; }
-        .count-up  { animation: countUp 0.4s ease both; }
-        .slide-up:nth-child(1){animation-delay:0.00s}
-        .slide-up:nth-child(2){animation-delay:0.05s}
-        .slide-up:nth-child(3){animation-delay:0.10s}
-        .slide-up:nth-child(4){animation-delay:0.15s}
-        .slide-up:nth-child(5){animation-delay:0.20s}
-        .slide-up:nth-child(6){animation-delay:0.25s}
-        .slide-up:nth-child(7){animation-delay:0.30s}
-        .slide-up:nth-child(8){animation-delay:0.35s}
-        .slide-up:nth-child(9){animation-delay:0.40s}
-        .slide-up:nth-child(n+10){animation-delay:0.45s}
-
-        /* Stat cards */
-        .stat-blue  { box-shadow:0 8px 32px rgba(10,132,255,0.25),  inset 0 1px 0 rgba(255,255,255,0.15); }
-        .stat-purple{ box-shadow:0 8px 32px rgba(191,90,242,0.25),  inset 0 1px 0 rgba(255,255,255,0.15); }
-        .stat-amber { box-shadow:0 8px 32px rgba(255,159,10,0.25),  inset 0 1px 0 rgba(255,255,255,0.15); }
-        .stat-green { box-shadow:0 8px 32px rgba(48,209,88,0.25),   inset 0 1px 0 rgba(255,255,255,0.15); }
-
-        /* Nav */
-        .crm-nav {
-          background: rgba(6,8,18,0.75);
-          backdrop-filter: blur(60px) saturate(200%);
-          -webkit-backdrop-filter: blur(60px) saturate(200%);
-          border-bottom: 1px solid rgba(255,255,255,0.1);
-          position: sticky; top: 0; z-index: 200;
-        }
-
-        /* Form inputs override */
-        input, select, textarea {
-          color: rgba(255,255,255,0.95) !important;
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
-      `}</style>
+      {/* Styles from index.css */}
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div className="crm-nav" style={{height:54,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
@@ -3600,7 +3466,7 @@ Dimension rules:
                         <label style={S.label}>Work Items</label>
                         <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
                           <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:0,
-                            padding:"6px 12px", background:C.ink, fontSize:10, fontWeight:700,
+                            padding:"6px 12px", background:"#060812", fontSize:10, fontWeight:700,
                             color:"#fff", letterSpacing:1.5, textTransform:"uppercase" }}>
                             <span>Item</span><span>Type</span><span>Qty (sq ft)</span><span>Include?</span>
                           </div>
@@ -4158,7 +4024,7 @@ Dimension rules:
                     return (
                       <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
                         {/* Room header */}
-                        <div style={{ background:C.ink, padding:"10px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <div style={{ background:"#060812", padding:"10px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                           <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
                           <span style={{ color:installedCount===matEntries.length?C.teal:"#aaa", fontSize:10, letterSpacing:1 }}>
                             {installedCount}/{matEntries.length} installed
