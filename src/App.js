@@ -654,6 +654,18 @@ const S = {
     boxShadow:   active ? IOS.glow("#0A84FF")    : IOS.shadow,
     border:      active ? "1px solid rgba(10,132,255,0.5)" : "1px solid rgba(255,255,255,0.2)",
   }),
+  td: (i) => ({ padding:"10px 14px", fontSize:13,
+        background:i%2===0?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.02)",
+        borderBottom:"1px solid rgba(255,255,255,0.07)",
+        color:"rgba(255,255,255,0.85)" }),
+  th: { padding:"10px 14px", fontSize:10, fontWeight:700, letterSpacing:1.5,
+        textTransform:"uppercase", background:"rgba(255,255,255,0.08)",
+        color:"rgba(255,255,255,0.7)", borderBottom:"1px solid rgba(255,255,255,0.12)" },
+  sTitle: { fontSize:10, fontWeight:700, letterSpacing:2.5, textTransform:"uppercase",
+            color:"rgba(255,255,255,0.6)", marginBottom:8, display:"block" },
+  bullet: { fontSize:13, lineHeight:2, paddingLeft:16, color:"rgba(255,255,255,0.8)" },
+  payRow: { display:"flex", justifyContent:"space-between", alignItems:"center",
+            padding:"10px 14px", borderBottom:"1px solid rgba(255,255,255,0.08)" }
 };
 
 // ── Signature Pad Component ──────────────────────────────────────────
@@ -2942,7 +2954,7 @@ High Rise Interiors, Hyderabad`
       <div style={S.main}>
         <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:20 }}>
           <div>
-            <div style={{ ...S.card,marginBottom:16 }}>
+            <div className="glass" style={{marginBottom:16}}>
               <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16 }}>
                 <div><div style={{ fontSize:22,fontWeight:700 }}>{selected.name}</div><div style={{ color:C.muted,fontSize:13,marginTop:2 }}>{selected.projectType}</div></div>
                 <span style={S.badge(selected.status)}>{selected.status}</span>
@@ -2952,10 +2964,10 @@ High Rise Interiors, Hyderabad`
               ))}
               {selected.startDate && <div style={{ fontSize:13,marginBottom:6 }}><span style={{ color:C.muted }}>📅 </span>Start: {selected.startDate}</div>}
             </div>
-            {selected.notes && <div style={{...S.card,padding:"20px 24px"}}><div style={S.sec}>Notes</div><div style={{ fontSize:14,lineHeight:1.8 }}>{selected.notes}</div></div>}
+            {selected.notes && <div className="glass" style={{padding:"20px 24px"}}><div style={S.sec}>Notes</div><div style={{ fontSize:14,lineHeight:1.8 }}>{selected.notes}</div></div>}
           </div>
           <div>
-            <div style={{ ...S.card,marginBottom:16 }}>
+            <div className="glass" style={{marginBottom:16}}>
               <div style={S.sec}>Design & Scope</div>
               {selected.style && <div style={{ marginBottom:12 }}><span style={{ color:C.muted,fontSize:13 }}>Style: </span><strong>{selected.style}</strong></div>}
               {(selected.rooms||[]).length>0 && (
@@ -2983,7 +2995,7 @@ High Rise Interiors, Hyderabad`
               )}
             </div>
             {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
-              <div style={{ ...S.card,marginBottom:16 }}>
+              <div className="glass" style={{marginBottom:16}}>
                 <div style={S.sec}>Room Materials & Cost</div>
                 {Object.entries(selected.roomMaterials).map(([room, mats]) => {
                   const roomCost = Object.entries(mats).reduce((total, [matType, sel]) => {
@@ -3034,7 +3046,7 @@ High Rise Interiors, Hyderabad`
           </div>
         </div>
         {/* ── Audit Trail Timeline ── */}
-        <div style={{ ...S.card, marginTop:20 }}>
+        <div className="glass" style={{ marginTop:20}}>
           <div style={S.sec}>Audit Trail</div>
           {(selected.auditLog||[]).length === 0 ? (
             <div style={{ textAlign:"center", color:C.muted, fontSize:13, padding:"12px 0" }}>
@@ -3239,7 +3251,7 @@ High Rise Interiors, Hyderabad`
           ))}
         </div>
 
-        <div style={{ ...S.card,padding:"32px 36px" }}>
+        <div className="glass" style={{padding:"32px 36px"}}>
 
           {/* ── PERSONAL ── */}
           {activeTab==="personal" && (
