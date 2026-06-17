@@ -562,7 +562,7 @@ const S = {
     display:"flex", alignItems:"center", justifyContent:"space-between",
     position:"sticky", top:0, zIndex:200,
   },
-  logo:  { color:"#ffffff", fontSize:15, fontWeight:700, letterSpacing:0.3 },
+  logo:  { color:"rgba(255,255,255,0.95)", fontSize:15, fontWeight:700, letterSpacing:0.3 },
   sub:   { color:"rgba(255,255,255,0.45)", fontSize:9, letterSpacing:3,
            marginTop:2, display:"block", textTransform:"uppercase" },
   main:  { maxWidth:1140, margin:"0 auto", padding:"24px 24px 80px 24px", position:"relative", zIndex:1 },
@@ -623,7 +623,7 @@ const S = {
     transition:"all 0.18s cubic-bezier(0.25,0.1,0.25,1)",
     backdropFilter:IOS.blur, WebkitBackdropFilter:IOS.blur,
     background: active ? "rgba(10,132,255,0.3)" : "rgba(255,255,255,0.12)",
-    color:       active ? "#FFFFFF"              : "rgba(255,255,255,0.85)",
+    color:       active ? "rgba(255,255,255,0.95)"              : "rgba(255,255,255,0.85)",
     border:      active ? "1px solid rgba(10,132,255,0.5)" : "1px solid rgba(255,255,255,0.2)",
     boxShadow:   active ? IOS.glow("#0A84FF")    : IOS.shadow,
   }),
@@ -649,7 +649,7 @@ const S = {
     transition:"all 0.18s ease",
     backdropFilter:IOS.blur, WebkitBackdropFilter:IOS.blur,
     background: active ? "rgba(10,132,255,0.3)" : "rgba(255,255,255,0.12)",
-    color:       active ? "#FFFFFF"              : "rgba(255,255,255,0.85)",
+    color:       active ? "rgba(255,255,255,0.95)"              : "rgba(255,255,255,0.85)",
     boxShadow:   active ? IOS.glow("#0A84FF")    : IOS.shadow,
     border:      active ? "1px solid rgba(10,132,255,0.5)" : "1px solid rgba(255,255,255,0.2)",
   }),
@@ -719,7 +719,7 @@ function SignaturePad({ onSave, onClose, label }) {
         <div style={{ fontSize:13, color:C.muted, marginBottom:16 }}>{label}</div>
 
         {/* Canvas */}
-        <div style={{ border:`2px solid ${C.teal}`, borderRadius:3, background:"#FAFAFA",
+        <div style={{ border:`2px solid ${C.teal}`, borderRadius:3, background:"rgba(255,255,255,0.06)",
           marginBottom:16, cursor:"crosshair", touchAction:"none" }}>
           <canvas ref={canvasRef} width={480} height={180}
             style={{ display:"block", width:"100%", height:180 }}
@@ -733,8 +733,8 @@ function SignaturePad({ onSave, onClose, label }) {
         </div>
 
         <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
-          <button style={S.btn("ghost")} onClick={clear}>Clear</button>
-          <button style={S.btn("ghost")} onClick={onClose}>Cancel</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["ghost"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["ghost"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["ghost"]}} onClick={clear}>Clear</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["ghost"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["ghost"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["ghost"]}} onClick={onClose}>Cancel</button>
           <button style={{ ...S.btn(), opacity:hasSignature?1:0.4 }}
             onClick={save} disabled={!hasSignature}>
             ✓ Save Signature
@@ -775,7 +775,7 @@ function Field({ label, children }) {
 
 function Select({ value, onChange, options, placeholder }) {
   return (
-    <select style={S.input} value={value} onChange={e => onChange(e.target.value)}>
+    <select className="glass-input" style={{}} value={value} onChange={e => onChange(e.target.value)}>
       {placeholder && <option value="">{placeholder}</option>}
       {options.map(o => <option key={o} value={o}>{o}</option>)}
     </select>
@@ -883,7 +883,7 @@ function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Roo
 
     // ── CEILING (semi-transparent) ──
     ctx.globalAlpha = 0.18;
-    poly([iso(0,RH,0), iso(RL,RH,0), iso(RL,RH,RW), iso(0,RH,RW)], '#ffffff', null);
+    poly([iso(0,RH,0), iso(RL,RH,0), iso(RL,RH,RW), iso(0,RH,RW)], "rgba(255,255,255,0.95)", null);
     ctx.globalAlpha = 1.0;
 
     // ── CEILING EDGES ──
@@ -1125,7 +1125,7 @@ function ClientReport({ selected, setView, customers }) {
                   color:C.ink,paddingBottom:60 }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
       <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
-        <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+        <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
         <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
         <button onClick={()=>{
           const subject = encodeURIComponent(`High Rise Interiors — Project Report for ${selected.name}`);
@@ -1147,7 +1147,7 @@ Hyderabad`);
             document.body.appendChild(ml);
             ml.click();
             setTimeout(() => document.body.removeChild(ml), 500);
-        }} style={S.btn("dark")}>📧 Email Client</button>
+        }} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>📧 Email Client</button>
         <span style={{ color:C.muted,fontSize:11,marginLeft:"auto" }}>
           {signatures.client&&signatures.hri?"✓ Both signed — ready to print"
             :signatures.client?"Client signed — awaiting HRI"
@@ -1189,7 +1189,7 @@ Hyderabad`);
                 const rd = selected.roomDetails?.[r] || {};
                 const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
                   return (
-                  <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"#FFFAFA":C.light, borderBottom:`1px solid ${C.line}` }}>
+                  <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"rgba(255,255,255,0.06)":C.light, borderBottom:`1px solid ${C.line}` }}>
                     <div style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</div>
                     <div style={{ fontSize:13 }}>{rd.length||"—"}</div>
                     <div style={{ fontSize:13 }}>{rd.width||"—"}</div>
@@ -1337,7 +1337,7 @@ Hyderabad`);
         {outOfScope.length>0 && (
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Out of Scope</div>
-            <div style={{ background:"#FEF2F2",borderRadius:3,padding:"16px 20px",border:"1px solid #FECACA" }}>
+            <div style={{ background:"rgba(255,69,58,0.08)",borderRadius:3,padding:"16px 20px",border:"1px solid #FECACA" }}>
               {outOfScope.map((l,i)=><div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {l}</div>)}
             </div>
           </div>
@@ -1352,12 +1352,12 @@ Hyderabad`);
             </div>
           )}
           {selected.rebateValue && (
-            <div style={{ background:"#DCFCE7", borderRadius:3, padding:"10px 14px", margin:"6px 0", border:"1px solid #86EFAC" }}>
+            <div style={{ background:"rgba(48,209,88,0.15)", borderRadius:3, padding:"10px 14px", margin:"6px 0", border:"1px solid #86EFAC" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <span style={{ color:"#166534", fontWeight:700 }}>
+                <span style={{ color:"#30D158", fontWeight:700 }}>
                   🎁 Rebate Applied {selected.appliedReferralCode && `(Referral: ${selected.appliedReferralCode})`}
                 </span>
-                <span style={{ color:"#166534", fontWeight:700 }}>
+                <span style={{ color:"#30D158", fontWeight:700 }}>
                   - {selected.rebateType==="percent" ? `${selected.rebateValue}%` : fmt(selected.rebateValue)}
                   {selected.previousQuotation && ` = - ${fmt(selected.rebateType==="percent" ? Math.round(Number(selected.previousQuotation)*Number(selected.rebateValue)/100) : Number(selected.rebateValue))}`}
                 </span>
@@ -1365,10 +1365,10 @@ Hyderabad`);
             </div>
           )}
           {selected.referralCode && (
-            <div style={{ background:"#DCFCE7", borderRadius:3, padding:"14px 18px", margin:"8px 0", border:"1px solid #86EFAC" }}>
-              <div style={{ fontSize:10, fontWeight:700, color:"#166534", letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>🎁 Your Referral Code</div>
-              <div style={{ fontSize:24, fontWeight:800, letterSpacing:5, color:"#064E3B", fontFamily:"monospace", marginBottom:8 }}>{selected.referralCode}</div>
-              <div style={{ fontSize:12, color:"#166534", lineHeight:1.9 }}>
+            <div style={{ background:"rgba(48,209,88,0.15)", borderRadius:3, padding:"14px 18px", margin:"8px 0", border:"1px solid #86EFAC" }}>
+              <div style={{ fontSize:10, fontWeight:700, color:"#30D158", letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>🎁 Your Referral Code</div>
+              <div style={{ fontSize:24, fontWeight:800, letterSpacing:5, color:"#30D158", fontFamily:"monospace", marginBottom:8 }}>{selected.referralCode}</div>
+              <div style={{ fontSize:12, color:"#30D158", lineHeight:1.9 }}>
                 <div>• Share this code with friends & family</div>
                 <div>• Referred friend gets <strong>5% off</strong> their High Rise Interiors project</div>
                 <div>• You earn <strong>5% cashback</strong> credited on your next payment</div>
@@ -1423,8 +1423,8 @@ Hyderabad`);
         {/* Disclaimers */}
         <div style={{ marginBottom:32 }}>
           <div style={RS.sTitle}>Disclaimers & Terms</div>
-          <div style={{ background:"#FFFFF8",borderRadius:12,padding:"20px 24px",border:`1.5px solid #E8E0C0`,fontSize:13,lineHeight:2.1,color:"#4A4A2A" }}>
-            <div style={{ background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:3,padding:"10px 14px",marginBottom:12,color:C.rust,fontWeight:700 }}>
+          <div style={{ background:"rgba(255,255,255,0.06)",borderRadius:12,padding:"20px 24px",border:`1.5px solid #E8E0C0`,fontSize:13,lineHeight:2.1,color:"#4A4A2A" }}>
+            <div style={{ background:"rgba(255,69,58,0.08)",border:"1px solid #FECACA",borderRadius:3,padding:"10px 14px",marginBottom:12,color:C.rust,fontWeight:700 }}>
               🚫 NO REFUND POLICY: All payments are strictly non-refundable once work has commenced.
             </div>
             <div>1. <strong>Draft Quotation:</strong> This is a draft and may vary based on final quantity and material selection.</div>
@@ -1514,7 +1514,7 @@ Hyderabad`);
             {signatures.client ? (
               <div>
                 <img src={signatures.client} alt="sig"
-                  style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"#FAFAFA",display:"block" }}/>
+                  style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
                 <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
                 <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
                   onClick={()=>setSignatures(s=>({...s,client:null}))}>✕ Clear</button>
@@ -1536,7 +1536,7 @@ Hyderabad`);
             {signatures.hri ? (
               <div>
                 <img src={signatures.hri} alt="sig"
-                  style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"#FAFAFA",display:"block" }}/>
+                  style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
                 <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
                 <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
                   onClick={()=>setSignatures(s=>({...s,hri:null}))}>✕ Clear</button>
@@ -1559,7 +1559,7 @@ Hyderabad`);
             <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
             <span>{d}</span>
           </div>
-          <div style={{ fontSize:11,color:"#C0A0A0",textAlign:"center",lineHeight:1.8 }}>
+          <div style={{ fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",lineHeight:1.8 }}>
             Confidential — intended solely for {selected.name}. All payments are non-refundable. Prices in INR ₹.
           </div>
         </div>
@@ -2070,9 +2070,9 @@ High Rise Interiors, Hyderabad`
 
         {/* Toolbar */}
         <div className="np" style={{ background:C.ink, padding:"12px 36px", display:"flex", gap:12, alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+          <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print</button>
-          <span style={{ background:"#FDE68A", color:"#5C3A00", padding:"3px 10px", borderRadius:2, fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>🔒 INTERNAL — Do not share with client</span>
+          <span style={{ background:"rgba(255,159,10,0.15)", color:"#5C3A00", padding:"3px 10px", borderRadius:2, fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>🔒 INTERNAL — Do not share with client</span>
         </div>
 
         {/* Header */}
@@ -2084,7 +2084,7 @@ High Rise Interiors, Hyderabad`
             </div>
             <div style={{ textAlign:"right", color:C.muted, fontSize:11 }}>
               <div>{d}</div>
-              <div style={{ color:"#FDE68A", fontSize:10, marginTop:4, fontWeight:700, letterSpacing:1 }}>⚠ CONFIDENTIAL — TEAM ONLY</div>
+              <div style={{ color:"rgba(255,159,10,0.15)", fontSize:10, marginTop:4, fontWeight:700, letterSpacing:1 }}>⚠ CONFIDENTIAL — TEAM ONLY</div>
             </div>
           </div>
         </div>
@@ -2228,11 +2228,11 @@ High Rise Interiors, Hyderabad`
                 return (
                   <div style={{ display:"flex", gap:12, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
                     <div style={{ flex:1, height:6, borderRadius:3, overflow:"hidden", background:C.line, display:"flex" }}>
-                      {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#F59E0B"]].map(([s,col])=>(
+                      {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#FF9F0A"]].map(([s,col])=>(
                         counts[s]>0 && <div key={s} style={{ flex:counts[s], background:col }}/>
                       ))}
                     </div>
-                    {[["Pending","#92400E","#FEF3C7"],["Ordered","#1E40AF","#DBEAFE"],["Delivered","#065F46","#D1FAE5"],["Installed","#4C1D95","#EDE9FE"]].map(([s,c,bg])=>(
+                    {[["Pending","#92400E","rgba(255,159,10,0.15)"],["Ordered","#1E40AF","rgba(10,132,255,0.15)"],["Delivered","#065F46","rgba(48,209,88,0.12)"],["Installed","#4C1D95","rgba(191,90,242,0.15)"]].map(([s,c,bg])=>(
                       <span key={s} style={{ background:bg, color:c, padding:"2px 10px", borderRadius:2, fontSize:10, fontWeight:700 }}>{counts[s]} {s}</span>
                     ))}
                     <span style={{ fontSize:11, color:C.muted }}>{counts.Installed}/{total} complete</span>
@@ -2262,10 +2262,10 @@ High Rise Interiors, Hyderabad`
                     {roomItems.map(({matType, sel, inv}, i) => {
                       const item = getCatalog(matType).find(m=>m.name===sel.name);
                       const sc = {
-                        Pending:   { bg:"#FEF3C7", c:"#92400E" },
-                        Ordered:   { bg:"#DBEAFE", c:"#1E40AF" },
-                        Delivered: { bg:"#D1FAE5", c:"#065F46" },
-                        Installed: { bg:"#EDE9FE", c:"#4C1D95" },
+                        Pending:   { bg:"rgba(255,159,10,0.15)", c:"#92400E" },
+                        Ordered:   { bg:"rgba(10,132,255,0.15)", c:"#1E40AF" },
+                        Delivered: { bg:"rgba(48,209,88,0.12)", c:"#065F46" },
+                        Installed: { bg:"rgba(191,90,242,0.15)", c:"#4C1D95" },
                       }[inv.status||"Pending"];
                       return (
                         <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr 2fr",
@@ -2356,24 +2356,24 @@ High Rise Interiors, Hyderabad`
     const installed = orderItems.filter(o=>o.status==="Installed");
 
     const VR = {
-      page:  { background:"#fff", minHeight:"100vh", fontFamily:"'DM Sans',system-ui,sans-serif", color:"#0F1923", paddingBottom:60 },
+      page:  { background:"rgba(255,255,255,0.08)", minHeight:"100vh", fontFamily:"'DM Sans',system-ui,sans-serif", color:"rgba(255,255,255,0.95)", paddingBottom:60 },
       body:  { maxWidth:920, margin:"0 auto", padding:"32px 48px" },
       sec:   { fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase",
                color:C.teal, borderBottom:`2px solid ${C.teal}`, paddingBottom:6, marginBottom:14, marginTop:28 },
-      th:    (bg="#0F1923") => ({ padding:"8px 12px", fontSize:9, fontWeight:700, letterSpacing:1.5,
+      th:    (bg="rgba(255,255,255,0.95)") => ({ padding:"8px 12px", fontSize:9, fontWeight:700, letterSpacing:1.5,
                textTransform:"uppercase", background:bg, color:"#fff" }),
-      td:    (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?"#fff":"#F5F1EA",
+      td:    (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?"#fff":"rgba(255,255,255,0.06)",
                borderBottom:`1px solid ${C.line}`, verticalAlign:"top" }),
       badge: (s) => {
-        const m = { Pending:{bg:"#FEF3C7",c:"#92400E"}, Ordered:{bg:"#DBEAFE",c:"#1E40AF"},
-                    Delivered:{bg:"#D1FAE5",c:"#065F46"}, Installed:{bg:"#EDE9FE",c:"#4C1D95"} };
+        const m = { Pending:{bg:"rgba(255,159,10,0.15)",c:"#92400E"}, Ordered:{bg:"rgba(10,132,255,0.15)",c:"#1E40AF"},
+                    Delivered:{bg:"rgba(48,209,88,0.12)",c:"#065F46"}, Installed:{bg:"rgba(191,90,242,0.15)",c:"#4C1D95"} };
         const x = m[s]||m.Pending;
         return { background:x.bg, color:x.c, padding:"2px 8px", borderRadius:2,
                  fontSize:9, fontWeight:700, letterSpacing:1, textTransform:"uppercase" };
       },
     };
 
-    const MatTable = ({ items, title, color="#0F1923" }) => {
+    const MatTable = ({ items, title, color="rgba(255,255,255,0.95)" }) => {
       if (!items.length) return null;
       return (
         <div style={{ marginBottom:20 }}>
@@ -2421,9 +2421,9 @@ High Rise Interiors, Hyderabad`
         {/* Toolbar */}
         <div className="np" style={{ background:C.ink, padding:"12px 36px", display:"flex", gap:12,
           alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+          <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
-          <span style={{ background:"#FDE68A", color:"#5C3A00", padding:"3px 10px", borderRadius:2,
+          <span style={{ background:"rgba(255,159,10,0.15)", color:"#5C3A00", padding:"3px 10px", borderRadius:2,
             fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>
             🔒 INTERNAL — Vendor Purchase Order
           </span>
@@ -2470,13 +2470,13 @@ High Rise Interiors, Hyderabad`
           {orderItems.length > 0 && (
             <div style={{ marginBottom:16 }}>
               <div style={{ display:"flex", height:6, borderRadius:3, overflow:"hidden", background:C.line, marginBottom:8 }}>
-                {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#F59E0B"]].map(([s,col])=>
+                {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#FF9F0A"]].map(([s,col])=>
                   orderItems.filter(o=>o.status===s).length > 0
                     ? <div key={s} style={{ flex:orderItems.filter(o=>o.status===s).length, background:col }}/> : null
                 )}
               </div>
               <div style={{ display:"flex", gap:16, fontSize:11, color:C.muted }}>
-                {[["Pending","#FEF3C7","#92400E"],["Ordered","#DBEAFE","#1E40AF"],["Delivered","#D1FAE5","#065F46"],["Installed","#EDE9FE","#4C1D95"]].map(([s,bg,c])=>(
+                {[["Pending","rgba(255,159,10,0.15)","#92400E"],["Ordered","rgba(10,132,255,0.15)","#1E40AF"],["Delivered","rgba(48,209,88,0.12)","#065F46"],["Installed","rgba(191,90,242,0.15)","#4C1D95"]].map(([s,bg,c])=>(
                   <div key={s}><span style={{ background:bg,color:c,padding:"2px 8px",borderRadius:2,fontSize:10,fontWeight:700 }}>{orderItems.filter(o=>o.status===s).length}</span> {s}</div>
                 ))}
                 <span style={{ marginLeft:"auto", fontWeight:700 }}>{installed.length}/{orderItems.length} Complete</span>
@@ -2565,7 +2565,7 @@ High Rise Interiors, Hyderabad`
       <div style={{ minHeight:"100vh", background:C.ink, fontFamily:"'DM Sans',system-ui,sans-serif" }}>
         <div style={{ background:C.ink, padding:"12px 24px", display:"flex",
           alignItems:"center", gap:12, borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+          <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
           <div style={{ color:"#fff", fontSize:13, fontWeight:700, letterSpacing:2 }}>
             3D Room Planner — {selected.name}
           </div>
@@ -2626,7 +2626,7 @@ High Rise Interiors, Hyderabad`
                     color:C.ink,paddingBottom:60 }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
         <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} style={S.btn("dark")}>← Back</button>
+          <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
           <span style={{ color:C.muted,fontSize:11,letterSpacing:1 }}>Tip: Save as PDF in print dialog</span>
         </div>
@@ -2685,7 +2685,7 @@ High Rise Interiors, Hyderabad`
                 <span style={{ flex:1,textAlign:"right",fontWeight:600 }}>{fmt(total)||"As agreed"}</span>
               </div>
               {(selected.rooms||[]).map((r,i)=>(
-                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#fff":"#FFFAFA",borderBottom:`1px solid ${C.line}` }}>
+                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#fff":"rgba(255,255,255,0.06)",borderBottom:`1px solid ${C.line}` }}>
                   <span style={{ flex:3,fontSize:12,color:"#4A2A2A",paddingLeft:16 }}>↳ {r}</span>
                   <span style={{ flex:1,textAlign:"right",fontSize:12,color:C.muted }}>Included</span>
                 </div>
@@ -2716,12 +2716,12 @@ High Rise Interiors, Hyderabad`
                 <span style={{ flex:1,textAlign:"right" }}>Status</span>
               </div>
               {PAYMENT_PHASES.map((p,i)=>(
-                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#FFFAFA":"#fff",borderTop:`1px solid ${C.line}` }}>
+                <div key={i} style={{ ...IV.tRow,background:i%2===0?"rgba(255,255,255,0.06)":"#fff",borderTop:`1px solid ${C.line}` }}>
                   <span style={{ flex:1,fontWeight:700,color:C.red,fontSize:12 }}>{p.day}</span>
                   <span style={{ flex:2,fontSize:12,color:"#4A2A2A" }}>{p.label}</span>
                   <span style={{ flex:1,textAlign:"center",fontSize:12 }}>{p.pct}%</span>
                   <span style={{ flex:1,textAlign:"right",fontWeight:600,fontSize:13 }}>{total>0?fmt(Math.round(total*p.pct/100)):"—"}</span>
-                  <span style={{ flex:1,textAlign:"right" }}><span style={i===0?IV.pill("#FFF3CD","#856404"):IV.pill("#F0F0F0","#9A9A9A")}>{i===0?"Due Now":"Pending"}</span></span>
+                  <span style={{ flex:1,textAlign:"right" }}><span style={i===0?IV.pill("rgba(255,159,10,0.12)","#856404"):IV.pill("rgba(255,255,255,0.08)","#9A9A9A")}>{i===0?"Due Now":"Pending"}</span></span>
                 </div>
               ))}
             </div>
@@ -2741,7 +2741,7 @@ High Rise Interiors, Hyderabad`
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Terms, Conditions & Disclaimers</div>
             <div style={{ background:C.smoke,borderRadius:3,padding:"16px 20px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A4A2A" }}>
-              <div style={{ background:"#FFF0F0",border:`1px solid ${C.line}`,borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:13,color:C.red,fontWeight:700 }}>
+              <div style={{ background:"rgba(255,255,255,0.06)",border:`1px solid ${C.line}`,borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:13,color:C.red,fontWeight:700 }}>
                 🚫 NO REFUND POLICY: All payments made are strictly non-refundable. Once payment is made and work has commenced, no refunds will be issued under any circumstances.
               </div>
               <div>1. <strong>Cancellation:</strong> Amounts paid till date are forfeited upon cancellation after commencement.</div>
@@ -2773,7 +2773,7 @@ High Rise Interiors, Hyderabad`
               <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
               <span>{invNum} | {d}</span>
             </div>
-            <div style={{ fontSize:11,color:"#C0A0A0",textAlign:"center",lineHeight:1.8 }}>
+            <div style={{ fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",lineHeight:1.8 }}>
               All payments are non-refundable. Confidential — intended solely for {selected.name}. Prices in INR ₹.
             </div>
           </div>
@@ -2784,19 +2784,153 @@ High Rise Interiors, Hyderabad`
 
   // ── DETAIL ────────────────────────────────────────────────────────────
   if (view==="detail" && selected) return (
-    <div style={S.app}>
+    <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)",color:"rgba(255,255,255,0.92)",fontFamily:"Inter,-apple-system,BlinkMacSystemFont,sans-serif",position:"relative"}}>
       <Orbs/>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+
+        /* Glass card */
+        .glass {
+          background: rgba(255,255,255,0.07);
+          backdrop-filter: blur(40px) saturate(180%);
+          -webkit-backdrop-filter: blur(40px) saturate(180%);
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 18px;
+          position: relative;
+          overflow: hidden;
+        }
+        .glass::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+          z-index: 1;
+        }
+        .glass::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 45%;
+          background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 100%);
+          border-radius: 18px 18px 0 0;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        /* Hover lift */
+        .glass-hover { transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1); cursor: pointer; }
+        .glass-hover:hover {
+          background: rgba(255,255,255,0.12) !important;
+          border-color: rgba(255,255,255,0.24) !important;
+          transform: translateY(-2px);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+        }
+        .glass-hover:active { transform: scale(0.97); transition: all 0.1s ease; }
+
+        /* Pill */
+        .pill {
+          border: none; cursor: pointer;
+          font-family: inherit; font-weight: 600; font-size: 13px;
+          padding: 8px 20px; border-radius: 100px;
+          transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+          backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        }
+        .pill:active { transform: scale(0.93); }
+
+        /* Input */
+        .glass-input {
+          background: rgba(255,255,255,0.08);
+          border: 1px solid rgba(255,255,255,0.16);
+          border-radius: 12px;
+          color: rgba(255,255,255,0.95);
+          font-family: inherit; font-size: 14px;
+          padding: 11px 14px; outline: none; width: 100%;
+          transition: all 0.2s ease;
+          backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        }
+        .glass-input:focus {
+          border-color: rgba(10,132,255,0.7) !important;
+          background: rgba(10,132,255,0.08) !important;
+          box-shadow: 0 0 0 3px rgba(10,132,255,0.18) !important;
+        }
+        .glass-input::placeholder { color: rgba(255,255,255,0.32); }
+        select.glass-input option { background: #1a1a2e; color: #fff; }
+
+        /* Client rows */
+        .client-row { transition: all 0.2s cubic-bezier(0.34,1.4,0.64,1); cursor: pointer; }
+        .client-row:hover {
+          background: rgba(255,255,255,0.11) !important;
+          border-color: rgba(255,255,255,0.22) !important;
+          transform: translateX(4px);
+        }
+        .client-row:active { transform: scale(0.99) translateX(2px); }
+
+        /* Status badges */
+        .badge { display:inline-block; padding: 3px 12px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
+        .badge-lead        { background:rgba(255,159,10,0.18);  color:#FF9F0A; border:1px solid rgba(255,159,10,0.35);  }
+        .badge-active      { background:rgba(10,132,255,0.18);  color:#0A84FF; border:1px solid rgba(10,132,255,0.35);  }
+        .badge-inprogress  { background:rgba(191,90,242,0.18);  color:#BF5AF2; border:1px solid rgba(191,90,242,0.35); }
+        .badge-completed   { background:rgba(48,209,88,0.18);   color:#30D158; border:1px solid rgba(48,209,88,0.35);  }
+        .badge-onhold      { background:rgba(255,69,58,0.18);   color:#FF453A; border:1px solid rgba(255,69,58,0.35);  }
+
+        /* Animations */
+        @keyframes slideUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+        @keyframes spin      { to{transform:rotate(360deg)} }
+        @keyframes countUp   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        .slide-up  { animation: slideUp 0.35s cubic-bezier(0.34,1.2,0.64,1) both; }
+        .fade-in   { animation: fadeIn 0.25s ease both; }
+        .count-up  { animation: countUp 0.4s ease both; }
+        .slide-up:nth-child(1){animation-delay:0.00s}
+        .slide-up:nth-child(2){animation-delay:0.05s}
+        .slide-up:nth-child(3){animation-delay:0.10s}
+        .slide-up:nth-child(4){animation-delay:0.15s}
+        .slide-up:nth-child(5){animation-delay:0.20s}
+        .slide-up:nth-child(6){animation-delay:0.25s}
+        .slide-up:nth-child(7){animation-delay:0.30s}
+        .slide-up:nth-child(8){animation-delay:0.35s}
+        .slide-up:nth-child(9){animation-delay:0.40s}
+        .slide-up:nth-child(n+10){animation-delay:0.45s}
+
+        /* Stat cards */
+        .stat-blue  { box-shadow:0 8px 32px rgba(10,132,255,0.25),  inset 0 1px 0 rgba(255,255,255,0.15); }
+        .stat-purple{ box-shadow:0 8px 32px rgba(191,90,242,0.25),  inset 0 1px 0 rgba(255,255,255,0.15); }
+        .stat-amber { box-shadow:0 8px 32px rgba(255,159,10,0.25),  inset 0 1px 0 rgba(255,255,255,0.15); }
+        .stat-green { box-shadow:0 8px 32px rgba(48,209,88,0.25),   inset 0 1px 0 rgba(255,255,255,0.15); }
+
+        /* Nav */
+        .crm-nav {
+          background: rgba(6,8,18,0.75);
+          backdrop-filter: blur(60px) saturate(200%);
+          -webkit-backdrop-filter: blur(60px) saturate(200%);
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+          position: sticky; top: 0; z-index: 200;
+        }
+
+        /* Form inputs override */
+        input, select, textarea {
+          color: rgba(255,255,255,0.95) !important;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+      `}</style>
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
-      <div style={S.hdr}>
+      <div className="crm-nav" style={{height:54,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
         <div style={{ display:"flex",gap:10 }}>
-          <button style={S.btn("dark")} onClick={()=>setView("list")}>← Back</button>
-<button style={S.btn("dark")} onClick={()=>setView("room3d")}>🧊 3D Room</button>
-          <button style={S.btn("dark")} onClick={()=>setView("report")}>📄 Client Report</button>
-          <button style={S.btn("dark")} onClick={()=>setView("internal")}>🔧 Internal Report</button>
-          <button style={S.btn("dark")} onClick={()=>setView("vendor")}>🛒 Vendor Order</button>
-          <button style={S.btn("dark")} onClick={()=>setView("invoice")}>🧾 Invoice</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("list")}>← Back</button>
+<button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("room3d")}>🧊 3D Room</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("report")}>📄 Client Report</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("internal")}>🔧 Internal Report</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("vendor")}>🛒 Vendor Order</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("invoice")}>🧾 Invoice</button>
           <button style={S.btn()} onClick={()=>openEdit(selected)}>Edit</button>
         </div>
       </div>
@@ -2813,7 +2947,7 @@ High Rise Interiors, Hyderabad`
               ))}
               {selected.startDate && <div style={{ fontSize:13,marginBottom:6 }}><span style={{ color:C.muted }}>📅 </span>Start: {selected.startDate}</div>}
             </div>
-            {selected.notes && <div style={S.card}><div style={S.sec}>Notes</div><div style={{ fontSize:14,lineHeight:1.8 }}>{selected.notes}</div></div>}
+            {selected.notes && <div style={{...S.card,padding:"20px 24px"}}><div style={S.sec}>Notes</div><div style={{ fontSize:14,lineHeight:1.8 }}>{selected.notes}</div></div>}
           </div>
           <div>
             <div style={{ ...S.card,marginBottom:16 }}>
@@ -2914,7 +3048,7 @@ High Rise Interiors, Hyderabad`
                 return (
                   <div key={i} style={{ display:"flex", gap:16, marginBottom:20, position:"relative" }}>
                     <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, zIndex:1,
-                      background: isSign?"#DCFCE7":isPrint?C.tealL:C.smoke,
+                      background: isSign?"rgba(48,209,88,0.15)":isPrint?C.tealL:C.smoke,
                       border:`2px solid ${isSign?"#86EFAC":isPrint?C.teal:C.line}`,
                       display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
                       {icon}
@@ -2936,7 +3070,7 @@ High Rise Interiors, Hyderabad`
                       {isSign && (
                         <div style={{ marginTop:8 }}>
                           <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                            {entry.signatures?.client && <span style={{ background:"#DCFCE7", color:"#166534", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ Client signed</span>}
+                            {entry.signatures?.client && <span style={{ background:"rgba(48,209,88,0.15)", color:"#30D158", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ Client signed</span>}
                             {entry.signatures?.hri    && <span style={{ background:C.tealL, color:C.teal, fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:2 }}>✍ HRI signed</span>}
                           </div>
                           {/* Show signature images from audit log */}
@@ -2945,14 +3079,14 @@ High Rise Interiors, Hyderabad`
                               <div>
                                 <div style={{ fontSize:9, color:C.muted, marginBottom:2 }}>{selected.name}</div>
                                 <img src={entry.signatures.clientImg} alt="Client sig"
-                                  style={{ height:48, border:`1px solid ${C.line}`, borderRadius:3, background:"#FAFAFA" }}/>
+                                  style={{ height:48, border:`1px solid ${C.line}`, borderRadius:3, background:"rgba(255,255,255,0.06)" }}/>
                               </div>
                             )}
                             {entry.signatures?.hriImg && (
                               <div>
                                 <div style={{ fontSize:9, color:C.muted, marginBottom:2 }}>High Rise Interiors</div>
                                 <img src={entry.signatures.hriImg} alt="HRI sig"
-                                  style={{ height:48, border:`1px solid ${C.line}`, borderRadius:3, background:"#FAFAFA" }}/>
+                                  style={{ height:48, border:`1px solid ${C.line}`, borderRadius:3, background:"rgba(255,255,255,0.06)" }}/>
                               </div>
                             )}
                           </div>
@@ -2995,10 +3129,10 @@ High Rise Interiors, Hyderabad`
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Studio CRM</span></div>
         <div style={{ display:"flex",alignItems:"center",gap:10 }}>
           <span style={{ background:connected?"#27AE60":"#C0392B",color:"#fff",fontSize:10,padding:"3px 10px",borderRadius:20 }}>● {connected?"Connected":"Offline"}</span>
-          <span style={{ color:"#E0D0FF",fontSize:11 }}>{user?.email}</span>
-          <button style={S.btn("dark")} onClick={fetchCustomers}>↻</button>
-          <button style={S.btn("dark")} onClick={exportCSV}>↓ CSV</button>
-          <button style={S.btn("dark")} onClick={onLogout}>Sign Out</button>
+          <span style={{ color:"rgba(191,90,242,0.12)",fontSize:11 }}>{user?.email}</span>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={fetchCustomers}>↻</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={exportCSV}>↓ CSV</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={onLogout}>Sign Out</button>
           <button style={S.btn()} onClick={openNew}>+ New Client</button>
         </div>
       </div>
@@ -3019,8 +3153,20 @@ High Rise Interiors, Hyderabad`
         {/* Search */}
         <div style={{ display:"flex",gap:12,marginBottom:20,flexWrap:"wrap",alignItems:"center" }}>
           <input style={{ ...S.input,width:280,marginBottom:0 }} placeholder="Search name, phone, address…" value={search} onChange={e=>setSearch(e.target.value)}/>
-          <div style={{ display:"flex",gap:6,background:"#F5EEEE",padding:5,borderRadius:10 }}>
-            {["All",...STATUSES].map(s=><button key={s} style={S.tab(filterStatus===s)} onClick={()=>setFilterStatus(s)}>{s}</button>)}
+          <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+            {["All",...STATUSES].map(s=>{
+              const cfg={Lead:["rgba(255,159,10,0.28)","#FF9F0A","rgba(255,159,10,0.45)"],Active:["rgba(10,132,255,0.28)","#0A84FF","rgba(10,132,255,0.45)"],"In Progress":["rgba(191,90,242,0.28)","#BF5AF2","rgba(191,90,242,0.45)"],Completed:["rgba(48,209,88,0.28)","#30D158","rgba(48,209,88,0.45)"],"On Hold":["rgba(255,69,58,0.28)","#FF453A","rgba(255,69,58,0.45)"],All:["rgba(10,132,255,0.28)","#0A84FF","rgba(10,132,255,0.45)"]}[s]||["rgba(255,255,255,0.1)","#fff","rgba(255,255,255,0.3)"];
+              const active=filterStatus===s;
+              return (
+                <button key={s} className="pill" onClick={()=>setFilterStatus(s)} style={{
+                  background: active ? cfg[0] : "rgba(255,255,255,0.08)",
+                  color:      active ? cfg[1] : "rgba(255,255,255,0.75)",
+                  border:     active ? `1px solid ${cfg[2]}` : "1px solid rgba(255,255,255,0.15)",
+                  boxShadow:  active ? `0 0 16px ${cfg[0]}` : "none",
+                  fontSize:13, padding:"8px 20px",
+                }}>{s}</button>
+              );
+            })}
           </div>
         </div>
         {/* List */}
@@ -3067,7 +3213,7 @@ High Rise Interiors, Hyderabad`
       <div style={S.hdr}>
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>{form.id?"Edit Client":"New Client"}</span></div>
         <div style={{ display:"flex",gap:10 }}>
-          <button style={S.btn("dark")} onClick={()=>setView("list")}>Cancel</button>
+          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("list")}>Cancel</button>
           <button style={{ ...S.btn(),opacity:saving?0.7:1 }} onClick={saveCustomer} disabled={saving}>{saving?"Saving…":form.id?"Update Client":"Save Client"}</button>
         </div>
       </div>
@@ -3085,7 +3231,7 @@ High Rise Interiors, Hyderabad`
           {activeTab==="personal" && (
             <div>
               {form.id && (
-                <div style={{ background:"#F5EEEE", borderRadius:10, padding:"10px 16px", marginBottom:16, display:"flex", alignItems:"center", gap:12, border:`1px solid ${C.line}` }}>
+                <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"10px 16px", marginBottom:16, display:"flex", alignItems:"center", gap:12, border:`1px solid ${C.line}` }}>
                   <span style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase" }}>Client ID</span>
                   <span style={{ fontSize:13, fontWeight:700, color:C.red, fontFamily:"monospace" }}>{form.id}</span>
                   <span style={{ fontSize:11, color:C.muted }}>(Read only — cannot be changed)</span>
@@ -3293,8 +3439,8 @@ Dimension rules:
 
                     {/* Already applied — show summary */}
                     {form.floorPlanData && !form.floorPlanPending && (
-                      <div style={{ marginTop:10, background:"#DCFCE7", border:"1px solid #86EFAC",
-                        borderRadius:3, padding:"10px 14px", fontSize:12, color:"#166534" }}>
+                      <div style={{ marginTop:10, background:"rgba(48,209,88,0.15)", border:"1px solid #86EFAC",
+                        borderRadius:3, padding:"10px 14px", fontSize:12, color:"#30D158" }}>
                         ✅ {form.rooms.length} rooms populated
                         {form.floorPlanData.notes && ` · ${form.floorPlanData.notes}`}
                       </div>
@@ -3312,7 +3458,7 @@ Dimension rules:
               <div style={S.sec}>Client Information</div>
               <div style={S.row}>
                 <Field label="Full Name *">
-                  <input style={S.input} value={form.name} onChange={e=>setF("name",e.target.value)} placeholder="Mr. Sashi Kanth"/>
+                  <input className="glass-input" style={{}} value={form.name} onChange={e=>setF("name",e.target.value)} placeholder="Mr. Sashi Kanth"/>
                 </Field>
                 <Field label="Status">
                   <Select value={form.status} onChange={v=>setF("status",v)} options={STATUSES}/>
@@ -3320,15 +3466,15 @@ Dimension rules:
               </div>
               <div style={S.row}>
                 <Field label="Phone">
-                  <input style={S.input} value={form.phone} onChange={e=>setF("phone",e.target.value)} placeholder="+91 98765 43210"/>
+                  <input className="glass-input" style={{}} value={form.phone} onChange={e=>setF("phone",e.target.value)} placeholder="+91 98765 43210"/>
                 </Field>
                 <Field label="Email">
-                  <input style={S.input} type="email" value={form.email} onChange={e=>setF("email",e.target.value)} placeholder="client@email.com"/>
+                  <input className="glass-input" style={{}} type="email" value={form.email} onChange={e=>setF("email",e.target.value)} placeholder="client@email.com"/>
                 </Field>
               </div>
               <div style={{ marginBottom:18 }}>
                 <label style={S.label}>Project Address</label>
-                <input style={S.input} value={form.address} onChange={e=>setF("address",e.target.value)} placeholder="EIPL Cornerstone T2, 803, Hyderabad, Telangana"/>
+                <input className="glass-input" style={{}} value={form.address} onChange={e=>setF("address",e.target.value)} placeholder="EIPL Cornerstone T2, 803, Hyderabad, Telangana"/>
               </div>
               <div style={S.row}>
                 <Field label="Project Type">
@@ -3340,11 +3486,11 @@ Dimension rules:
               </div>
               <div style={{ marginBottom:18 }}>
                 <label style={S.label}>Start Date</label>
-                <input style={S.input} type="date" value={form.startDate} onChange={e=>setF("startDate",e.target.value)}/>
+                <input className="glass-input" style={{}} type="date" value={form.startDate} onChange={e=>setF("startDate",e.target.value)}/>
               </div>
               <div style={{ marginBottom:18 }}>
                 <label style={S.label}>Duration</label>
-                <select style={S.input} value={form.timeline} onChange={e=>setF("timeline",e.target.value)}>
+                <select className="glass-input" style={{}} value={form.timeline} onChange={e=>setF("timeline",e.target.value)}>
                   <option value="">Select duration</option>
                   {TIMELINES.map(t=><option key={t} value={t}>{t}</option>)}
                 </select>
@@ -3389,7 +3535,7 @@ Dimension rules:
                 const area = rd.length && rd.width ? (parseFloat(rd.length) * parseFloat(rd.width)).toFixed(0) : null;
 
                 return (
-                  <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.line}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
+                  <div key={room} style={{ background:"rgba(255,255,255,0.08)", border:`1.5px solid ${C.line}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
                     {/* Room header */}
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
                       <div style={{ fontSize:15, fontWeight:700, color:C.ink }}>🏠 {room}</div>
@@ -3400,15 +3546,15 @@ Dimension rules:
                     <div style={{ display:"flex", gap:12, marginBottom:14, flexWrap:"wrap" }}>
                       <div style={{ flex:1 }}>
                         <label style={S.label}>Length (ft)</label>
-                        <input style={S.input} type="number" value={rd.length||""} onChange={e=>setRD("length",e.target.value)} placeholder="0"/>
+                        <input className="glass-input" style={{}} type="number" value={rd.length||""} onChange={e=>setRD("length",e.target.value)} placeholder="0"/>
                       </div>
                       <div style={{ flex:1 }}>
                         <label style={S.label}>Width (ft)</label>
-                        <input style={S.input} type="number" value={rd.width||""} onChange={e=>setRD("width",e.target.value)} placeholder="0"/>
+                        <input className="glass-input" style={{}} type="number" value={rd.width||""} onChange={e=>setRD("width",e.target.value)} placeholder="0"/>
                       </div>
                       <div style={{ flex:1 }}>
                         <label style={S.label}>Height (ft)</label>
-                        <input style={S.input} type="number" value={rd.height||""} onChange={e=>setRD("height",e.target.value)} placeholder="0"/>
+                        <input className="glass-input" style={{}} type="number" value={rd.height||""} onChange={e=>setRD("height",e.target.value)} placeholder="0"/>
                       </div>
                     </div>
 
@@ -3466,7 +3612,7 @@ Dimension rules:
                     {/* Notes for this room */}
                     <div style={{ marginBottom:14 }}>
                       <label style={S.label}>Room Notes</label>
-                      <input style={S.input} value={rd.notes||""} onChange={e=>setRD("notes",e.target.value)} placeholder={`Special requirements for ${room}…`}/>
+                      <input className="glass-input" style={{}} value={rd.notes||""} onChange={e=>setRD("notes",e.target.value)} placeholder={`Special requirements for ${room}…`}/>
                     </div>
 
                     {/* Photo upload */}
@@ -3576,7 +3722,7 @@ Dimension rules:
                     }, 0);
 
                     return (
-                      <div key={room} style={{ background:"#fff", border:`1.5px solid ${C.line}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
+                      <div key={room} style={{ background:"rgba(255,255,255,0.08)", border:`1.5px solid ${C.line}`, borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
                         {/* Room header */}
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, paddingBottom:12, borderBottom:`1px solid ${C.line}` }}>
                           <div style={{ fontSize:15, fontWeight:700, color:C.ink }}>🏠 {room}</div>
@@ -3600,7 +3746,7 @@ Dimension rules:
                                 {/* Material selector */}
                                 <div style={{ flex:2 }}>
                                   <label style={S.label}>Brand / Type</label>
-                                  <select style={S.input} value={sel.name||""} onChange={e => setRM(matType, "name", e.target.value)}>
+                                  <select className="glass-input" style={{}} value={sel.name||""} onChange={e => setRM(matType, "name", e.target.value)}>
                                     <option value="">Select {MATERIAL_LABELS[matType]}</option>
                                     {matType==="hardware" ? (
                                       <>
@@ -3623,12 +3769,12 @@ Dimension rules:
                                 {/* Quantity */}
                                 <div style={{ flex:1 }}>
                                   <label style={S.label}>Qty ({selectedItem?.unit||"unit"})</label>
-                                  <input style={S.input} type="number" value={sel.qty||""} onChange={e => setRM(matType, "qty", e.target.value)} placeholder="0"/>
+                                  <input className="glass-input" style={{}} type="number" value={sel.qty||""} onChange={e => setRM(matType, "qty", e.target.value)} placeholder="0"/>
                                 </div>
                                 {/* Rate display */}
                                 <div style={{ flex:1 }}>
                                   <label style={S.label}>Rate</label>
-                                  <div style={{ ...S.input, background:"#F5EEEE", color:C.muted, cursor:"default" }}>
+                                  <div style={{ ...S.input, background:"rgba(255,255,255,0.08)", color:C.muted, cursor:"default" }}>
                                     {selectedItem ? `₹${selectedItem.price}/${selectedItem.unit}` : "—"}
                                   </div>
                                 </div>
@@ -3665,7 +3811,7 @@ Dimension rules:
                       <div style={{ background:C.red, borderRadius:14, padding:"20px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                         <div>
                           <div style={{ color:"#fff", fontSize:12, letterSpacing:2, textTransform:"uppercase" }}>Estimated Material Cost</div>
-                          <div style={{ color:"#E0D0FF", fontSize:11, marginTop:4 }}>Based on selected materials & quantities</div>
+                          <div style={{ color:"rgba(191,90,242,0.12)", fontSize:11, marginTop:4 }}>Based on selected materials & quantities</div>
                         </div>
                         <div style={{ color:"#fff", fontSize:26, fontWeight:700 }}>{fmt(Math.round(grandTotal))}</div>
                       </div>
@@ -3730,7 +3876,7 @@ Dimension rules:
               {/* Previous Quotation */}
               <div style={S.row}>
                 <Field label="Previous Quotation ₹">
-                  <input style={S.input} type="number" value={form.previousQuotation} onChange={e=>setF("previousQuotation",e.target.value)} placeholder="Auto-filled from materials"/>
+                  <input className="glass-input" style={{}} type="number" value={form.previousQuotation} onChange={e=>setF("previousQuotation",e.target.value)} placeholder="Auto-filled from materials"/>
                 </Field>
                 <Field label="Revised Quotation ₹">
                   <input style={{ ...S.input, color: form.revisedQuotation ? C.red : C.muted }} type="number" value={form.revisedQuotation} onChange={e=>setF("revisedQuotation",e.target.value)} placeholder="After rebate"/>
@@ -3745,7 +3891,7 @@ Dimension rules:
                 <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8, fontWeight:700 }}>Step 1 — Rebate</div>
                 <div style={S.row}>
                   <Field label="Rebate Type">
-                    <select style={S.input} value={form.rebateType} onChange={e=>{
+                    <select className="glass-input" style={{}} value={form.rebateType} onChange={e=>{
                       setF("rebateType",e.target.value);
                     }}>
                       <option value="amount">Fixed Amount (₹)</option>
@@ -3753,7 +3899,7 @@ Dimension rules:
                     </select>
                   </Field>
                   <Field label={form.rebateType==="percent" ? "Rebate % (max 5%)" : "Rebate Amount ₹ (max ₹25,000)"}>
-                    <input style={S.input} type="number" min="0" max={form.rebateType==="percent"?"5":"25000"}
+                    <input className="glass-input" style={{}} type="number" min="0" max={form.rebateType==="percent"?"5":"25000"}
                       value={form.rebateValue}
                       onChange={e=>{
                         const val = e.target.value;
@@ -3773,7 +3919,7 @@ Dimension rules:
                       placeholder={form.rebateType==="percent"?"max 5%":"e.g. 25000"}/>
                   </Field>
                   <Field label="Rebate Amount">
-                    <div style={{ ...S.input, background:"#F5EEEE", color:C.red, fontWeight:700, cursor:"default" }}>
+                    <div style={{ ...S.input, background:"rgba(255,255,255,0.08)", color:C.red, fontWeight:700, cursor:"default" }}>
                       {form.previousQuotation && form.rebateValue
                         ? `- ${form.rebateType==="percent"
                             ? fmt(Math.round(parseFloat(form.previousQuotation)*Math.min(parseFloat(form.rebateValue||0),5)/100))
@@ -3806,7 +3952,7 @@ Dimension rules:
                 <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8, fontWeight:700, marginTop:4 }}>Step 2 — Apply Referral Code (from another client)</div>
                 <div style={S.row}>
                   <Field label="Referral Code Used">
-                    <input style={S.input}
+                    <input className="glass-input" style={{}}
                       value={form.appliedReferralCode}
                       onChange={e=>{
                         const code = e.target.value.toUpperCase();
@@ -3852,9 +3998,9 @@ Dimension rules:
                   </Field>
                   <Field label="Validation">
                     <div style={{ ...S.input, cursor:"default",
-                      background: form.referralDiscount ? "#DCFCE7"
-                        : form.appliedReferralCode ? "#FEF2F2" : C.smoke,
-                      color: form.referralDiscount ? "#166534"
+                      background: form.referralDiscount ? "rgba(48,209,88,0.15)"
+                        : form.appliedReferralCode ? "rgba(255,69,58,0.08)" : C.smoke,
+                      color: form.referralDiscount ? "#30D158"
                         : form.appliedReferralCode ? C.rust : C.muted,
                       fontWeight:700 }}>
                       {form.referralDiscount
@@ -3871,8 +4017,8 @@ Dimension rules:
                     </div>
                   </Field>
                   <Field label="Referral Discount (5%)">
-                    <div style={{ ...S.input, background:form.referralDiscount?"#DCFCE7":C.smoke,
-                      color:form.referralDiscount?"#166534":C.muted, fontWeight:700, cursor:"default" }}>
+                    <div style={{ ...S.input, background:form.referralDiscount?"rgba(48,209,88,0.15)":C.smoke,
+                      color:form.referralDiscount?"#30D158":C.muted, fontWeight:700, cursor:"default" }}>
                       {form.referralDiscount && form.previousQuotation
                         ? (() => {
                             const base = parseFloat(form.previousQuotation||0);
@@ -3888,7 +4034,7 @@ Dimension rules:
 
                 {/* Live Summary */}
                 {form.previousQuotation && (
-                  <div style={{ background:"#fff", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}`, marginTop:4 }}>
+                  <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}`, marginTop:4 }}>
                     {(() => {
                       const base = parseFloat(form.previousQuotation||0);
                       const rebateAmt = form.rebateType==="percent"
@@ -3901,7 +4047,7 @@ Dimension rules:
                         <div style={{ display:"flex", gap:16, flexWrap:"wrap", fontSize:13, alignItems:"center" }}>
                           <div><span style={{ color:C.muted }}>Base: </span><strong>{fmt(base)}</strong></div>
                           {rebateAmt>0 && <div><span style={{ color:C.muted }}>Rebate: </span><strong style={{ color:C.teal }}>-{fmt(rebateAmt)}</strong></div>}
-                          {couponAmt>0 && <div><span style={{ color:C.muted }}>Coupon 5%: </span><strong style={{ color:"#166534" }}>-{fmt(couponAmt)}</strong></div>}
+                          {couponAmt>0 && <div><span style={{ color:C.muted }}>Coupon 5%: </span><strong style={{ color:"#30D158" }}>-{fmt(couponAmt)}</strong></div>}
                           <div style={{ marginLeft:"auto" }}><span style={{ color:C.muted }}>Final: </span><strong style={{ color:C.teal, fontSize:16 }}>{fmt(final)}</strong></div>
                         </div>
                       );
@@ -3913,8 +4059,8 @@ Dimension rules:
               {/* Referral Program Info */}
               {form.couponCode && (
                 <div style={{ background:"#F0FFF4", borderRadius:12, padding:"14px 18px", marginBottom:16, border:"1.5px solid #BBF7D0" }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:"#166534", letterSpacing:1, marginBottom:8 }}>🎁 REFERRAL PROGRAM</div>
-                  <div style={{ fontSize:13, color:"#166534", lineHeight:1.9 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:"#30D158", letterSpacing:1, marginBottom:8 }}>🎁 REFERRAL PROGRAM</div>
+                  <div style={{ fontSize:13, color:"#30D158", lineHeight:1.9 }}>
                     <div>• Client shares code <strong>{form.couponCode}</strong> with friends</div>
                     <div>• Referred friend gets <strong>5% off</strong> their project</div>
                     <div>• This client gets <strong>5% cashback</strong> on their final invoice</div>
@@ -3959,7 +4105,7 @@ Dimension rules:
                 <>
                   {/* Status legend */}
                   <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap", alignItems:"center" }}>
-                    {[["Pending","#FEF3C7","#92400E"],["Ordered","#DBEAFE","#1E40AF"],["Delivered","#D1FAE5","#065F46"],["Installed","#EDE9FE","#4C1D95"]].map(([s,bg,c])=>(
+                    {[["Pending","rgba(255,159,10,0.15)","#92400E"],["Ordered","rgba(10,132,255,0.15)","#1E40AF"],["Delivered","rgba(48,209,88,0.12)","#065F46"],["Installed","rgba(191,90,242,0.15)","#4C1D95"]].map(([s,bg,c])=>(
                       <span key={s} style={{ background:bg, color:c, padding:"4px 12px", borderRadius:2, fontSize:11, fontWeight:700, letterSpacing:1 }}>{s}</span>
                     ))}
                     <span style={{ fontSize:11, color:C.muted }}>— tap status to cycle through stages</span>
@@ -3994,10 +4140,10 @@ Dimension rules:
                           const inv = form.inventory?.[invKey] || { status:"Pending" };
                           const SINV = ["Pending","Ordered","Delivered","Installed"];
                           const SC = {
-                            Pending:   { bg:"#FEF3C7", c:"#92400E" },
-                            Ordered:   { bg:"#DBEAFE", c:"#1E40AF" },
-                            Delivered: { bg:"#D1FAE5", c:"#065F46" },
-                            Installed: { bg:"#EDE9FE", c:"#4C1D95" },
+                            Pending:   { bg:"rgba(255,159,10,0.15)", c:"#92400E" },
+                            Ordered:   { bg:"rgba(10,132,255,0.15)", c:"#1E40AF" },
+                            Delivered: { bg:"rgba(48,209,88,0.12)", c:"#065F46" },
+                            Installed: { bg:"rgba(191,90,242,0.15)", c:"#4C1D95" },
                           };
                           const sc = SC[inv.status||"Pending"];
                           const setInv = (field, val) => setForm(f=>({
@@ -4087,12 +4233,12 @@ Dimension rules:
                       <div style={{ background:C.smoke, borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, marginTop:8 }}>
                         <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Overall Progress</div>
                         <div style={{ display:"flex", height:8, borderRadius:4, overflow:"hidden", marginBottom:12, background:C.line }}>
-                          {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#F59E0B"]].map(([s,col])=>(
+                          {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#FF9F0A"]].map(([s,col])=>(
                             counts[s]>0 ? <div key={s} style={{ flex:counts[s], background:col }}/> : null
                           ))}
                         </div>
                         <div style={{ display:"flex", gap:16, fontSize:12, flexWrap:"wrap" }}>
-                          {[["Pending","#92400E","#FEF3C7"],["Ordered","#1E40AF","#DBEAFE"],["Delivered","#065F46","#D1FAE5"],["Installed","#4C1D95","#EDE9FE"]].map(([s,c,bg])=>(
+                          {[["Pending","#92400E","rgba(255,159,10,0.15)"],["Ordered","#1E40AF","rgba(10,132,255,0.15)"],["Delivered","#065F46","rgba(48,209,88,0.12)"],["Installed","#4C1D95","rgba(191,90,242,0.15)"]].map(([s,c,bg])=>(
                             <div key={s}><span style={{ background:bg, color:c, padding:"2px 8px", borderRadius:2, fontSize:10, fontWeight:700 }}>{counts[s]}</span> <span style={{ color:C.muted }}>{s}</span></div>
                           ))}
                           <div style={{ marginLeft:"auto", fontWeight:700, color:C.ink }}>{counts.Installed}/{total} Complete</div>
@@ -4120,7 +4266,7 @@ Dimension rules:
 
           {/* Footer Nav */}
           <div style={{ display:"flex",justifyContent:"space-between",marginTop:28,paddingTop:20,borderTop:`1px solid ${C.line}` }}>
-            <button style={S.btn("ghost")} onClick={()=>{const i=TABS.indexOf(activeTab);if(i>0)setActiveTab(TABS[i-1]);}} disabled={activeTab===TABS[0]}>← Previous</button>
+            <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["ghost"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["ghost"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["ghost"]}} onClick={()=>{const i=TABS.indexOf(activeTab);if(i>0)setActiveTab(TABS[i-1]);}} disabled={activeTab===TABS[0]}>← Previous</button>
             {activeTab!==TABS[TABS.length-1]
               ? <button style={S.btn()} onClick={()=>{const i=TABS.indexOf(activeTab);setActiveTab(TABS[i+1]);}}>Next →</button>
               : <button style={{ ...S.btn(),opacity:saving?0.7:1 }} onClick={saveCustomer} disabled={saving}>{saving?"Saving…":form.id?"Update Client":"Save Client"}</button>
