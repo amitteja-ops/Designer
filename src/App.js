@@ -2816,9 +2816,9 @@ High Rise Interiors, Hyderabad`
           <button style={S.btn()} onClick={()=>openEdit(selected)}>Edit</button>
         </div>
       </div>
-      <div style={{maxWidth:1140,margin:"0 auto",padding:"20px 20px 80px",position:"relative",zIndex:1,overflow:"hidden"}}>
+      <div style={{maxWidth:1140,margin:"0 auto",padding:"20px 20px 80px",position:"relative",zIndex:1}}>
         <div style={{display:"grid",gridTemplateColumns:"minmax(0,2fr) minmax(0,3fr)",gap:16,alignItems:"start"}}>
-          <div style={{minWidth:0,overflow:"hidden"}}>
+          <div style={{minWidth:0}}>
             <div className="glass" style={{marginBottom:16,padding:"22px",background:"rgba(255,255,255,0.08)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
                 <div>
@@ -2834,8 +2834,8 @@ High Rise Interiors, Hyderabad`
             </div>
             {selected.notes && <div className="glass" style={{padding:"20px 24px"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Notes</div><div style={{ fontSize:14,lineHeight:1.8 }}>{selected.notes}</div></div>}
           </div>
-          <div style={{minWidth:0,overflow:"hidden"}}>
-            <div className="glass" style={{padding:"20px",marginBottom:12,overflow:"hidden"}}>
+          <div style={{minWidth:0}}>
+            <div className="glass" style={{padding:"20px",marginBottom:12}}>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Design & Scope</div>
               {selected.style && <div style={{ marginBottom:12 }}><span style={{ color:"rgba(255,255,255,0.5)",fontSize:13 }}>Style: </span><strong>{selected.style}</strong></div>}
               {(selected.rooms||[]).length>0 && (
@@ -2863,7 +2863,7 @@ High Rise Interiors, Hyderabad`
               )}
             </div>
             {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
-              <div className="glass" style={{padding:"20px",marginBottom:16,overflow:"hidden"}}>
+              <div className="glass" style={{padding:"20px",marginBottom:16}}>
                 <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Room Materials & Cost</div>
                 {Object.entries(selected.roomMaterials).map(([room, mats]) => {
                   const roomCost = Object.entries(mats).reduce((total, [matType, sel]) => {
@@ -2914,15 +2914,20 @@ High Rise Interiors, Hyderabad`
           </div>
         </div>
         {/* ── Audit Trail Timeline ── */}
-        <div className="glass" style={{padding:"20px", marginTop:20}}>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Audit Trail</div>
+        <div className="glass" style={{padding:"24px",marginTop:16}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:2.5,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:10,marginBottom:20}}>
+            🕐 Audit Trail
+          </div>
           {(selected.auditLog||[]).length === 0 ? (
-            <div style={{ textAlign:"center", color:"rgba(255,255,255,0.5)", fontSize:13, padding:"12px 0" }}>
-              No activity logged yet — edits and report prints will appear here
+            <div style={{textAlign:"center",color:"rgba(255,255,255,0.4)",fontSize:13,padding:"24px 0"}}>
+              No activity yet — edits and report prints will appear here
             </div>
           ) : (
-            <div style={{ position:"relative" }}>
-              <div style={{ position:"absolute", left:15, top:8, bottom:8, width:2, background:C.line }}/>
+            <div style={{position:"relative"}}>
+              {/* Timeline line */}
+              <div style={{position:"absolute",left:15,top:4,bottom:4,width:2,
+                background:"linear-gradient(180deg,rgba(10,132,255,0.5) 0%,rgba(191,90,242,0.3) 100%)",
+                borderRadius:2}}/>
               {[...(selected.auditLog||[])].reverse().map((entry, i) => {
                 const dt   = new Date(entry.ts);
                 const date = dt.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
@@ -2930,25 +2935,32 @@ High Rise Interiors, Hyderabad`
                 const icon = AUDIT_ICONS[entry.type]||"📋";
                 const isSign  = entry.type==="signed";
                 const isPrint = entry.type==="report";
+                const dotColor = isSign?"#30D158":isPrint?"#0A84FF":"#BF5AF2";
                 return (
-                  <div key={i} style={{ display:"flex", gap:16, marginBottom:20, position:"relative" }}>
-                    <div style={{ width:32, height:32, borderRadius:"50%", flexShrink:0, zIndex:1,
-                      background: isSign?"rgba(48,209,88,0.15)":isPrint?C.tealL:C.smoke,
-                      border:`2px solid ${isSign?"#86EFAC":isPrint?C.teal:C.line}`,
-                      display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
+                  <div key={i} className="slide-up" style={{display:"flex",gap:14,marginBottom:16,position:"relative",animationDelay:`${i*0.05}s`}}>
+                    {/* Timeline dot */}
+                    <div style={{width:32,height:32,borderRadius:"50%",flexShrink:0,zIndex:1,
+                      background:`${dotColor}20`,
+                      border:`2px solid ${dotColor}66`,
+                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>
                       {icon}
                     </div>
-                    <div style={{ flex:1, paddingTop:4 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{entry.summary}</div>
-                        <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", textAlign:"right", marginLeft:12, flexShrink:0 }}>
-                          <div>{date}</div><div>{time}</div>
+                    {/* Entry content */}
+                    <div style={{flex:1,minWidth:0,paddingTop:4}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                        <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.92)",lineHeight:1.4}}>{entry.summary}</div>
+                        <div style={{fontSize:10,color:"rgba(255,255,255,0.4)",textAlign:"right",flexShrink:0,whiteSpace:"nowrap"}}>
+                          <div>{date}</div>
+                          <div style={{color:"rgba(255,255,255,0.3)"}}>{time}</div>
                         </div>
                       </div>
                       {entry.snapshot?.changes?.length > 0 && (
-                        <div style={{ marginTop:6, background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"8px 12px", border:"1px solid rgba(255,255,255,0.12)" }}>
+                        <div style={{marginTop:8,background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"10px 14px",border:"1px solid rgba(255,255,255,0.1)"}}>
                           {entry.snapshot.changes.map((c,j)=>(
-                            <div key={j} style={{ fontSize:11, color:"rgba(255,255,255,0.5)", lineHeight:1.8 }}>• {c}</div>
+                            <div key={j} style={{fontSize:11,color:"rgba(255,255,255,0.5)",lineHeight:1.9,display:"flex",gap:6,alignItems:"flex-start"}}>
+                              <span style={{color:"rgba(10,132,255,0.7)",flexShrink:0}}>•</span>
+                              <span style={{wordBreak:"break-word"}}>{c}</span>
+                            </div>
                           ))}
                         </div>
                       )}
