@@ -746,8 +746,8 @@ function SignaturePad({ onSave, onClose, label }) {
         </div>
 
         <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["ghost"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["ghost"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["ghost"]}} onClick={clear}>Clear</button>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["ghost"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["ghost"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["ghost"]}} onClick={onClose}>Cancel</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={clear}>Clear</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={onClose}>Cancel</button>
           <button style={{ ...S.btn(), opacity:hasSignature?1:0.4 }}
             onClick={save} disabled={!hasSignature}>
             ✓ Save Signature
@@ -1125,7 +1125,7 @@ function ClientReport({ selected, setView, customers }) {
     row:   { display:"flex",justifyContent:"space-between",padding:"10px 0",
              borderBottom:`1px solid ${C.line}`,fontSize:13,fontFamily:"'DM Sans',sans-serif" },
     payRow:{ display:"flex",justifyContent:"space-between",alignItems:"center",
-             background:C.smoke,borderRadius:3,padding:"12px 18px",marginBottom:6,
+             background:"rgba(255,255,255,0.07)",borderRadius:3,padding:"12px 18px",marginBottom:6,
              border:`1px solid ${C.line}`,fontFamily:"'DM Sans',sans-serif" },
     bullet:{ fontSize:13,lineHeight:2,paddingLeft:16,fontFamily:"'DM Sans',sans-serif" },
     pill:  (bg,c)=>({ background:bg,color:c,padding:"3px 12px",borderRadius:2,
@@ -1138,7 +1138,7 @@ function ClientReport({ selected, setView, customers }) {
                   color:C.ink,paddingBottom:60 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
       <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
-        <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
+        <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
         <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
         <button onClick={()=>{
           const subject = encodeURIComponent(`High Rise Interiors — Project Report for ${selected.name}`);
@@ -1160,7 +1160,7 @@ Hyderabad`);
             document.body.appendChild(ml);
             ml.click();
             setTimeout(() => document.body.removeChild(ml), 500);
-        }} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>📧 Email Client</button>
+        }} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>📧 Email Client</button>
         <span style={{ color:C.muted,fontSize:11,marginLeft:"auto" }}>
           {signatures.client&&signatures.hri?"✓ Both signed — ready to print"
             :signatures.client?"Client signed — awaiting HRI"
@@ -1406,7 +1406,7 @@ Hyderabad`);
         {discussions.length>0 && (
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Discussions & Notes</div>
-            <div style={{ background:C.smoke,borderRadius:12,padding:"16px 20px",border:`1px solid ${C.line}` }}>
+            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:12,padding:"16px 20px",border:`1px solid ${C.line}` }}>
               {discussions.map((l,i)=><div key={i} style={{ ...RS.bullet,marginBottom:4 }}>• {l}</div>)}
             </div>
           </div>
@@ -1426,7 +1426,7 @@ Hyderabad`);
               <strong style={{ fontSize:16,color:C.ink }}>{selected.quotation ? fmt(Math.round(Number(selected.quotation)*p.pct/100)) : `${p.pct}%`}</strong>
             </div>
           ))}
-          <div style={{ background:C.smoke,borderRadius:10,padding:"14px 18px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
+          <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:10,padding:"14px 18px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
             <div>• Payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
             <div>• Work commences only after advance payment (35%) is received</div>
             <div>• Each phase must be cleared before proceeding to next</div>
@@ -2083,7 +2083,7 @@ High Rise Interiors, Hyderabad`
 
         {/* Toolbar */}
         <div className="np" style={{ background:C.ink, padding:"12px 36px", display:"flex", gap:12, alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
+          <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print</button>
           <span style={{ background:"rgba(255,159,10,0.15)", color:"#5C3A00", padding:"3px 10px", borderRadius:2, fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>🔒 INTERNAL — Do not share with client</span>
         </div>
@@ -2189,7 +2189,7 @@ High Rise Interiors, Hyderabad`
                     <div style={{ ...IR.td(i), fontSize:11, color:C.muted }}>{[...new Set(m.rooms)].join(", ")}</div>
                   </div>
                 ))}
-                <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 3fr 1fr 2fr", background:C.smoke, borderTop:`2px solid ${C.teal}` }}>
+                <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 3fr 1fr 2fr", background:"rgba(255,255,255,0.07)", borderTop:`2px solid ${C.teal}` }}>
                   <div style={{ padding:"10px 12px", gridColumn:"1/4", fontWeight:700, fontSize:12, color:C.ink }}>Total Items to Order</div>
                   <div style={{ padding:"10px 12px", fontWeight:700, fontSize:13, color:C.teal }}>{matList.length} types</div>
                   <div/>
@@ -2307,7 +2307,7 @@ High Rise Interiors, Hyderabad`
           {selected.notes && (
             <>
               <div style={IR.sec}>Project Notes & Client Requirements</div>
-              <div style={{ background:C.smoke, borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, fontSize:13, lineHeight:2, whiteSpace:"pre-wrap" }}>
+              <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, fontSize:13, lineHeight:2, whiteSpace:"pre-wrap" }}>
                 {selected.notes}
               </div>
             </>
@@ -2434,7 +2434,7 @@ High Rise Interiors, Hyderabad`
         {/* Toolbar */}
         <div className="np" style={{ background:C.ink, padding:"12px 36px", display:"flex", gap:12,
           alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
+          <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
           <span style={{ background:"rgba(255,159,10,0.15)", color:"#5C3A00", padding:"3px 10px", borderRadius:2,
             fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>
@@ -2465,7 +2465,7 @@ High Rise Interiors, Hyderabad`
         <div style={VR.body}>
 
           {/* Project summary */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, background:C.smoke,
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, background:"rgba(255,255,255,0.07)",
             borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, marginBottom:8 }}>
             <div>
               <div style={{ fontSize:10, color:C.muted, letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Client</div>
@@ -2578,7 +2578,7 @@ High Rise Interiors, Hyderabad`
       <div style={{ minHeight:"100vh", background:C.ink, fontFamily:"'DM Sans',system-ui,sans-serif" }}>
         <div style={{ background:C.ink, padding:"12px 24px", display:"flex",
           alignItems:"center", gap:12, borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
+          <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <div style={{ color:"#fff", fontSize:13, fontWeight:700, letterSpacing:2 }}>
             3D Room Planner — {selected.name}
           </div>
@@ -2639,7 +2639,7 @@ High Rise Interiors, Hyderabad`
                     color:C.ink,paddingBottom:60 }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
         <div className="np" style={{ background:C.ink,padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}}>← Back</button>
+          <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
           <span style={{ color:C.muted,fontSize:11,letterSpacing:1 }}>Tip: Save as PDF in print dialog</span>
         </div>
@@ -2693,7 +2693,7 @@ High Rise Interiors, Hyderabad`
               <div style={{ ...IV.tRow,background:C.red,color:"#fff",fontWeight:700,fontSize:12,letterSpacing:1 }}>
                 <span style={{ flex:3 }}>Description</span><span style={{ flex:1,textAlign:"right" }}>Amount (₹)</span>
               </div>
-              <div style={{ ...IV.tRow,background:C.smoke,borderBottom:`1px solid ${C.line}` }}>
+              <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderBottom:`1px solid ${C.line}` }}>
                 <span style={{ flex:3,lineHeight:1.7 }}><strong>Interior Design & Execution Work</strong><br/><span style={{ fontSize:12,color:C.muted }}>{selected.projectType} — {selected.address}</span></span>
                 <span style={{ flex:1,textAlign:"right",fontWeight:600 }}>{fmt(total)||"As agreed"}</span>
               </div>
@@ -2703,12 +2703,12 @@ High Rise Interiors, Hyderabad`
                   <span style={{ flex:1,textAlign:"right",fontSize:12,color:C.muted }}>Included</span>
                 </div>
               ))}
-              <div style={{ ...IV.tRow,background:C.smoke,borderTop:`1.5px solid ${C.line}` }}>
+              <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderTop:`1.5px solid ${C.line}` }}>
                 <span style={{ flex:3,color:C.muted }}>Subtotal (Before GST)</span>
                 <span style={{ flex:1,textAlign:"right" }}>{fmt(total)||"—"}</span>
               </div>
               {total>0 && (
-                <div style={{ ...IV.tRow,background:C.smoke,borderTop:`1px solid ${C.line}` }}>
+                <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderTop:`1px solid ${C.line}` }}>
                   <span style={{ flex:3,color:C.muted }}>GST @ 18%</span>
                   <span style={{ flex:1,textAlign:"right" }}>{fmt(gst)}</span>
                 </div>
@@ -2742,7 +2742,7 @@ High Rise Interiors, Hyderabad`
           {/* Payment Terms */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Payment Terms</div>
-            <div style={{ background:C.smoke,borderRadius:10,padding:"16px 20px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A" }}>
+            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:10,padding:"16px 20px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A" }}>
               <div>• All payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
               <div>• Work commences only after <strong>advance payment (35%)</strong> is received</div>
               <div>• Each phase payment must be cleared before proceeding to next phase</div>
@@ -2753,7 +2753,7 @@ High Rise Interiors, Hyderabad`
           {/* No Refund + Disclaimers */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Terms, Conditions & Disclaimers</div>
-            <div style={{ background:C.smoke,borderRadius:3,padding:"16px 20px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A4A2A" }}>
+            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:3,padding:"16px 20px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A4A2A" }}>
               <div style={{ background:"rgba(255,255,255,0.06)",border:`1px solid ${C.line}`,borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:13,color:C.red,fontWeight:700 }}>
                 🚫 NO REFUND POLICY: All payments made are strictly non-refundable. Once payment is made and work has commenced, no refunds will be issued under any circumstances.
               </div>
@@ -2942,12 +2942,12 @@ High Rise Interiors, Hyderabad`
       <div className="crm-nav" style={{height:54,padding:"0 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
         <div style={{ display:"flex",gap:10 }}>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("list")}>← Back</button>
-<button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("room3d")}>🧊 3D Room</button>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("report")}>📄 Client Report</button>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("internal")}>🔧 Internal Report</button>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("vendor")}>🛒 Vendor Order</button>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("invoice")}>🧾 Invoice</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("list")}>← Back</button>
+<button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("room3d")}>🧊 3D Room</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("report")}>📄 Client Report</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("internal")}>🔧 Internal Report</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("vendor")}>🛒 Vendor Order</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("invoice")}>🧾 Invoice</button>
           <button style={S.btn()} onClick={()=>openEdit(selected)}>Edit</button>
         </div>
       </div>
@@ -3078,7 +3078,7 @@ High Rise Interiors, Hyderabad`
                         </div>
                       </div>
                       {entry.snapshot?.changes?.length > 0 && (
-                        <div style={{ marginTop:6, background:C.smoke, borderRadius:3, padding:"8px 12px", border:`1px solid ${C.line}` }}>
+                        <div style={{ marginTop:6, background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"8px 12px", border:`1px solid ${C.line}` }}>
                           {entry.snapshot.changes.map((c,j)=>(
                             <div key={j} style={{ fontSize:11, color:C.muted, lineHeight:1.8 }}>• {c}</div>
                           ))}
@@ -3119,7 +3119,7 @@ High Rise Interiors, Hyderabad`
                       )}
                       {(entry.snapshot?.quotation || entry.snapshot?.ref) && (
                         <div style={{ fontSize:11, color:C.muted, marginTop:4, display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
-                          {entry.snapshot.ref && <span style={{ background:C.smoke, color:C.teal, padding:"1px 8px", borderRadius:2, fontWeight:700, fontSize:10, letterSpacing:1 }}>{entry.snapshot.ref}</span>}
+                          {entry.snapshot.ref && <span style={{ background:"rgba(255,255,255,0.07)", color:C.teal, padding:"1px 8px", borderRadius:2, fontWeight:700, fontSize:10, letterSpacing:1 }}>{entry.snapshot.ref}</span>}
                           {entry.snapshot.quotation && <span>{getDocTerm(entry.snapshot.status)}: <strong style={{ color:C.teal }}>{fmt(entry.snapshot.quotation)}</strong></span>}
                           {entry.snapshot.status && <span style={{ ...S.badge(entry.snapshot.status), fontSize:9 }}>{entry.snapshot.status}</span>}
                         </div>
@@ -3140,16 +3140,21 @@ High Rise Interiors, Hyderabad`
   // ── LIST ──────────────────────────────────────────────────────────────
   if (view==="list") return (
     <div style={S.app}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
+      <div className="orb" style={{top:"-20%",left:"-10%",width:"60%",height:"60%",background:"radial-gradient(ellipse,rgba(10,100,255,0.35) 0%,transparent 65%)"}}/>
+      <div className="orb" style={{top:"10%",right:"-15%",width:"55%",height:"55%",background:"radial-gradient(ellipse,rgba(120,40,220,0.28) 0%,transparent 65%)"}}/>
+      <div className="orb" style={{bottom:"-15%",left:"25%",width:"50%",height:"45%",background:"radial-gradient(ellipse,rgba(0,130,190,0.18) 0%,transparent 65%)"}}/>
+      {/* CSS loaded via index.css */}
+      
+      {/* CSS loaded via index.css */}
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Studio CRM</span></div>
         <div style={{ display:"flex",alignItems:"center",gap:10 }}>
           <span style={{ background:connected?"#27AE60":"#C0392B",color:"#fff",fontSize:10,padding:"3px 10px",borderRadius:20 }}>● {connected?"Connected":"Offline"}</span>
           <span style={{ color:"rgba(191,90,242,0.12)",fontSize:11 }}>{user?.email}</span>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={fetchCustomers}>↻</button>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={exportCSV}>↓ CSV</button>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={onLogout}>Sign Out</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={fetchCustomers}>↻</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={exportCSV}>↓ CSV</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={onLogout}>Sign Out</button>
           <button style={S.btn()} onClick={openNew}>+ New Client</button>
         </div>
       </div>
@@ -3234,18 +3239,23 @@ High Rise Interiors, Hyderabad`
   // ── FORM ──────────────────────────────────────────────────────────────
   return (
     <div style={S.app}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:#1A5276!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
+      <div className="orb" style={{top:"-20%",left:"-10%",width:"60%",height:"60%",background:"radial-gradient(ellipse,rgba(10,100,255,0.35) 0%,transparent 65%)"}}/>
+      <div className="orb" style={{top:"10%",right:"-15%",width:"55%",height:"55%",background:"radial-gradient(ellipse,rgba(120,40,220,0.28) 0%,transparent 65%)"}}/>
+      <div className="orb" style={{bottom:"-15%",left:"25%",width:"50%",height:"45%",background:"radial-gradient(ellipse,rgba(0,130,190,0.18) 0%,transparent 65%)"}}/>
+      {/* CSS loaded via index.css */}
+      
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}} input:focus,select:focus,textarea:focus{border-color:rgba(10,132,255,0.7)!important;box-shadow:0 0 0 3px rgba(26,82,118,0.12)!important} *{box-sizing:border-box}`}</style>
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>{form.id?"Edit Client":"New Client"}</span></div>
         <div style={{ display:"flex",gap:10 }}>
-          <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["dark"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["dark"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["dark"]}} onClick={()=>setView("list")}>Cancel</button>
+          <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("list")}>Cancel</button>
           <button style={{ ...S.btn(),opacity:saving?0.7:1 }} onClick={saveCustomer} disabled={saving}>{saving?"Saving…":form.id?"Update Client":"Save Client"}</button>
         </div>
       </div>
       <div style={S.main}>
         {/* Tabs */}
-        <div style={{ display:"flex",gap:6,marginBottom:24,background:C.smoke,padding:5,borderRadius:3,width:"fit-content" }}>
+        <div style={{ display:"flex",gap:6,marginBottom:24,flexWrap:"wrap" }}>
           {[["personal","👤 Client"],["dimensions","📐 Dimensions"],["materials","🔧 Materials"],["quotation","💰 Quotation"],["notes","📝 Notes"],["inventory","📦 Inventory"]].map(([k,l])=>(
             <button key={k} style={S.tab(activeTab===k)} onClick={()=>setActiveTab(k)}>{l}</button>
           ))}
@@ -3274,7 +3284,7 @@ High Rise Interiors, Hyderabad`
                 {!form.floorPlanUrl ? (
                   <label style={{ display:"block", border:`2px dashed ${C.line}`, borderRadius:3,
                     padding:"24px 16px", textAlign:"center", cursor:"pointer",
-                    background:C.smoke, transition:"border-color 0.2s" }}>
+                    background:"rgba(255,255,255,0.07)", transition:"border-color 0.2s" }}>
                     <input type="file" accept="image/*" style={{ display:"none" }}
                       onChange={async e => {
                         const file = e.target.files?.[0];
@@ -3369,7 +3379,7 @@ Dimension rules:
                     </div>
                     {/* ── Room Mapping UI ── */}
                     {form.floorPlanPending && form.floorPlanPending.length > 0 && (
-                      <div style={{ marginTop:12, background:C.smoke, borderRadius:3,
+                      <div style={{ marginTop:12, background:"rgba(255,255,255,0.07)", borderRadius:3,
                         border:`1px solid ${C.line}`, padding:14 }}>
                         <div style={{ fontSize:11, fontWeight:700, color:C.teal,
                           letterSpacing:2, textTransform:"uppercase", marginBottom:4 }}>
@@ -3766,7 +3776,7 @@ Dimension rules:
                           const lineTotal = selectedItem && sel.qty ? Math.round(parseFloat(sel.qty) * selectedItem.price) : null;
 
                           return (
-                            <div key={matType} style={{ marginBottom:14, background:C.smoke, borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}` }}>
+                            <div key={matType} style={{ marginBottom:14, background:"rgba(255,255,255,0.07)", borderRadius:10, padding:"12px 16px", border:`1px solid ${C.line}` }}>
                               <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10, fontWeight:700 }}>{MATERIAL_LABELS[matType]}</div>
                               <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
                                 {/* Material selector */}
@@ -3910,7 +3920,7 @@ Dimension rules:
               </div>
 
               {/* Rebate & Coupon — two separate discounts */}
-              <div style={{ background:C.smoke, borderRadius:12, padding:"18px 20px", border:`1px solid ${C.line}`, marginBottom:20 }}>
+              <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:12, padding:"18px 20px", border:`1px solid ${C.line}`, marginBottom:20 }}>
                 <div style={S.sec}>Rebate & Coupon Discount</div>
 
                 {/* Row 1: Rebate */}
@@ -3956,7 +3966,7 @@ Dimension rules:
                 </div>
 
                 {/* This client's own referral code */}
-                <div style={{ background:C.smoke, borderRadius:3, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.line}` }}>
+                <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"14px 18px", marginBottom:20, border:`1px solid ${C.line}` }}>
                   <div style={{ fontSize:10, fontWeight:700, color:C.teal, letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>
                     This Client's Referral Code
                   </div>
@@ -4124,7 +4134,7 @@ Dimension rules:
             <div>
               <div style={S.sec}>Project Material Inventory</div>
               {!form.roomMaterials || Object.keys(form.roomMaterials).length===0 ? (
-                <div style={{ textAlign:"center", padding:40, background:C.smoke, borderRadius:3, color:C.muted, fontSize:13, border:`1px solid ${C.line}` }}>
+                <div style={{ textAlign:"center", padding:40, background:"rgba(255,255,255,0.07)", borderRadius:3, color:C.muted, fontSize:13, border:`1px solid ${C.line}` }}>
                   ☝️ Add materials in the <strong>Materials</strong> tab first, then track them here
                 </div>
               ) : (
@@ -4256,7 +4266,7 @@ Dimension rules:
                     allKeys.forEach(k=>{ const s=form.inventory?.[k]?.status||"Pending"; counts[s]=(counts[s]||0)+1; });
                     const total = allKeys.length;
                     return total>0?(
-                      <div style={{ background:C.smoke, borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, marginTop:8 }}>
+                      <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, marginTop:8 }}>
                         <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Overall Progress</div>
                         <div style={{ display:"flex", height:8, borderRadius:4, overflow:"hidden", marginBottom:12, background:C.line }}>
                           {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#FF9F0A"]].map(([s,col])=>(
@@ -4292,7 +4302,7 @@ Dimension rules:
 
           {/* Footer Nav */}
           <div style={{ display:"flex",justifyContent:"space-between",marginTop:28,paddingTop:20,borderTop:`1px solid ${C.line}` }}>
-            <button className="pill" style={{background:{primary:"linear-gradient(135deg,#0A84FF,#BF5AF2)",ghost:"rgba(255,255,255,0.08)",dark:"rgba(255,255,255,0.12)",danger:"rgba(255,69,58,0.18)",teal:"rgba(10,132,255,0.2)"}["ghost"],color:{primary:"#fff",ghost:"rgba(255,255,255,0.75)",dark:"rgba(255,255,255,0.9)",danger:"#FF453A",teal:"#0A84FF"}["ghost"],border:{primary:"none",ghost:"1px solid rgba(255,255,255,0.15)",dark:"1px solid rgba(255,255,255,0.2)",danger:"1px solid rgba(255,69,58,0.35)",teal:"1px solid rgba(10,132,255,0.35)"}["ghost"]}} onClick={()=>{const i=TABS.indexOf(activeTab);if(i>0)setActiveTab(TABS[i-1]);}} disabled={activeTab===TABS[0]}>← Previous</button>
+            <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>{const i=TABS.indexOf(activeTab);if(i>0)setActiveTab(TABS[i-1]);}} disabled={activeTab===TABS[0]}>← Previous</button>
             {activeTab!==TABS[TABS.length-1]
               ? <button style={S.btn()} onClick={()=>{const i=TABS.indexOf(activeTab);setActiveTab(TABS[i+1]);}}>Next →</button>
               : <button style={{ ...S.btn(),opacity:saving?0.7:1 }} onClick={saveCustomer} disabled={saving}>{saving?"Saving…":form.id?"Update Client":"Save Client"}</button>
