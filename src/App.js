@@ -2899,7 +2899,7 @@ High Rise Interiors, Hyderabad`
                       return rt + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
                     }, 0), 0);
                   return grand > 0 ? (
-                    <div className="glass" style={{display:"flex",justifyContent:"space-between",padding:"12px 16px",borderRadius:12,background:"rgba(255,69,58,0.2)",borderColor:"rgba(255,69,58,0.4)"}}>
+                    <div className="glass" style={{display:"flex",justifyContent:"space-between",padding:"14px 18px",borderRadius:12,background:"rgba(255,69,58,0.18)",border:"1px solid rgba(255,69,58,0.4)",marginTop:12,marginBottom:4}}>
                       <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>Total Material Cost</span>
                       <span style={{ color:"#fff", fontWeight:700, fontSize:16 }}>{fmt(Math.round(grand))}</span>
                     </div>
@@ -2908,7 +2908,7 @@ High Rise Interiors, Hyderabad`
               </div>
             )}
             {selected.quotation && (
-              <div style={S.card}>
+              <div className="glass" style={{padding:"20px",marginTop:12}}>
                 <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>{getDocTerm(selected.status)}</div>
                 {selected.previousQuotation && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:"rgba(255,255,255,0.5)" }}>Previous: </span><span style={{ textDecoration:"line-through" }}>{fmt(selected.previousQuotation)}</span></div>}
                 {selected.revisedQuotation  && <div style={{ fontSize:13,marginBottom:4 }}><span style={{ color:"rgba(255,255,255,0.5)" }}>Revised: </span>{fmt(selected.revisedQuotation)}</div>}
@@ -4040,9 +4040,9 @@ Dimension rules:
                       return form.inventory?.[k]?.status==="Installed";
                     }).length;
                     return (
-                      <div key={room} style={{ marginBottom:16, border:"1px solid rgba(255,255,255,0.12)", borderRadius:3, overflow:"hidden" }}>
+                      <div key={room} className="glass" style={{ marginBottom:16, borderRadius:14 }}>
                         {/* Room header */}
-                        <div style={{ background:"#060812", padding:"10px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <div style={{ background:"rgba(255,255,255,0.08)", padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", borderRadius:"14px 14px 0 0", borderBottom:"1px solid rgba(255,255,255,0.1)" }}>
                           <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
                           <span style={{ color:installedCount===matEntries.length?C.teal:"#aaa", fontSize:10, letterSpacing:1 }}>
                             {installedCount}/{matEntries.length} installed
@@ -4050,8 +4050,10 @@ Dimension rules:
                         </div>
                         {/* Column headers */}
                         <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
-                          padding:"6px 14px", background:"#2A3A4A",
-                          fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
+                          padding:"8px 14px", background:"rgba(255,255,255,0.08)",
+                          borderBottom:"1px solid rgba(255,255,255,0.1)",
+                          fontSize:9, fontWeight:700, letterSpacing:1.5,
+                          color:"rgba(255,255,255,0.5)", textTransform:"uppercase" }}>
                           {["Category","Brand","Qty","Status","Dates","Notes"].map(h=><span key={h}>{h}</span>)}
                         </div>
                         {/* Material rows */}
@@ -4060,10 +4062,10 @@ Dimension rules:
                           const inv = form.inventory?.[invKey] || { status:"Pending" };
                           const SINV = ["Pending","Ordered","Delivered","Installed"];
                           const SC = {
-                            Pending:   { bg:"rgba(255,159,10,0.15)", c:"#92400E" },
-                            Ordered:   { bg:"rgba(10,132,255,0.15)", c:"#1E40AF" },
-                            Delivered: { bg:"rgba(48,209,88,0.12)", c:"#065F46" },
-                            Installed: { bg:"rgba(191,90,242,0.15)", c:"#4C1D95" },
+                            Pending:   { bg:"rgba(255,159,10,0.22)", c:"#FF9F0A" },
+                            Ordered:   { bg:"rgba(10,132,255,0.22)", c:"#0A84FF" },
+                            Delivered: { bg:"rgba(48,209,88,0.22)",  c:"#30D158" },
+                            Installed: { bg:"rgba(191,90,242,0.22)", c:"#BF5AF2" },
                           };
                           const sc = SC[inv.status||"Pending"];
                           const setInv = (field, val) => setForm(f=>({
@@ -4110,8 +4112,10 @@ Dimension rules:
                           const item = getCatalog(matType).find(m=>m.name===sel.name);
                           return (
                             <div key={invKey} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
-                              padding:"10px 14px", background:i%2===0?"#ffffff":"#f8f9fa",
-                              borderTop:`1px solid ${C.line}`, alignItems:"center", gap:8 }}>
+                              padding:"10px 14px",
+                              background:i%2===0?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.02)",
+                              borderTop:"1px solid rgba(255,255,255,0.08)",
+                              alignItems:"center", gap:8 }}>
                               <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", fontWeight:600, textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
                               <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{sel.name}</div>
                               <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>{sel.qty} {item?.unit||""}</div>
@@ -4130,7 +4134,7 @@ Dimension rules:
                                 {inv.installedDate && <div>✅ {inv.installedDate}</div>}
                               </div>
                               {/* Notes */}
-                              <input style={{ ...S.input, padding:"5px 10px", fontSize:11 }}
+                              <input className="glass-input" style={{padding:"5px 10px",fontSize:11}}
                                 value={inv.notes||""}
                                 onChange={e=>setInv("notes", e.target.value)}
                                 placeholder="Supplier, PO#, remarks…"/>
