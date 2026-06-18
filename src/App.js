@@ -1133,8 +1133,8 @@ function ClientReport({ selected, setView, customers }) {
                       fontFamily:"'DM Sans',sans-serif" }),
   };
     return (
-    <div style={{ background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)",minHeight:"100vh",
-                  fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
+    <div style={{ background:"#fff",minHeight:"100vh",
+                  fontFamily:"'DM Sans',system-ui,sans-serif",
                   color:"#0F1923",paddingBottom:60 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
       <div className="np" style={{ background:"rgba(6,8,18,0.85)",padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
@@ -2369,13 +2369,13 @@ High Rise Interiors, Hyderabad`
     const installed = orderItems.filter(o=>o.status==="Installed");
 
     const VR = {
-      page:  { background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)", minHeight:"100vh", fontFamily:"Inter,-apple-system,sans-serif", color:"rgba(255,255,255,0.92)", paddingBottom:60 },
+      page:  { background:"#fff", minHeight:"100vh", fontFamily:"'DM Sans',system-ui,sans-serif", color:"#0F1923", paddingBottom:60 },
       body:  { maxWidth:920, margin:"0 auto", padding:"32px 48px" },
       sec:   { fontSize:10, fontWeight:700, letterSpacing:3, textTransform:"uppercase",
                color:C.teal, borderBottom:`2px solid ${C.teal}`, paddingBottom:6, marginBottom:14, marginTop:28 },
-      th:    (bg="rgba(255,255,255,0.95)") => ({ padding:"8px 12px", fontSize:9, fontWeight:700, letterSpacing:1.5,
+      th:    (bg="#1e293b") => ({ padding:"8px 12px", fontSize:9, fontWeight:700, letterSpacing:1.5,
                textTransform:"uppercase", background:bg, color:"#fff" }),
-      td:    (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?"#fff":"rgba(255,255,255,0.06)",
+      td:    (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?"#ffffff":"#f8f9fa",
                borderBottom:"1px solid #e5e7eb", verticalAlign:"top" }),
       badge: (s) => {
         const m = { Pending:{bg:"rgba(255,159,10,0.15)",c:"#92400E"}, Ordered:{bg:"rgba(10,132,255,0.15)",c:"#1E40AF"},
@@ -2634,8 +2634,8 @@ High Rise Interiors, Hyderabad`
                         fontFamily:"'DM Sans',sans-serif" }),
     };
     return (
-      <div style={{ background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)",minHeight:"100vh",
-                    fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
+      <div style={{ background:"#fff",minHeight:"100vh",
+                    fontFamily:"'DM Sans',system-ui,sans-serif",
                     color:"#0F1923",paddingBottom:60 }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
         <div className="np" style={{ background:"rgba(6,8,18,0.85)",padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
@@ -2698,7 +2698,7 @@ High Rise Interiors, Hyderabad`
                 <span style={{ flex:1,textAlign:"right",fontWeight:600 }}>{fmt(total)||"As agreed"}</span>
               </div>
               {(selected.rooms||[]).map((r,i)=>(
-                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#fff":"rgba(255,255,255,0.06)",borderBottom:"1px solid #e5e7eb" }}>
+                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#ffffff":"#f8f9fa",borderBottom:"1px solid #e5e7eb" }}>
                   <span style={{ flex:3,fontSize:12,color:"#4A2A2A",paddingLeft:16 }}>↳ {r}</span>
                   <span style={{ flex:1,textAlign:"right",fontSize:12,color:"#6b7280" }}>Included</span>
                 </div>
@@ -2844,7 +2844,7 @@ High Rise Interiors, Hyderabad`
                     const rd = selected.roomDetails?.[r] || {};
                     const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : null;
                     return (
-                      <div key={r} style={{ marginBottom:12, background:"#f1f5f9", borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
+                      <div key={r} style={{ marginBottom:12, background:"rgba(255,255,255,0.05)", borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
                           <span style={{ fontWeight:700, fontSize:13, color:"rgba(255,255,255,0.92)" }}>🏠 {r}</span>
                           {area && <span style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>{rd.length} × {rd.width} ft = <strong>{area} sq ft</strong></span>}
@@ -2872,7 +2872,7 @@ High Rise Interiors, Hyderabad`
                     return total + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
                   }, 0);
                   return (
-                    <div key={room} style={{ marginBottom:12, background:"#f1f5f9", borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
+                    <div key={room} style={{ marginBottom:12, background:"rgba(255,255,255,0.05)", borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                         <span style={{ fontWeight:700, fontSize:13, color:"rgba(255,255,255,0.92)" }}>🏠 {room}</span>
                         {roomCost > 0 && <span style={{ fontWeight:700, fontSize:13, color:"#FF453A" }}>{fmt(Math.round(roomCost))}</span>}
