@@ -725,11 +725,11 @@ function SignaturePad({ onSave, onClose, label }) {
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(15,25,35,0.85)", zIndex:9999,
       display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
-      <div style={{ background:C.white, borderRadius:4, padding:28, width:"100%", maxWidth:540,
+      <div style={{ background:"#ffffff", borderRadius:4, padding:28, width:"100%", maxWidth:540,
         boxShadow:"0 24px 60px rgba(0,0,0,0.4)" }}>
         <div style={{ fontSize:10, fontWeight:700, letterSpacing:3, color:C.teal,
           textTransform:"uppercase", marginBottom:6 }}>Sign Here</div>
-        <div style={{ fontSize:13, color:C.muted, marginBottom:16 }}>{label}</div>
+        <div style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>{label}</div>
 
         {/* Canvas */}
         <div style={{ border:`2px solid ${C.teal}`, borderRadius:3, background:"rgba(255,255,255,0.06)",
@@ -741,7 +741,7 @@ function SignaturePad({ onSave, onClose, label }) {
         </div>
 
         <div style={{ borderTop:`1px solid ${C.line}`, paddingTop:12, marginBottom:16,
-          fontSize:11, color:C.muted, textAlign:"center" }}>
+          fontSize:11, color:"#6b7280", textAlign:"center" }}>
           Draw your signature above using your finger or stylus
         </div>
 
@@ -777,7 +777,7 @@ function Spinner() {
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:80, gap:16 }}>
       <div style={{ width:32, height:32, border:`2px solid ${C.line}`,
         borderTop:`2px solid ${C.teal}`, borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/>
-      <span style={{ fontSize:11, letterSpacing:3, color:C.muted, textTransform:"uppercase" }}>Loading</span>
+      <span style={{ fontSize:11, letterSpacing:3, color:"#6b7280", textTransform:"uppercase" }}>Loading</span>
     </div>
   );
 }
@@ -1123,10 +1123,10 @@ function ClientReport({ selected, setView, customers }) {
              color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14,
              fontFamily:"'DM Sans',sans-serif" },
     row:   { display:"flex",justifyContent:"space-between",padding:"10px 0",
-             borderBottom:`1px solid ${C.line}`,fontSize:13,fontFamily:"'DM Sans',sans-serif" },
+             borderBottom:"1px solid #e5e7eb",fontSize:13,fontFamily:"'DM Sans',sans-serif" },
     payRow:{ display:"flex",justifyContent:"space-between",alignItems:"center",
              background:"rgba(255,255,255,0.07)",borderRadius:3,padding:"12px 18px",marginBottom:6,
-             border:`1px solid ${C.line}`,fontFamily:"'DM Sans',sans-serif" },
+             border:"1px solid #e5e7eb",fontFamily:"'DM Sans',sans-serif" },
     bullet:{ fontSize:13,lineHeight:2,paddingLeft:16,fontFamily:"'DM Sans',sans-serif" },
     pill:  (bg,c)=>({ background:bg,color:c,padding:"3px 12px",borderRadius:2,
                       fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",
@@ -1135,7 +1135,7 @@ function ClientReport({ selected, setView, customers }) {
     return (
     <div style={{ background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)",minHeight:"100vh",
                   fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
-                  color:C.ink,paddingBottom:60 }}>
+                  color:"#0F1923",paddingBottom:60 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
       <div className="np" style={{ background:"rgba(6,8,18,0.85)",padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
         <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
@@ -1161,7 +1161,7 @@ Hyderabad`);
             ml.click();
             setTimeout(() => document.body.removeChild(ml), 500);
         }} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>📧 Email Client</button>
-        <span style={{ color:C.muted,fontSize:11,marginLeft:"auto" }}>
+        <span style={{ color:"#6b7280",fontSize:11,marginLeft:"auto" }}>
           {signatures.client&&signatures.hri?"✓ Both signed — ready to print"
             :signatures.client?"Client signed — awaiting HRI"
             :signatures.hri?"HRI signed — awaiting client"
@@ -1174,7 +1174,7 @@ Hyderabad`);
             <div style={{ color:"#fff",fontSize:20,fontWeight:700,letterSpacing:4,textTransform:"uppercase",fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
             <div style={{ color:C.teal,fontSize:10,letterSpacing:5,marginTop:6,textTransform:"uppercase" }}>Project Summary Report</div>
           </div>
-          <div style={{ textAlign:"right",color:C.muted,fontSize:11,letterSpacing:1 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
+          <div style={{ textAlign:"right",color:"#6b7280",fontSize:11,letterSpacing:1 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
         </div>
       </div>
       <div style={{ maxWidth:820,margin:"0 auto",padding:"0 48px" }}>
@@ -1183,7 +1183,7 @@ Hyderabad`);
           <div style={RS.sTitle}>Client Information</div>
           <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 32px" }}>
             {[["Client Name",selected.name],["Phone",selected.phone],["Email",selected.email],["Project Type",selected.projectType],["Address",selected.address],["Style",selected.style],["Start Date",selected.startDate],["Duration",selected.timeline]].filter(([,v])=>v).map(([l,v])=>(
-              <div key={l} style={RS.row}><span style={{ color:C.muted }}>{l}</span><strong>{v}</strong></div>
+              <div key={l} style={RS.row}><span style={{ color:"#6b7280" }}>{l}</span><strong>{v}</strong></div>
             ))}
           </div>
         </div>
@@ -1202,8 +1202,8 @@ Hyderabad`);
                 const rd = selected.roomDetails?.[r] || {};
                 const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
                   return (
-                  <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"rgba(255,255,255,0.06)":C.light, borderBottom:`1px solid ${C.line}` }}>
-                    <div style={{ fontWeight:700, fontSize:13, color:C.ink }}>🏠 {r}</div>
+                  <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"rgba(255,255,255,0.06)":C.light, borderBottom:"1px solid #e5e7eb" }}>
+                    <div style={{ fontWeight:700, fontSize:13, color:"#0F1923" }}>🏠 {r}</div>
                     <div style={{ fontSize:13 }}>{rd.length||"—"}</div>
                     <div style={{ fontSize:13 }}>{rd.width||"—"}</div>
                     <div style={{ fontSize:13 }}>{rd.height||"—"}</div>
@@ -1223,12 +1223,12 @@ Hyderabad`);
                     <div/><div/><div/>
                     <div style={{ fontWeight:700, fontSize:14, color:"#fff" }}>{totalArea.toFixed(0)} sq ft</div>
                   </div>
-                ) : <div style={{ borderRadius:"0 0 10px 10px", border:`1px solid ${C.line}`, borderTop:"none" }}/>;
+                ) : <div style={{ borderRadius:"0 0 10px 10px", border:"1px solid #e5e7eb", borderTop:"none" }}/>;
               })()}
               {/* Room photos */}
               {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
                 <div style={{ marginTop:16 }}>
-                  <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:10 }}>Room Photos</div>
+                  <div style={{ fontSize:11, letterSpacing:2, color:"#6b7280", textTransform:"uppercase", marginBottom:10 }}>Room Photos</div>
                   {(selected.rooms||[]).map(r => {
                     const photos = selected.roomDetails?.[r]?.photos||[];
                     if (!photos.length) return null;
@@ -1236,7 +1236,7 @@ Hyderabad`);
                       <div key={r} style={{ marginBottom:12 }}>
                         <div style={{ fontSize:12, fontWeight:700, color:C.red, marginBottom:6 }}>🏠 {r}</div>
                         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                          {photos.map((p,i)=><img key={i} src={p} alt={r} style={{ width:100, height:100, objectFit:"cover", borderRadius:8, border:`1.5px solid ${C.line}` }}/>)}
+                          {photos.map((p,i)=><img key={i} src={p} alt={r} style={{ width:100, height:100, objectFit:"cover", borderRadius:8, border:"1px solid #d1d5db" }}/>)}
                         </div>
                       </div>
                     );
@@ -1245,12 +1245,12 @@ Hyderabad`);
               )}
             </div>
           ) : (
-            <div style={{ color:C.muted, fontSize:13 }}>No rooms selected</div>
+            <div style={{ color:"#6b7280", fontSize:13 }}>No rooms selected</div>
           )}
           {/* Scope notes */}
           {scopeLines.length>0 && (
             <div style={{ marginTop:16 }}>
-              <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:8 }}>Work Description</div>
+              <div style={{ fontSize:11, letterSpacing:2, color:"#6b7280", textTransform:"uppercase", marginBottom:8 }}>Work Description</div>
               {scopeLines.map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)}
             </div>
           )}
@@ -1258,7 +1258,7 @@ Hyderabad`);
           {/* Room Photos in Client Report */}
           {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
             <div style={{ marginTop:20 }}>
-              <div style={{ fontSize:11, letterSpacing:2, color:C.muted, textTransform:"uppercase", marginBottom:14 }}>Room Reference Photos</div>
+              <div style={{ fontSize:11, letterSpacing:2, color:"#6b7280", textTransform:"uppercase", marginBottom:14 }}>Room Reference Photos</div>
               {(selected.rooms||[]).map(r => {
                 const photos = selected.roomDetails?.[r]?.photos||[];
                 if (!photos.length) return null;
@@ -1269,7 +1269,7 @@ Hyderabad`);
                       {photos.map((p,i)=>(
                         <div key={i}>
                           <img src={p} alt={`${r} ${i+1}`} style={{ width:140, height:105,
-                            objectFit:"cover", borderRadius:3, border:`1px solid ${C.line}` }}/>
+                            objectFit:"cover", borderRadius:3, border:"1px solid #e5e7eb" }}/>
                         </div>
                       ))}
                     </div>
@@ -1294,7 +1294,7 @@ Hyderabad`);
               },0);
               const roomTotal = Math.round(roomCost*(1+lp/100));
                 return (
-                <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                <div key={room} style={{ marginBottom:16, border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
                   {/* Room header */}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
                     background:"#060812", padding:"10px 16px" }}>
@@ -1312,12 +1312,12 @@ Hyderabad`);
                     const item = getCatalog(matType).find(m=>m.name===sel.name);
                       return (
                       <div key={matType} style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
-                        padding:"9px 14px", background:i%2===0?C.white:C.smoke,
+                        padding:"9px 14px", background:i%2===0?"#ffffff":"#f8f9fa",
                         borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
-                        <div style={{ fontSize:11, color:C.muted, fontWeight:700,
+                        <div style={{ fontSize:11, color:"#6b7280", fontWeight:700,
                           textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
-                        <div style={{ fontSize:12, fontWeight:600, color:C.ink }}>{sel.name}</div>
-                        <div style={{ fontSize:12, color:C.muted }}>
+                        <div style={{ fontSize:12, fontWeight:600, color:"#0F1923" }}>{sel.name}</div>
+                        <div style={{ fontSize:12, color:"#6b7280" }}>
                           {sel.qty} {item?.unit||""}
                         </div>
                       </div>
@@ -1360,8 +1360,8 @@ Hyderabad`);
           <div style={RS.sTitle}>Budget Summary</div>
           {selected.previousQuotation && (
             <div style={RS.row}>
-              <span style={{ color:C.muted }}>Previous Quotation</span>
-              <span style={{ textDecoration: selected.revisedQuotation?"line-through":"none", color:C.muted }}>{fmt(selected.previousQuotation)}</span>
+              <span style={{ color:"#6b7280" }}>Previous Quotation</span>
+              <span style={{ textDecoration: selected.revisedQuotation?"line-through":"none", color:"#6b7280" }}>{fmt(selected.previousQuotation)}</span>
             </div>
           )}
           {selected.rebateValue && (
@@ -1390,7 +1390,7 @@ Hyderabad`);
           )}
           {selected.revisedQuotation && (
             <div style={RS.row}>
-              <span style={{ color:C.muted }}>Revised Quotation (After Rebate)</span>
+              <span style={{ color:"#6b7280" }}>Revised Quotation (After Rebate)</span>
               <span style={{ fontWeight:700, color:C.dark }}>{fmt(selected.revisedQuotation)}</span>
             </div>
           )}
@@ -1406,7 +1406,7 @@ Hyderabad`);
         {discussions.length>0 && (
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Discussions & Notes</div>
-            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:12,padding:"16px 20px",border:`1px solid ${C.line}` }}>
+            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:12,padding:"16px 20px",border:"1px solid #e5e7eb" }}>
               {discussions.map((l,i)=><div key={i} style={{ ...RS.bullet,marginBottom:4 }}>• {l}</div>)}
             </div>
           </div>
@@ -1420,13 +1420,13 @@ Hyderabad`);
                 <div style={{ background:C.red,color:"#fff",borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,flexShrink:0 }}>{i+1}</div>
                 <div>
                   <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.day} — {p.label}</div>
-                  <div style={{ fontSize:12,color:C.muted,marginTop:2 }}>{p.pct}% of total value</div>
+                  <div style={{ fontSize:12,color:"#6b7280",marginTop:2 }}>{p.pct}% of total value</div>
                 </div>
               </div>
-              <strong style={{ fontSize:16,color:C.ink }}>{selected.quotation ? fmt(Math.round(Number(selected.quotation)*p.pct/100)) : `${p.pct}%`}</strong>
+              <strong style={{ fontSize:16,color:"#0F1923" }}>{selected.quotation ? fmt(Math.round(Number(selected.quotation)*p.pct/100)) : `${p.pct}%`}</strong>
             </div>
           ))}
-          <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:10,padding:"14px 18px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
+          <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:10,padding:"14px 18px",border:"1px solid #e5e7eb",fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
             <div>• Payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
             <div>• Work commences only after advance payment (35%) is received</div>
             <div>• Each phase must be cleared before proceeding to next</div>
@@ -1522,21 +1522,21 @@ Hyderabad`);
         {/* Signature blocks */}
         <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:32 }}>
           <div style={{ borderTop:`2px solid ${C.ink}`,paddingTop:12 }}>
-            <div style={{ fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Client Signature</div>
+            <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Client Signature</div>
             <div style={{ fontSize:14,fontWeight:700,marginBottom:12 }}>{selected.name}</div>
             {signatures.client ? (
               <div>
                 <img src={signatures.client} alt="sig"
-                  style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
-                <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
+                  style={{ height:80,maxWidth:"100%",border:"1px solid #e5e7eb",borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
+                <div style={{ fontSize:10,color:"#6b7280",marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
                 <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
                   onClick={()=>setSignatures(s=>({...s,client:null}))}>✕ Clear</button>
               </div>
             ):(
               <div>
                 <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
-                  display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:C.smoke }}>
-                  <span style={{ fontSize:11,color:C.muted }}>Tap to sign</span>
+                  display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:"#f8f9fa" }}>
+                  <span style={{ fontSize:11,color:"#6b7280" }}>Tap to sign</span>
                 </div>
                 <button className="no-print" style={{ ...S.btn(),fontSize:11,padding:"7px 16px" }}
                   onClick={()=>setShowSigPad("client")}>✍ Sign Here</button>
@@ -1544,21 +1544,21 @@ Hyderabad`);
             )}
           </div>
           <div style={{ borderTop:`2px solid ${C.teal}`,paddingTop:12 }}>
-            <div style={{ fontSize:10,color:C.muted,letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Authorised by</div>
+            <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Authorised by</div>
             <div style={{ fontSize:14,fontWeight:700,color:C.teal,marginBottom:12 }}>High Rise Interiors</div>
             {signatures.hri ? (
               <div>
                 <img src={signatures.hri} alt="sig"
-                  style={{ height:80,maxWidth:"100%",border:`1px solid ${C.line}`,borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
-                <div style={{ fontSize:10,color:C.muted,marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
+                  style={{ height:80,maxWidth:"100%",border:"1px solid #e5e7eb",borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
+                <div style={{ fontSize:10,color:"#6b7280",marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
                 <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
                   onClick={()=>setSignatures(s=>({...s,hri:null}))}>✕ Clear</button>
               </div>
             ):(
               <div>
                 <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
-                  display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:C.smoke }}>
-                  <span style={{ fontSize:11,color:C.muted }}>Tap to sign</span>
+                  display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:"#f8f9fa" }}>
+                  <span style={{ fontSize:11,color:"#6b7280" }}>Tap to sign</span>
                 </div>
                 <button className="no-print" style={{ ...S.btn("ghost"),fontSize:11,padding:"7px 16px" }}
                   onClick={()=>setShowSigPad("hri")}>✍ Sign Here</button>
@@ -1568,7 +1568,7 @@ Hyderabad`);
         </div>
         {/* Footer */}
         <div style={{ borderTop:`2px solid ${C.line}`,paddingTop:16,marginTop:24 }}>
-          <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted,marginBottom:6 }}>
+          <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:"#6b7280",marginBottom:6 }}>
             <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
             <span>{d}</span>
           </div>
@@ -2073,7 +2073,7 @@ High Rise Interiors, Hyderabad`
                borderBottom:`2px solid ${C.teal}`, paddingBottom:6, marginBottom:14, marginTop:28 },
       th:     { padding:"8px 12px", fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase",
                background:"#060812", color:"#fff" },
-      td:     (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?C.white:C.smoke, borderBottom:`1px solid ${C.line}` }),
+      td:     (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?"#ffffff":"#f8f9fa", borderBottom:"1px solid #e5e7eb" }),
       tag:    (c) => ({ background:c, color:"#fff", padding:"2px 8px", borderRadius:2, fontSize:9, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }),
     };
 
@@ -2095,7 +2095,7 @@ High Rise Interiors, Hyderabad`
               <div style={{ color:"#fff", fontSize:18, fontWeight:700, letterSpacing:4, textTransform:"uppercase" }}>High Rise Interiors</div>
               <div style={{ color:C.teal, fontSize:10, letterSpacing:5, marginTop:6, textTransform:"uppercase" }}>Internal Work Order & Material Report</div>
             </div>
-            <div style={{ textAlign:"right", color:C.muted, fontSize:11 }}>
+            <div style={{ textAlign:"right", color:"#6b7280", fontSize:11 }}>
               <div>{d}</div>
               <div style={{ color:"rgba(255,159,10,0.15)", fontSize:10, marginTop:4, fontWeight:700, letterSpacing:1 }}>⚠ CONFIDENTIAL — TEAM ONLY</div>
             </div>
@@ -2106,7 +2106,7 @@ High Rise Interiors, Hyderabad`
 
           {/* Client Summary */}
           <div style={IR.sec}>Client & Project Summary</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 40px", border:`1px solid ${C.line}`, borderRadius:3, padding:"16px 20px", background:C.smoke }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 40px", border:"1px solid #e5e7eb", borderRadius:3, padding:"16px 20px", background:"#f8f9fa" }}>
             {[
               ["Client",       selected.name],
               ["Phone",        selected.phone],
@@ -2117,8 +2117,8 @@ High Rise Interiors, Hyderabad`
               ["Style",        selected.style],
               ["Status",       selected.status],
             ].filter(([,v])=>v).map(([l,v])=>(
-              <div key={l} style={{ display:"flex", gap:8, padding:"5px 0", borderBottom:`1px solid ${C.line}`, fontSize:12 }}>
-                <span style={{ color:C.muted, minWidth:100 }}>{l}</span>
+              <div key={l} style={{ display:"flex", gap:8, padding:"5px 0", borderBottom:"1px solid #e5e7eb", fontSize:12 }}>
+                <span style={{ color:"#6b7280", minWidth:100 }}>{l}</span>
                 <strong>{v}</strong>
               </div>
             ))}
@@ -2126,7 +2126,7 @@ High Rise Interiors, Hyderabad`
 
           {/* Rooms & Dimensions */}
           <div style={IR.sec}>Room Dimensions</div>
-          <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+          <div style={{ border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
             <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:0 }}>
               {["Room","Length (ft)","Width (ft)","Height (ft)","Area (sq ft)"].map(h=>(
                 <div key={h} style={IR.th}>{h}</div>
@@ -2151,7 +2151,7 @@ High Rise Interiors, Hyderabad`
           {allSubsections.length > 0 && (
             <>
               <div style={IR.sec}>Work Items to Execute</div>
-              <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1.5fr 2fr 1fr 1fr 0.5fr", gap:0 }}>
                   {["Room","Work Item","Type","Qty (sq ft)","✓"].map(h=>(
                     <div key={h} style={IR.th}>{h}</div>
@@ -2174,7 +2174,7 @@ High Rise Interiors, Hyderabad`
           {matList.length > 0 && (
             <>
               <div style={IR.sec}>Materials Order List & Specifications</div>
-              <div style={{ border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 3fr 1fr 2fr", gap:0 }}>
                   {["#","Category","Brand / Material","Qty","Rooms"].map(h=>(
                     <div key={h} style={IR.th}>{h}</div>
@@ -2186,11 +2186,11 @@ High Rise Interiors, Hyderabad`
                     <div style={IR.td(i)}><span style={IR.tag(C.teal)}>{MATERIAL_LABELS[m.matType]}</span></div>
                     <div style={{ ...IR.td(i), fontWeight:600 }}>{m.name}</div>
                     <div style={IR.td(i)}><strong>{m.qty.toFixed(1)}</strong> {m.unit}</div>
-                    <div style={{ ...IR.td(i), fontSize:11, color:C.muted }}>{[...new Set(m.rooms)].join(", ")}</div>
+                    <div style={{ ...IR.td(i), fontSize:11, color:"#6b7280" }}>{[...new Set(m.rooms)].join(", ")}</div>
                   </div>
                 ))}
                 <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 3fr 1fr 2fr", background:"rgba(255,255,255,0.07)", borderTop:`2px solid ${C.teal}` }}>
-                  <div style={{ padding:"10px 12px", gridColumn:"1/4", fontWeight:700, fontSize:12, color:C.ink }}>Total Items to Order</div>
+                  <div style={{ padding:"10px 12px", gridColumn:"1/4", fontWeight:700, fontSize:12, color:"#0F1923" }}>Total Items to Order</div>
                   <div style={{ padding:"10px 12px", fontWeight:700, fontSize:13, color:C.teal }}>{matList.length} types</div>
                   <div/>
                 </div>
@@ -2215,8 +2215,8 @@ High Rise Interiors, Hyderabad`
                       {photos.map((p,i)=>(
                         <div key={i} style={{ position:"relative" }}>
                           <img src={p} alt={`${r} ${i+1}`} style={{ width:160, height:120,
-                            objectFit:"cover", borderRadius:3, border:`1px solid ${C.line}` }}/>
-                          <div style={{ fontSize:9, color:C.muted, marginTop:4, textAlign:"center" }}>
+                            objectFit:"cover", borderRadius:3, border:"1px solid #e5e7eb" }}/>
+                          <div style={{ fontSize:9, color:"#6b7280", marginTop:4, textAlign:"center" }}>
                             {r} — Photo {i+1}
                           </div>
                         </div>
@@ -2248,7 +2248,7 @@ High Rise Interiors, Hyderabad`
                     {[["Pending","#92400E","rgba(255,159,10,0.15)"],["Ordered","#1E40AF","rgba(10,132,255,0.15)"],["Delivered","#065F46","rgba(48,209,88,0.12)"],["Installed","#4C1D95","rgba(191,90,242,0.15)"]].map(([s,c,bg])=>(
                       <span key={s} style={{ background:bg, color:c, padding:"2px 10px", borderRadius:2, fontSize:10, fontWeight:700 }}>{counts[s]} {s}</span>
                     ))}
-                    <span style={{ fontSize:11, color:C.muted }}>{counts.Installed}/{total} complete</span>
+                    <span style={{ fontSize:11, color:"#6b7280" }}>{counts.Installed}/{total} complete</span>
                   </div>
                 );
               })()}
@@ -2261,7 +2261,7 @@ High Rise Interiors, Hyderabad`
                   inv: selected.inventory?.[`${room}__${sel.name}`] || { status:"Pending" }
                 }));
                 return (
-                  <div key={room} style={{ marginBottom:16, border:`1px solid ${C.line}`, borderRadius:3, overflow:"hidden" }}>
+                  <div key={room} style={{ marginBottom:16, border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
                     <div style={{ background:"#060812", padding:"8px 14px", display:"flex", justifyContent:"space-between" }}>
                       <span style={{ color:"#fff", fontWeight:700, fontSize:12 }}>🏠 {room}</span>
                       <span style={{ color:C.teal, fontSize:10, letterSpacing:1 }}>
@@ -2282,7 +2282,7 @@ High Rise Interiors, Hyderabad`
                       }[inv.status||"Pending"];
                       return (
                         <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr 2fr",
-                          padding:"9px 14px", background:i%2===0?C.white:C.smoke, borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
+                          padding:"9px 14px", background:i%2===0?"#ffffff":"#f8f9fa", borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
                           <div style={IR.td(i)}><span style={IR.tag(C.teal)}>{MATERIAL_LABELS[matType]}</span></div>
                           <div style={{ ...IR.td(i), fontWeight:600 }}>{sel.name}</div>
                           <div style={IR.td(i)}>{sel.qty} {item?.unit||""}</div>
@@ -2291,9 +2291,9 @@ High Rise Interiors, Hyderabad`
                               {inv.status||"Pending"}
                             </span>
                           </div>
-                          <div style={{ ...IR.td(i), fontSize:10, color:C.muted }}>{inv.orderedDate||"—"}</div>
-                          <div style={{ ...IR.td(i), fontSize:10, color:C.muted }}>{inv.deliveredDate||"—"}</div>
-                          <div style={{ ...IR.td(i), fontSize:11, color:C.muted }}>{inv.notes||""}</div>
+                          <div style={{ ...IR.td(i), fontSize:10, color:"#6b7280" }}>{inv.orderedDate||"—"}</div>
+                          <div style={{ ...IR.td(i), fontSize:10, color:"#6b7280" }}>{inv.deliveredDate||"—"}</div>
+                          <div style={{ ...IR.td(i), fontSize:11, color:"#6b7280" }}>{inv.notes||""}</div>
                         </div>
                       );
                     })}
@@ -2307,14 +2307,14 @@ High Rise Interiors, Hyderabad`
           {selected.notes && (
             <>
               <div style={IR.sec}>Project Notes & Client Requirements</div>
-              <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, fontSize:13, lineHeight:2, whiteSpace:"pre-wrap" }}>
+              <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"16px 20px", border:"1px solid #e5e7eb", fontSize:13, lineHeight:2, whiteSpace:"pre-wrap" }}>
                 {selected.notes}
               </div>
             </>
           )}
 
           {/* Footer */}
-          <div style={{ borderTop:`2px solid ${C.line}`, paddingTop:16, marginTop:40, display:"flex", justifyContent:"space-between", fontSize:11, color:C.muted }}>
+          <div style={{ borderTop:`2px solid ${C.line}`, paddingTop:16, marginTop:40, display:"flex", justifyContent:"space-between", fontSize:11, color:"#6b7280" }}>
             <span>High Rise Interiors — Internal Document</span>
             <span>Generated: {d} · Powered by Genovatech IT Services Pvt. Ltd.</span>
           </div>
@@ -2376,7 +2376,7 @@ High Rise Interiors, Hyderabad`
       th:    (bg="rgba(255,255,255,0.95)") => ({ padding:"8px 12px", fontSize:9, fontWeight:700, letterSpacing:1.5,
                textTransform:"uppercase", background:bg, color:"#fff" }),
       td:    (i) => ({ padding:"9px 12px", fontSize:12, background:i%2===0?"#fff":"rgba(255,255,255,0.06)",
-               borderBottom:`1px solid ${C.line}`, verticalAlign:"top" }),
+               borderBottom:"1px solid #e5e7eb", verticalAlign:"top" }),
       badge: (s) => {
         const m = { Pending:{bg:"rgba(255,159,10,0.15)",c:"#92400E"}, Ordered:{bg:"rgba(10,132,255,0.15)",c:"#1E40AF"},
                     Delivered:{bg:"rgba(48,209,88,0.12)",c:"#065F46"}, Installed:{bg:"rgba(191,90,242,0.15)",c:"#4C1D95"} };
@@ -2395,7 +2395,7 @@ High Rise Interiors, Hyderabad`
             <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>{title}</span>
             <span style={{ color:"rgba(255,255,255,0.7)", fontSize:11 }}>{items.length} item{items.length!==1?"s":""}</span>
           </div>
-          <div style={{ border:`1px solid ${C.line}`, borderTop:"none", borderRadius:"0 0 3px 3px", overflow:"hidden" }}>
+          <div style={{ border:"1px solid #e5e7eb", borderTop:"none", borderRadius:"0 0 3px 3px", overflow:"hidden" }}>
             <div style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr 1fr 2fr 2fr" }}>
               {["Category","Brand / Material","Qty","Unit","Rooms","Dates / Notes"].map(h=>(
                 <div key={h} style={VR.th(color==="0F1923"?"#2A3A4A":color)}>{h}</div>
@@ -2411,14 +2411,14 @@ High Rise Interiors, Hyderabad`
                 <div style={{ ...VR.td(i), fontWeight:600 }}>{o.name}</div>
                 <div style={{ ...VR.td(i), fontWeight:700, color:C.teal }}>{o.qty.toFixed(1)}</div>
                 <div style={VR.td(i)}>{o.unit}</div>
-                <div style={{ ...VR.td(i), fontSize:11, color:C.muted }}>
+                <div style={{ ...VR.td(i), fontSize:11, color:"#6b7280" }}>
                   {[...new Set(o.rooms)].join(", ")}
                 </div>
-                <div style={{ ...VR.td(i), fontSize:10, color:C.muted, lineHeight:1.8 }}>
+                <div style={{ ...VR.td(i), fontSize:10, color:"#6b7280", lineHeight:1.8 }}>
                   {o.orderedDate   && <div>📦 Ord: {o.orderedDate}</div>}
                   {o.deliveredDate && <div>🚚 Del: {o.deliveredDate}</div>}
                   {o.installedDate && <div>✅ Ins: {o.installedDate}</div>}
-                  {o.notes         && <div style={{ color:C.ink }}>💬 {o.notes}</div>}
+                  {o.notes         && <div style={{ color:"#0F1923" }}>💬 {o.notes}</div>}
                 </div>
               </div>
             ))}
@@ -2440,7 +2440,7 @@ High Rise Interiors, Hyderabad`
             fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>
             🔒 INTERNAL — Vendor Purchase Order
           </span>
-          <div style={{ marginLeft:"auto", display:"flex", gap:12, fontSize:11, color:C.muted }}>
+          <div style={{ marginLeft:"auto", display:"flex", gap:12, fontSize:11, color:"#6b7280" }}>
             <span>🔴 {pending.length} Pending</span>
             <span>🔵 {ordered.length} Ordered</span>
             <span>🟢 {delivered.length} Delivered</span>
@@ -2457,7 +2457,7 @@ High Rise Interiors, Hyderabad`
             </div>
             <div style={{ textAlign:"right" }}>
               <div style={{ color:"#fff", fontSize:16, fontWeight:700 }}>{orderNum}</div>
-              <div style={{ color:C.muted, fontSize:11, marginTop:4 }}>{d}</div>
+              <div style={{ color:"#6b7280", fontSize:11, marginTop:4 }}>{d}</div>
             </div>
           </div>
         </div>
@@ -2466,15 +2466,15 @@ High Rise Interiors, Hyderabad`
 
           {/* Project summary */}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, background:"rgba(255,255,255,0.07)",
-            borderRadius:3, padding:"16px 20px", border:`1px solid ${C.line}`, marginBottom:8 }}>
+            borderRadius:3, padding:"16px 20px", border:"1px solid #e5e7eb", marginBottom:8 }}>
             <div>
-              <div style={{ fontSize:10, color:C.muted, letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Client</div>
+              <div style={{ fontSize:10, color:"#6b7280", letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Client</div>
               <div style={{ fontSize:15, fontWeight:700 }}>{selected.name}</div>
-              <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>{selected.address}</div>
+              <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>{selected.address}</div>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
               {[["Project",selected.projectType],["Style",selected.style],["Start",selected.startDate],["Duration",selected.timeline]].filter(([,v])=>v).map(([l,v])=>(
-                <div key={l}><div style={{ fontSize:9, color:C.muted, letterSpacing:1, textTransform:"uppercase" }}>{l}</div><div style={{ fontSize:12, fontWeight:600 }}>{v}</div></div>
+                <div key={l}><div style={{ fontSize:9, color:"#6b7280", letterSpacing:1, textTransform:"uppercase" }}>{l}</div><div style={{ fontSize:12, fontWeight:600 }}>{v}</div></div>
               ))}
             </div>
           </div>
@@ -2488,7 +2488,7 @@ High Rise Interiors, Hyderabad`
                     ? <div key={s} style={{ flex:orderItems.filter(o=>o.status===s).length, background:col }}/> : null
                 )}
               </div>
-              <div style={{ display:"flex", gap:16, fontSize:11, color:C.muted }}>
+              <div style={{ display:"flex", gap:16, fontSize:11, color:"#6b7280" }}>
                 {[["Pending","rgba(255,159,10,0.15)","#92400E"],["Ordered","rgba(10,132,255,0.15)","#1E40AF"],["Delivered","rgba(48,209,88,0.12)","#065F46"],["Installed","rgba(191,90,242,0.15)","#4C1D95"]].map(([s,bg,c])=>(
                   <div key={s}><span style={{ background:bg,color:c,padding:"2px 8px",borderRadius:2,fontSize:10,fontWeight:700 }}>{orderItems.filter(o=>o.status===s).length}</span> {s}</div>
                 ))}
@@ -2530,7 +2530,7 @@ High Rise Interiors, Hyderabad`
           )}
 
           {orderItems.length === 0 && (
-            <div style={{ textAlign:"center", padding:48, color:C.muted }}>
+            <div style={{ textAlign:"center", padding:48, color:"#6b7280" }}>
               No materials added yet — add materials in the Materials tab first
             </div>
           )}
@@ -2541,14 +2541,14 @@ High Rise Interiors, Hyderabad`
               <div style={VR.sec}>Order Confirmation</div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:32, marginTop:8 }}>
                 <div style={{ borderTop:`2px solid ${C.ink}`, paddingTop:12 }}>
-                  <div style={{ fontSize:10, color:C.muted, letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Prepared by</div>
+                  <div style={{ fontSize:10, color:"#6b7280", letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Prepared by</div>
                   <div style={{ fontSize:13, fontWeight:700 }}>High Rise Interiors</div>
-                  <div style={{ marginTop:40, borderTop:`1px solid ${C.line}`, paddingTop:8, fontSize:10, color:C.muted }}>Signature / Date</div>
+                  <div style={{ marginTop:40, borderTop:`1px solid ${C.line}`, paddingTop:8, fontSize:10, color:"#6b7280" }}>Signature / Date</div>
                 </div>
                 <div style={{ borderTop:`2px solid ${C.teal}`, paddingTop:12 }}>
-                  <div style={{ fontSize:10, color:C.muted, letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Vendor Acknowledgement</div>
+                  <div style={{ fontSize:10, color:"#6b7280", letterSpacing:2, textTransform:"uppercase", marginBottom:6 }}>Vendor Acknowledgement</div>
                   <div style={{ fontSize:13, fontWeight:700, color:C.teal }}>Vendor Name: _______________</div>
-                  <div style={{ marginTop:40, borderTop:`1px solid ${C.line}`, paddingTop:8, fontSize:10, color:C.muted }}>Signature / Stamp / Date</div>
+                  <div style={{ marginTop:40, borderTop:`1px solid ${C.line}`, paddingTop:8, fontSize:10, color:"#6b7280" }}>Signature / Stamp / Date</div>
                 </div>
               </div>
             </>
@@ -2556,7 +2556,7 @@ High Rise Interiors, Hyderabad`
 
           {/* Footer */}
           <div style={{ borderTop:`2px solid ${C.line}`, paddingTop:16, marginTop:32, display:"flex",
-            justifyContent:"space-between", fontSize:10, color:C.muted }}>
+            justifyContent:"space-between", fontSize:10, color:"#6b7280" }}>
             <span>High Rise Interiors — Vendor Purchase Order</span>
             <span>{orderNum} | {d} | Powered by Genovatech IT Services Pvt. Ltd.</span>
           </div>
@@ -2636,23 +2636,23 @@ High Rise Interiors, Hyderabad`
     return (
       <div style={{ background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)",minHeight:"100vh",
                     fontFamily:"'DM Sans','Inter',system-ui,sans-serif",
-                    color:C.ink,paddingBottom:60 }}>
+                    color:"#0F1923",paddingBottom:60 }}>
         <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
         <div className="np" style={{ background:"rgba(6,8,18,0.85)",padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
           <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
-          <span style={{ color:C.muted,fontSize:11,letterSpacing:1 }}>Tip: Save as PDF in print dialog</span>
+          <span style={{ color:"#6b7280",fontSize:11,letterSpacing:1 }}>Tip: Save as PDF in print dialog</span>
         </div>
         <div style={{ maxWidth:820,margin:"0 auto",padding:"40px 48px" }}>
           {/* Header */}
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:36,paddingBottom:24,borderBottom:`3px solid ${C.teal}` }}>
             <div>
               <div style={{ fontSize:28,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase" }}>High Rise Interiors</div>
-              <div style={{ fontSize:12,color:C.muted,marginTop:4,lineHeight:1.8 }}>Hyderabad, Telangana, India<br/>GSTIN: [Your GST Number]</div>
+              <div style={{ fontSize:12,color:"#6b7280",marginTop:4,lineHeight:1.8 }}>Hyderabad, Telangana, India<br/>GSTIN: [Your GST Number]</div>
             </div>
             <div style={{ textAlign:"right" }}>
               <div style={{ fontSize:28,fontWeight:700,color:C.dark }}>INVOICE</div>
-              <div style={{ fontSize:13,color:C.muted,marginTop:6,lineHeight:1.9 }}>
+              <div style={{ fontSize:13,color:"#6b7280",marginTop:6,lineHeight:1.9 }}>
                 <div><strong>Invoice No:</strong> {invNum}</div>
                 <div><strong>Date:</strong> {d}</div>
               </div>
@@ -2689,27 +2689,27 @@ High Rise Interiors, Hyderabad`
           {/* Line Items */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Invoice Items</div>
-            <div style={{ border:`1.5px solid ${C.line}`,borderRadius:12,overflow:"hidden" }}>
+            <div style={{ border:"1px solid #d1d5db",borderRadius:12,overflow:"hidden" }}>
               <div style={{ ...IV.tRow,background:C.red,color:"#fff",fontWeight:700,fontSize:12,letterSpacing:1 }}>
                 <span style={{ flex:3 }}>Description</span><span style={{ flex:1,textAlign:"right" }}>Amount (₹)</span>
               </div>
-              <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderBottom:`1px solid ${C.line}` }}>
-                <span style={{ flex:3,lineHeight:1.7 }}><strong>Interior Design & Execution Work</strong><br/><span style={{ fontSize:12,color:C.muted }}>{selected.projectType} — {selected.address}</span></span>
+              <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderBottom:"1px solid #e5e7eb" }}>
+                <span style={{ flex:3,lineHeight:1.7 }}><strong>Interior Design & Execution Work</strong><br/><span style={{ fontSize:12,color:"#6b7280" }}>{selected.projectType} — {selected.address}</span></span>
                 <span style={{ flex:1,textAlign:"right",fontWeight:600 }}>{fmt(total)||"As agreed"}</span>
               </div>
               {(selected.rooms||[]).map((r,i)=>(
-                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#fff":"rgba(255,255,255,0.06)",borderBottom:`1px solid ${C.line}` }}>
+                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#fff":"rgba(255,255,255,0.06)",borderBottom:"1px solid #e5e7eb" }}>
                   <span style={{ flex:3,fontSize:12,color:"#4A2A2A",paddingLeft:16 }}>↳ {r}</span>
-                  <span style={{ flex:1,textAlign:"right",fontSize:12,color:C.muted }}>Included</span>
+                  <span style={{ flex:1,textAlign:"right",fontSize:12,color:"#6b7280" }}>Included</span>
                 </div>
               ))}
               <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderTop:`1.5px solid ${C.line}` }}>
-                <span style={{ flex:3,color:C.muted }}>Subtotal (Before GST)</span>
+                <span style={{ flex:3,color:"#6b7280" }}>Subtotal (Before GST)</span>
                 <span style={{ flex:1,textAlign:"right" }}>{fmt(total)||"—"}</span>
               </div>
               {total>0 && (
                 <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderTop:`1px solid ${C.line}` }}>
-                  <span style={{ flex:3,color:C.muted }}>GST @ 18%</span>
+                  <span style={{ flex:3,color:"#6b7280" }}>GST @ 18%</span>
                   <span style={{ flex:1,textAlign:"right" }}>{fmt(gst)}</span>
                 </div>
               )}
@@ -2722,7 +2722,7 @@ High Rise Interiors, Hyderabad`
           {/* Payment Schedule */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Payment Schedule</div>
-            <div style={{ border:`1.5px solid ${C.line}`,borderRadius:12,overflow:"hidden" }}>
+            <div style={{ border:"1px solid #d1d5db",borderRadius:12,overflow:"hidden" }}>
               <div style={{ ...IV.tRow,background:"#060812",color:"#fff",fontWeight:700,fontSize:11,letterSpacing:1 }}>
                 <span style={{ flex:1 }}>Phase</span><span style={{ flex:2 }}>Milestone</span>
                 <span style={{ flex:1,textAlign:"center" }}>%</span><span style={{ flex:1,textAlign:"right" }}>Amount</span>
@@ -2742,7 +2742,7 @@ High Rise Interiors, Hyderabad`
           {/* Payment Terms */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Payment Terms</div>
-            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:10,padding:"16px 20px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A2A2A" }}>
+            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:10,padding:"16px 20px",border:"1px solid #e5e7eb",fontSize:13,lineHeight:2,color:"#4A2A2A" }}>
               <div>• All payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
               <div>• Work commences only after <strong>advance payment (35%)</strong> is received</div>
               <div>• Each phase payment must be cleared before proceeding to next phase</div>
@@ -2753,8 +2753,8 @@ High Rise Interiors, Hyderabad`
           {/* No Refund + Disclaimers */}
           <div style={{ marginBottom:28 }}>
             <div style={IV.sTitle}>Terms, Conditions & Disclaimers</div>
-            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:3,padding:"16px 20px",border:`1px solid ${C.line}`,fontSize:13,lineHeight:2,color:"#4A4A2A" }}>
-              <div style={{ background:"rgba(255,255,255,0.06)",border:`1px solid ${C.line}`,borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:13,color:C.red,fontWeight:700 }}>
+            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:3,padding:"16px 20px",border:"1px solid #e5e7eb",fontSize:13,lineHeight:2,color:"#4A4A2A" }}>
+              <div style={{ background:"rgba(255,255,255,0.06)",border:"1px solid #e5e7eb",borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:13,color:C.red,fontWeight:700 }}>
                 🚫 NO REFUND POLICY: All payments made are strictly non-refundable. Once payment is made and work has commenced, no refunds will be issued under any circumstances.
               </div>
               <div>1. <strong>Cancellation:</strong> Amounts paid till date are forfeited upon cancellation after commencement.</div>
@@ -2769,20 +2769,20 @@ High Rise Interiors, Hyderabad`
           {/* Signature */}
           <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:32 }}>
             <div style={{ borderTop:`2px solid ${C.dark}`,paddingTop:12 }}>
-              <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Client Acceptance</div>
+              <div style={{ fontSize:12,color:"#6b7280",marginBottom:4 }}>Client Acceptance</div>
               <div style={{ fontSize:14,fontWeight:700 }}>{selected.name}</div>
-              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:C.muted }}>Signature / Date</div>
+              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:"#6b7280" }}>Signature / Date</div>
             </div>
             <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:12 }}>
-              <div style={{ fontSize:12,color:C.muted,marginBottom:4 }}>Authorised by</div>
+              <div style={{ fontSize:12,color:"#6b7280",marginBottom:4 }}>Authorised by</div>
               <div style={{ fontSize:14,fontWeight:700,color:C.teal,fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
-              <div style={{ fontSize:12,color:C.muted }}>Hyderabad, Telangana</div>
-              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:C.muted }}>Signature / Stamp / Date</div>
+              <div style={{ fontSize:12,color:"#6b7280" }}>Hyderabad, Telangana</div>
+              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:"#6b7280" }}>Signature / Stamp / Date</div>
             </div>
           </div>
           {/* Footer */}
           <div style={{ borderTop:`2px solid ${C.line}`,paddingTop:16,marginTop:24 }}>
-            <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:C.muted,marginBottom:6 }}>
+            <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:"#6b7280",marginBottom:6 }}>
               <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
               <span>{invNum} | {d}</span>
             </div>
@@ -2844,7 +2844,7 @@ High Rise Interiors, Hyderabad`
                     const rd = selected.roomDetails?.[r] || {};
                     const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : null;
                     return (
-                      <div key={r} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
+                      <div key={r} style={{ marginBottom:12, background:"#f1f5f9", borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
                           <span style={{ fontWeight:700, fontSize:13, color:"rgba(255,255,255,0.92)" }}>🏠 {r}</span>
                           {area && <span style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>{rd.length} × {rd.width} ft = <strong>{area} sq ft</strong></span>}
@@ -2872,7 +2872,7 @@ High Rise Interiors, Hyderabad`
                     return total + (item && sel.qty ? parseFloat(sel.qty) * item.price : 0);
                   }, 0);
                   return (
-                    <div key={room} style={{ marginBottom:12, background:C.light, borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
+                    <div key={room} style={{ marginBottom:12, background:"#f1f5f9", borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                         <span style={{ fontWeight:700, fontSize:13, color:"rgba(255,255,255,0.92)" }}>🏠 {room}</span>
                         {roomCost > 0 && <span style={{ fontWeight:700, fontSize:13, color:"#FF453A" }}>{fmt(Math.round(roomCost))}</span>}
@@ -3031,7 +3031,7 @@ High Rise Interiors, Hyderabad`
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Studio CRM</span></div>
         <div style={{ display:"flex",alignItems:"center",gap:10 }}>
           <span style={{ background:connected?"#27AE60":"#C0392B",color:"#fff",fontSize:10,padding:"3px 10px",borderRadius:20 }}>● {connected?"Connected":"Offline"}</span>
-          <span style={{ color:"rgba(191,90,242,0.12)",fontSize:11 }}>{user?.email}</span>
+          <span style={{ color:"rgba(255,255,255,0.6)",fontSize:11 }}>{user?.email}</span>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={fetchCustomers}>↻</button>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={exportCSV}>↓ CSV</button>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={onLogout}>Sign Out</button>
@@ -4106,7 +4106,7 @@ Dimension rules:
                           const item = getCatalog(matType).find(m=>m.name===sel.name);
                           return (
                             <div key={invKey} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
-                              padding:"10px 14px", background:i%2===0?C.white:C.smoke,
+                              padding:"10px 14px", background:i%2===0?"#ffffff":"#f8f9fa",
                               borderTop:`1px solid ${C.line}`, alignItems:"center", gap:8 }}>
                               <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", fontWeight:600, textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
                               <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{sel.name}</div>
