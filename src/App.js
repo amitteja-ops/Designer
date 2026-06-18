@@ -701,7 +701,7 @@ function SignaturePad({ onSave, onClose, label }) {
     const ctx = canvas.getContext("2d");
     const pos = getPos(e, canvas);
     ctx.lineTo(pos.x, pos.y);
-    ctx.strokeStyle = C.ink;
+    ctx.strokeStyle = "#0F1923"; // dark ink — visible on white canvas
     ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -712,7 +712,10 @@ function SignaturePad({ onSave, onClose, label }) {
 
   const clear = () => {
     const canvas = canvasRef.current;
-    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
   };
 
@@ -732,10 +735,11 @@ function SignaturePad({ onSave, onClose, label }) {
         <div style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>{label}</div>
 
         {/* Canvas */}
-        <div style={{ border:`2px solid ${C.teal}`, borderRadius:3, background:"rgba(255,255,255,0.06)",
-          marginBottom:16, cursor:"crosshair", touchAction:"none" }}>
+        <div style={{ border:"2px solid rgba(10,132,255,0.6)", borderRadius:12,
+          background:"#ffffff", marginBottom:16, cursor:"crosshair", touchAction:"none",
+          boxShadow:"0 4px 20px rgba(0,0,0,0.3)", overflow:"hidden" }}>
           <canvas ref={canvasRef} width={480} height={180}
-            style={{ display:"block", width:"100%", height:180 }}
+            style={{ display:"block", width:"100%", height:180, background:"#fff" }}
             onMouseDown={startDraw} onMouseMove={draw} onMouseUp={stopDraw} onMouseLeave={stopDraw}
             onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={stopDraw}/>
         </div>
@@ -2878,7 +2882,7 @@ High Rise Interiors, Hyderabad`
                         {roomCost > 0 && <span style={{ fontWeight:700, fontSize:13, color:"#FF453A" }}>{fmt(Math.round(roomCost))}</span>}
                       </div>
                       {Object.entries(mats).filter(([,v])=>v?.name).map(([matType, sel]) => (
-                        <div key={matType} style={{ fontSize:12, color:C.dark, marginBottom:3 }}>
+                        <div key={matType} style={{ fontSize:12, color:"rgba(255,255,255,0.75)", marginBottom:3 }}>
                           <span style={{ color:"rgba(255,255,255,0.5)" }}>{MATERIAL_LABELS[matType]}: </span>
                           <strong>{sel.name}</strong>
                           {sel.qty && <span style={{ color:"rgba(255,255,255,0.5)" }}> × {sel.qty} {getCatalog(matType).find(m=>m.name===sel.name)?.unit}</span>}
