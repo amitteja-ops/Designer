@@ -125,6 +125,7 @@ export const toRow = (f) => {
                           : null,
     inventory:          f.inventory && Object.keys(f.inventory).length > 0 ? JSON.stringify(f.inventory) : null,
     referral_code:      f.referralCode       || null,
+    client_access_code: f.clientAccessCode   || null,
   applied_referral:   f.appliedReferralCode|| null,
   referral_discount:  f.referralDiscount   || false,
   labour_pct:         f.labourPct          != null ? Number(f.labourPct) : 50,
@@ -186,6 +187,7 @@ export const fromRow = (r) => {
     rebateValue:        r.rebate_value       != null ? String(r.rebate_value) : "",
     couponApplied:      r.coupon_applied     || false,
     referralCode:       r.referral_code      || "",
+    clientAccessCode:   r.client_access_code  || "",
     appliedReferralCode:r.applied_referral   || "",
     referralDiscount:   r.referral_discount  || false,
     roomMaterials:      r.room_materials

@@ -1887,6 +1887,7 @@ High Rise Interiors, Hyderabad`
       auditLog:            c.auditLog            || [],
       inventory:           c.inventory           || {},
       referralCode:        c.referralCode        || "",
+      clientAccessCode:    c.clientAccessCode    || "",
       appliedReferralCode: c.appliedReferralCode || "",
       referralDiscount:   c.referralDiscount   || false,
       labourPct:         c.labourPct         != null ? c.labourPct : 50,
@@ -3864,6 +3865,30 @@ Dimension rules:
                     <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)", lineHeight:1.8 }}>
                       <div>Share with friends to earn <strong style={{ color:"#0A84FF" }}>5% cashback</strong></div>
                       <div>Friends get <strong style={{ color:"#0A84FF" }}>5% off</strong> their project</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Client Portal Access Code */}
+                <div style={{ marginBottom:20 }}>
+                  <div style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:8, fontWeight:700 }}>Client Portal Access</div>
+                  <div className="glass" style={{ borderRadius:12, padding:"16px 18px", border:"1px solid rgba(10,132,255,0.3)", background:"rgba(10,132,255,0.06)" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+                      <div>
+                        <div style={{ fontSize:10, letterSpacing:1.5, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:6, fontWeight:600 }}>🔑 Access Code for Client Portal</div>
+                        <input className="glass-input" style={{ width:200, letterSpacing:3, fontWeight:700, fontSize:15, textTransform:"uppercase" }}
+                          placeholder="e.g. HRI-1234"
+                          value={form.clientAccessCode||""}
+                          onChange={e=>setF("clientAccessCode", e.target.value.toUpperCase())}/>
+                      </div>
+                      <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)", lineHeight:1.9, marginTop:16 }}>
+                        <div>Share this code + their email with the client</div>
+                        <div>They use it to log in to <strong style={{ color:"#0A84FF" }}>client-portal-nu-blush.vercel.app</strong></div>
+                        <button style={{ marginTop:6, background:"rgba(10,132,255,0.2)", border:"1px solid rgba(10,132,255,0.4)", borderRadius:8, color:"#0A84FF", padding:"4px 12px", fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}
+                          onClick={()=>setF("clientAccessCode", (form.referralCode||genReferralCode(form.id||"NEW")).slice(0,8))}>
+                          Auto-fill from Referral Code
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
