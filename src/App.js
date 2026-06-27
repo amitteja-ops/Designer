@@ -1317,6 +1317,9 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const [customers,    setCustomers]    = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [saving,       setSaving]       = useState(false);
+  const [isOnline,     setIsOnline]     = useState(navigator.onLine);
+  const [offlineQ,     setOfflineQ]     = useState(()=>{try{return JSON.parse(localStorage.getItem("hri_q")||"[]");}catch{return [];}});
+  const pendingSync = offlineQ.length;
   const [view,         setView]         = useState("list");
   const [form,         setForm]         = useState(EMPTY);
   const [selectedId,   setSelectedId]   = useState(null);
@@ -1368,6 +1371,13 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   }, [safeCall]);
 
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
+  useEffect(()=>{
+    const up  =()=>{ setIsOnline(true);  showToast("🌐 Back online — syncing…","success",3000); syncQ(); };
+    const down=()=>{ setIsOnline(false); showToast("📴 Offline — changes saved locally","warning",4000); };
+    window.addEventListener("online", up);
+    window.addEventListener("offline",down);
+    return ()=>{ window.removeEventListener("online",up); window.removeEventListener("offline",down); };
+  },[]);
   useEffect(()=>{
     const up  =()=>{ setIsOnline(true);  showToast("🌐 Back online — syncing…","success",3000); syncQ(); };
     const down=()=>{ setIsOnline(false); showToast("📴 Offline — changes saved locally","warning",4000); };
@@ -1656,20 +1666,28 @@ High Rise Interiors, Hyderabad`
   const syncQ = async () => {
     const q = JSON.parse(localStorage.getItem("hri_q")||"[]");
     if (!q.length) return;
-    let ok=0,fail=0;
+    let ok=0, fail=0;
     for (const item of q) {
-      try { await upsertCustomer(item.data); ok++; }
-      catch { fail++; }
+      try {
+        const row = toRow(item.data);
+        if (item.data.id) {
+          await safeCall(t => sb(`${TABLE}?id=eq.${item.data.id}`,"PATCH",row,t));
+        } else {
+          await safeCall(t => sb(TABLE,"POST",row,t));
+        }
+        ok++;
+      } catch { fail++; }
     }
     if (fail===0) { localStorage.removeItem("hri_q"); setOfflineQ([]); showToast(`✅ Synced ${ok} change${ok>1?"s":""}`, "success", 4000); }
-    else { showToast(`⚠️ Synced ${ok}, failed ${fail}`, "warning", 4000); }
+    else { showToast(`⚠️ Synced ${ok}, failed ${fail} — will retry`, "warning", 4000); }
     fetchCustomers();
   };
+
   const queueSave = (data) => {
     const q = JSON.parse(localStorage.getItem("hri_q")||"[]");
-    const idx = q.findIndex(x=>x.data.id===data.id);
-    const entry = {data, ts:Date.now()};
-    if (idx>=0) q[idx]=entry; else q.push(entry);
+    const idx = q.findIndex(x => x.data.id === data.id);
+    const entry = { data, ts: Date.now() };
+    if (idx >= 0) q[idx] = entry; else q.push(entry);
     localStorage.setItem("hri_q", JSON.stringify(q));
     setOfflineQ([...q]);
   };
@@ -1721,6 +1739,17 @@ High Rise Interiors, Hyderabad`
         formToSave.auditLog = [...(formToSave.auditLog||[]), auditEntry];
       }
 
+      // ── Offline: queue and optimistic update ──────────────────────
+      if (!navigator.onLine) {
+        queueSave(formToSave);
+        setCustomers(prev => {
+          const i = prev.findIndex(c => c.id === formToSave.id);
+          const u = {...formToSave, _offline: true};
+          return i >= 0 ? prev.map((c,j) => j===i ? u : c) : [...prev, {...u, id:"off-"+Date.now()}];
+        });
+        showToast("📴 Saved offline — syncs when connected", "warning", 3000);
+        setSaving(false); setView("list"); return;
+      }
       const row = toRow(formToSave);
       const statusChanged = existingClient && existingClient.status !== formToSave.status;
 
