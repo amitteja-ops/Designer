@@ -298,6 +298,24 @@ const MATERIAL_LABELS = {
   glass:"Glass/Mirror", ceiling:"Ceiling Board", lights:"Ceiling Lights", handles:"Handles",
 };
 
+// ── Work Types — what is being built in each room ─────────────────────
+// Each entry: { label, materials[], icon }
+const WORK_TYPES = {
+  frame:      { label:"Frame Work",       icon:"🪵", materials:["plywood","laminate"] },
+  box:        { label:"Box Work",         icon:"📦", materials:["plywood","laminate","hardware"] },
+  wardrobe:   { label:"Wardrobe",         icon:"🚪", materials:["plywood","laminate","hardware","handles","glass"] },
+  kitchen:    { label:"Kitchen Cabinet",  icon:"🍳", materials:["plywood","laminate","hardware","handles","glass"] },
+  tv_unit:    { label:"TV Unit",          icon:"📺", materials:["plywood","laminate","hardware","glass"] },
+  crockery:   { label:"Crockery Unit",    icon:"🍽",  materials:["plywood","laminate","hardware","glass"] },
+  study:      { label:"Study Table",      icon:"📚", materials:["plywood","laminate","hardware"] },
+  ceiling:    { label:"False Ceiling",    icon:"✨", materials:["ceiling","lights"] },
+  partition:  { label:"Partition",        icon:"🧱", materials:["plywood","laminate","glass"] },
+  foyer:      { label:"Foyer / Entrance", icon:"🚪", materials:["plywood","laminate"] },
+  pooja_unit: { label:"Pooja Unit",       icon:"🪔", materials:["plywood","laminate","glass","lights"] },
+  mirror:     { label:"Mirror / Glass",   icon:"🪞", materials:["glass"] },
+  custom:     { label:"Custom Work",      icon:"🔧", materials:["plywood","laminate","hardware","glass","ceiling","lights","handles"] },
+};
+
 const PAYMENT_PHASES = [
   { day:"Day 1",  label:"Advance (before project starts)",          pct:35 },
   { day:"Day 15", label:"Phase 2 (After box frame work)",            pct:35 },
@@ -3012,112 +3030,210 @@ Dimension rules:
           {activeTab==="rooms" && (
             <div>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Rooms — Dimensions & Materials</div>
-              <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",marginBottom:16,lineHeight:1.7}}>Select rooms, enter L×W×H. Sq ft and costs calculate automatically.</div>
+              <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",marginBottom:16,lineHeight:1.7}}>
+                Select rooms, add work items (Frame / Box / Wardrobe etc.) with dimensions and materials.
+              </div>
+
+              {/* Room selector pills */}
               <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
                 {getRooms(form).map(r=>(<button key={r} style={S.pill(form.rooms.includes(r))} onClick={()=>toggleRoom(r)}>{r}</button>))}
               </div>
+
               {form.rooms.length===0 && (
                 <div style={{textAlign:"center",padding:"32px",background:"rgba(255,255,255,0.05)",borderRadius:12,color:"rgba(255,255,255,0.5)",fontSize:13}}>
-                  ☝️ Select rooms above to enter dimensions and materials
+                  ☝️ Select rooms above to add work items
                 </div>
               )}
-              {form.rooms.map(room=>{
-                const rd=form.roomDetails?.[room]||{};
-                const rm=form.roomMaterials?.[room]||{};
-                const applicableMats=ROOM_MATERIALS[room]||["plywood","laminate","ceiling","lights"];
-                const setRD=(key,val)=>setForm(f=>({...f,roomDetails:{...(f.roomDetails||{}),[room]:{...(f.roomDetails?.[room]||{}),[key]:val}}}));
-                const setRM=(mt,field,val)=>setForm(f=>({...f,roomMaterials:{...(f.roomMaterials||{}),[room]:{...(f.roomMaterials?.[room]||{}),[mt]:{...(f.roomMaterials?.[room]?.[mt]||{}),[field]:val}}}}));
-                const area=rd.length&&rd.width?(parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0):null;
-                const roomCost=applicableMats.reduce((t,mt)=>{
-                  const sel=rm[mt];if(!sel?.name)return t;
-                  const item=getCatalog(mt).find(m=>m.name===sel.name);
-                  return t+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
-                },0);
+
+              {/* Per-room card */}
+              {form.rooms.map(room => {
+                // roomWork: { [room]: [ {id, workType, width, height, brand, qty, unit, notes}, ... ] }
+                const works = form.roomWork?.[room] || [];
+                const setWorks = (updater) => setForm(f => ({
+                  ...f,
+                  roomWork: { ...(f.roomWork||{}), [room]: typeof updater==="function" ? updater(f.roomWork?.[room]||[]) : updater }
+                }));
+                const addWork = () => setWorks(w => [...w, {id:Date.now(), workType:"frame", width:"", height:"", brand:"", qty:"", unit:"sq ft", price:0, notes:""}]);
+                const delWork = (id) => setWorks(w => w.filter(x=>x.id!==id));
+                const updWork = (id, key, val) => setWorks(w => w.map(x => x.id===id ? {...x,[key]:val} : x));
+
+                // Also keep room-level L×W×H for reference
+                const rd = form.roomDetails?.[room] || {};
+                const setRD = (key,val) => setForm(f=>({...f,roomDetails:{...(f.roomDetails||{}),[room]:{...(f.roomDetails?.[room]||{}),[key]:val}}}));
+                const roomArea = rd.length&&rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : null;
+
+                // Room total cost
+                const roomTotal = works.reduce((t, w) => {
+                  const wt = WORK_TYPES[w.workType];
+                  if (!wt || !w.brand) return t;
+                  const catalog = wt.materials.flatMap(mt => getCatalog(mt));
+                  const item = catalog.find(m => m.name===w.brand);
+                  if (!item) return t;
+                  const sqft = w.width&&w.height ? parseFloat(w.width)*parseFloat(w.height) : parseFloat(w.qty)||0;
+                  return t + sqft * item.price;
+                }, 0);
+
                 return (
                   <div key={room} className="glass" style={{padding:"20px",marginBottom:16}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                    {/* Room header */}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                       <div style={{fontSize:15,fontWeight:700}}>🏠 {room}</div>
-                      {roomCost>0&&<div style={{fontSize:13,fontWeight:700,color:"#FF9F0A"}}>₹{roomCost.toLocaleString("en-IN")}</div>}
+                      {roomTotal>0 && <div style={{fontSize:13,fontWeight:700,color:"#FF9F0A"}}>₹{roomTotal.toLocaleString("en-IN")}</div>}
                     </div>
-                    <div style={{marginBottom:14}}>
-                      <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",marginBottom:10}}>📐 Dimensions</div>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr auto",gap:10,alignItems:"end"}}>
-                        {[["length","Length (ft)"],["width","Width (ft)"],["height","Height (ft)"]].map(([k,lbl])=>(
-                          <div key={k}>
-                            <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:5,display:"block",fontWeight:600}}>{lbl}</label>
-                            <input className="glass-input" type="number" min="0" step="0.1" value={rd[k]||""} onChange={e=>setRD(k,e.target.value)} placeholder="0"/>
-                          </div>
-                        ))}
-                        <div>
-                          {area
-                            ?<div style={{background:"rgba(10,132,255,0.2)",border:"1px solid rgba(10,132,255,0.4)",borderRadius:10,padding:"10px 14px",textAlign:"center",minWidth:90}}>
-                              <div style={{fontSize:18,fontWeight:800,color:"#0A84FF"}}>{parseInt(area).toLocaleString()}</div>
-                              <div style={{fontSize:9,color:"rgba(10,132,255,0.7)",letterSpacing:1,fontWeight:600}}>SQ FT</div>
-                             </div>
-                            :<div style={{background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"10px 14px",textAlign:"center",minWidth:90}}>
-                              <div style={{fontSize:12,color:"rgba(255,255,255,0.2)"}}>—</div>
-                              <div style={{fontSize:9,color:"rgba(255,255,255,0.2)",letterSpacing:1}}>SQ FT</div>
-                             </div>
-                          }
+
+                    {/* Room dimensions (reference) */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr auto",gap:8,marginBottom:14,alignItems:"end"}}>
+                      {[["length","Room L (ft)"],["width","Room W (ft)"],["height","Room H (ft)"]].map(([k,lbl])=>(
+                        <div key={k}>
+                          <label style={{fontSize:9,letterSpacing:1.5,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",marginBottom:4,display:"block",fontWeight:600}}>{lbl}</label>
+                          <input className="glass-input" type="number" min="0" step="0.1"
+                            value={rd[k]||""} onChange={e=>setRD(k,e.target.value)} placeholder="0"
+                            style={{padding:"7px 10px",fontSize:13}}/>
                         </div>
+                      ))}
+                      <div style={{background:roomArea?"rgba(10,132,255,0.2)":"rgba(255,255,255,0.05)",border:`1px solid ${roomArea?"rgba(10,132,255,0.4)":"rgba(255,255,255,0.1)"}`,borderRadius:10,padding:"8px 12px",textAlign:"center",minWidth:80}}>
+                        <div style={{fontSize:15,fontWeight:800,color:roomArea?"#0A84FF":"rgba(255,255,255,0.2)"}}>{roomArea||"—"}</div>
+                        <div style={{fontSize:8,letterSpacing:1,color:roomArea?"rgba(10,132,255,0.7)":"rgba(255,255,255,0.2)",fontWeight:600}}>SQ FT</div>
                       </div>
                     </div>
+
                     <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",marginBottom:14}}/>
-                    <div>
-                      <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",marginBottom:10}}>🔧 Materials</div>
-                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                        {applicableMats.map(mt=>{
-                          const catalog=getCatalog(mt);
-                          const sel=rm[mt]||{};
-                          const item=catalog.find(m=>m.name===sel.name);
-                          const autoQty=area&&item?(mt==="hardware"||mt==="handles"?null:mt==="lights"?Math.ceil(parseFloat(area)/20):Math.ceil(parseFloat(area))):null;
-                          const linePrice=item&&sel.qty?parseFloat(sel.qty)*item.price:0;
-                          return (
-                            <div key={mt} style={{display:"grid",gridTemplateColumns:"110px 1fr 80px 70px 90px",gap:8,alignItems:"center",background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 12px"}}>
-                              <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.5)",letterSpacing:1,textTransform:"uppercase"}}>{MATERIAL_LABELS[mt]||mt}</div>
-                              <select className="glass-input" style={{fontSize:12,padding:"6px 10px"}}
-                                value={sel.name||""}
-                                onChange={e=>{
-                                  const chosen=getCatalog(mt).find(m=>m.name===e.target.value);
-                                  setRM(mt,"name",e.target.value);
-                                  if(autoQty&&!sel.qty)setRM(mt,"qty",String(autoQty));
-                                  if(chosen?.unit)setRM(mt,"unit",chosen.unit);
-                                }}>
-                                <option value="">— select —</option>
-                                {catalog.map(m=><option key={m.name} value={m.name}>{m.name}{m.price?` (₹${m.price}/${m.unit||"unit"})`:""}</option>)}
-                              </select>
-                              <input className="glass-input" type="number" min="0" style={{fontSize:12,padding:"6px 8px",textAlign:"center"}} placeholder="Qty" value={sel.qty||""} onChange={e=>setRM(mt,"qty",e.target.value)}/>
-                              <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",textAlign:"center"}}>
-                                {item?.unit||"—"}{autoQty&&!sel.qty&&<div style={{fontSize:9,color:"rgba(10,132,255,0.6)"}}>~{autoQty}</div>}
-                              </div>
-                              <div style={{fontSize:12,fontWeight:700,color:linePrice>0?"#FF9F0A":"rgba(255,255,255,0.2)",textAlign:"right"}}>
-                                {linePrice>0?`₹${linePrice.toLocaleString("en-IN")}`:"—"}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+
+                    {/* Work items */}
+                    <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",marginBottom:10}}>
+                      Work Items
                     </div>
-                    {roomCost>0&&(
+
+                    {works.length===0 && (
+                      <div style={{textAlign:"center",padding:"16px",background:"rgba(255,255,255,0.03)",borderRadius:10,color:"rgba(255,255,255,0.3)",fontSize:12,marginBottom:10}}>
+                        No work items yet — add Frame Work, Wardrobe, Ceiling etc.
+                      </div>
+                    )}
+
+                    {works.map((w,wi) => {
+                      const wt = WORK_TYPES[w.workType] || WORK_TYPES.custom;
+                      // Build brand options from this work type's materials
+                      const brandOptions = wt.materials.flatMap(mt =>
+                        getCatalog(mt).map(item => ({...item, matType:mt}))
+                      );
+                      const selectedItem = brandOptions.find(b => b.name===w.brand);
+                      const sqft = w.width&&w.height ? parseFloat(w.width)*parseFloat(w.height) : null;
+                      const lineTotal = selectedItem && (sqft||parseFloat(w.qty)||0)
+                        ? (sqft||parseFloat(w.qty)) * selectedItem.price : 0;
+
+                      return (
+                        <div key={w.id} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px",marginBottom:10,border:"1px solid rgba(255,255,255,0.08)"}}>
+                          {/* Row 1: Work type + delete */}
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8,flex:1,flexWrap:"wrap"}}>
+                              <span style={{fontSize:16}}>{wt.icon}</span>
+                              <select className="glass-input" style={{fontSize:12,padding:"5px 8px",width:"auto",minWidth:160}}
+                                value={w.workType}
+                                onChange={e=>updWork(w.id,"workType",e.target.value)}>
+                                {Object.entries(WORK_TYPES).map(([k,v])=>(
+                                  <option key={k} value={k}>{v.label}</option>
+                                ))}
+                              </select>
+                              <input className="glass-input" style={{fontSize:12,padding:"5px 8px",flex:1,minWidth:120}}
+                                placeholder="Notes (e.g. TV unit 10ft, L-shape kitchen...)"
+                                value={w.notes||""}
+                                onChange={e=>updWork(w.id,"notes",e.target.value)}/>
+                            </div>
+                            <button onClick={()=>delWork(w.id)}
+                              style={{background:"rgba(255,69,58,0.15)",border:"1px solid rgba(255,69,58,0.3)",borderRadius:8,color:"#FF453A",padding:"4px 10px",cursor:"pointer",fontFamily:"inherit",fontSize:12,marginLeft:8,flexShrink:0}}>
+                              ✕
+                            </button>
+                          </div>
+
+                          {/* Row 2: W × H = sqft | Brand | Price */}
+                          <div style={{display:"grid",gridTemplateColumns:"80px 10px 80px auto 1fr auto",gap:6,alignItems:"end"}}>
+                            {/* Width */}
+                            <div>
+                              <label style={{fontSize:9,letterSpacing:1.5,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",marginBottom:3,display:"block",fontWeight:600}}>Width (ft)</label>
+                              <input className="glass-input" type="number" min="0" step="0.1"
+                                style={{padding:"6px 8px",fontSize:13,textAlign:"center"}}
+                                placeholder="W" value={w.width||""}
+                                onChange={e=>updWork(w.id,"width",e.target.value)}/>
+                            </div>
+                            <div style={{textAlign:"center",color:"rgba(255,255,255,0.3)",fontSize:16,paddingBottom:2}}>×</div>
+                            {/* Height */}
+                            <div>
+                              <label style={{fontSize:9,letterSpacing:1.5,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",marginBottom:3,display:"block",fontWeight:600}}>Height (ft)</label>
+                              <input className="glass-input" type="number" min="0" step="0.1"
+                                style={{padding:"6px 8px",fontSize:13,textAlign:"center"}}
+                                placeholder="H" value={w.height||""}
+                                onChange={e=>updWork(w.id,"height",e.target.value)}/>
+                            </div>
+                            {/* Sq ft badge */}
+                            <div style={{background:sqft?"rgba(10,132,255,0.2)":"rgba(255,255,255,0.05)",border:`1px solid ${sqft?"rgba(10,132,255,0.4)":"rgba(255,255,255,0.08)"}`,borderRadius:8,padding:"6px 10px",textAlign:"center",minWidth:68}}>
+                              <div style={{fontSize:13,fontWeight:800,color:sqft?"#0A84FF":"rgba(255,255,255,0.2)"}}>{sqft?sqft.toFixed(1):"—"}</div>
+                              <div style={{fontSize:8,color:sqft?"rgba(10,132,255,0.7)":"rgba(255,255,255,0.2)",letterSpacing:0.8,fontWeight:600}}>SQ FT</div>
+                            </div>
+                            {/* Brand selector */}
+                            <div>
+                              <label style={{fontSize:9,letterSpacing:1.5,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",marginBottom:3,display:"block",fontWeight:600}}>
+                                Material / Brand
+                              </label>
+                              <select className="glass-input" style={{fontSize:12,padding:"6px 8px",width:"100%"}}
+                                value={w.brand||""}
+                                onChange={e=>{
+                                  const item=brandOptions.find(b=>b.name===e.target.value);
+                                  updWork(w.id,"brand",e.target.value);
+                                  if(item?.unit)updWork(w.id,"unit",item.unit);
+                                  if(item?.matType)updWork(w.id,"matType",item.matType);
+                                }}>
+                                <option value="">— select material —</option>
+                                {wt.materials.map(mt=>(
+                                  <optgroup key={mt} label={MATERIAL_LABELS[mt]||mt}>
+                                    {getCatalog(mt).map(m=>(
+                                      <option key={m.name} value={m.name}>{m.name} {m.price?`(₹${m.price}/${m.unit||"sq ft"})`:""}</option>
+                                    ))}
+                                  </optgroup>
+                                ))}
+                              </select>
+                            </div>
+                            {/* Line total */}
+                            <div style={{textAlign:"right",paddingBottom:2}}>
+                              <div style={{fontSize:9,letterSpacing:1,color:"rgba(255,255,255,0.4)",marginBottom:3,textTransform:"uppercase",fontWeight:600}}>Total</div>
+                              <div style={{fontSize:15,fontWeight:800,color:lineTotal>0?"#FF9F0A":"rgba(255,255,255,0.2)"}}>
+                                {lineTotal>0?`₹${lineTotal.toLocaleString("en-IN")}`:"—"}
+                              </div>
+                              {selectedItem&&<div style={{fontSize:9,color:"rgba(255,255,255,0.35)"}}>₹{selectedItem.price}/{selectedItem.unit||"sq ft"}</div>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <button onClick={addWork}
+                      style={{width:"100%",padding:"9px",borderRadius:10,border:"1px dashed rgba(10,132,255,0.4)",background:"rgba(10,132,255,0.08)",color:"#0A84FF",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:600,marginTop:4}}>
+                      + Add Work Item
+                    </button>
+
+                    {/* Room total */}
+                    {roomTotal>0 && (
                       <div style={{marginTop:12,borderTop:"1px solid rgba(255,255,255,0.08)",paddingTop:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                         <span style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontWeight:600,letterSpacing:1,textTransform:"uppercase"}}>Room Total</span>
-                        <span style={{fontSize:16,fontWeight:800,color:"#FF9F0A"}}>₹{roomCost.toLocaleString("en-IN")}</span>
+                        <span style={{fontSize:16,fontWeight:800,color:"#FF9F0A"}}>₹{roomTotal.toLocaleString("en-IN")}</span>
                       </div>
                     )}
                   </div>
                 );
               })}
-              {(()=>{
-                const grand=form.rooms.reduce((t,room)=>{
-                  const mats=ROOM_MATERIALS[room]||["plywood","laminate","ceiling","lights"];
-                  const rm=form.roomMaterials?.[room]||{};
-                  return t+mats.reduce((rt,mt)=>{
-                    const sel=rm[mt];if(!sel?.name)return rt;
-                    const item=getCatalog(mt).find(m=>m.name===sel.name);
-                    return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+
+              {/* Grand total */}
+              {form.rooms.length>0 && (()=>{
+                const grand = form.rooms.reduce((t,room)=>{
+                  const works = form.roomWork?.[room]||[];
+                  return t + works.reduce((rt,w)=>{
+                    const wt=WORK_TYPES[w.workType]; if(!wt||!w.brand) return rt;
+                    const item=wt.materials.flatMap(mt=>getCatalog(mt)).find(m=>m.name===w.brand);
+                    if(!item) return rt;
+                    const sqft=w.width&&w.height?parseFloat(w.width)*parseFloat(w.height):parseFloat(w.qty)||0;
+                    return rt+sqft*item.price;
                   },0);
                 },0);
-                return form.rooms.length>0&&grand>0?(
+                return grand>0?(
                   <div className="glass" style={{padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,69,58,0.1)",borderColor:"rgba(255,69,58,0.3)"}}>
                     <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.7)"}}>Total Material Cost — All Rooms</span>
                     <span style={{fontSize:22,fontWeight:800,color:"#FF453A"}}>₹{grand.toLocaleString("en-IN")}</span>
