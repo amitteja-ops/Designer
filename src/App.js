@@ -801,297 +801,6 @@ function Select({ value, onChange, options, placeholder }) {
 
 
 // ── Room Planner — Isometric 3D + Floor Plan ─────────────────────────
-function Room3DEmbed({ length:L=5, width:W=4, height:H=2.8, roomType="Living Room", rooms=[], roomDetails={} }) {
-  const isoRef   = useRef(null);
-  const planRef  = useRef(null);
-  const [activeRoom, setActiveRoom] = useState(roomType);
-  const [wallCol,  setWallCol]  = useState('#E8E0D4');
-  const [floorCol, setFloorCol] = useState('#A0784A');
-  const [tab,      setTab]      = useState('iso'); // 'iso' | 'plan'
-
-  const rd = roomDetails[activeRoom] || {};
-  const RL = Math.max(1, parseFloat(rd.length || L));
-  const RW = Math.max(1, parseFloat(rd.width  || W));
-  const RH = Math.max(1, parseFloat(rd.height || H));
-
-  // ── Isometric 3D drawing ────────────────────────────────────────────
-  useEffect(() => {
-    const canvas = isoRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const CW = canvas.width, CH = canvas.height;
-    ctx.clearRect(0, 0, CW, CH);
-
-    // Dark background
-    ctx.fillStyle = '#0D1B2A';
-    ctx.fillRect(0, 0, CW, CH);
-
-    // Isometric projection helpers
-    // Scale: 1 metre = S pixels
-    const S = Math.min(CW / (RL + RW + 2), CH / (RL/2 + RW/2 + RH + 2)) * 1.1;
-    // Iso origin — centre-bottom of scene
-    const ox = CW * 0.5;
-    const oy = CH * 0.72;
-
-    // Convert 3D (x along length, y up, z along width) → 2D isometric
-    const iso = (x, y, z) => ({
-      px: ox + (x - z) * S * Math.cos(Math.PI/6),
-      py: oy - y * S - (x + z) * S * Math.sin(Math.PI/6)
-    });
-
-    const poly = (points, fill, stroke, lineW=1) => {
-      ctx.beginPath();
-      ctx.moveTo(points[0].px, points[0].py);
-      points.slice(1).forEach(p => ctx.lineTo(p.px, p.py));
-      ctx.closePath();
-      if (fill)   { ctx.fillStyle   = fill;  ctx.fill();   }
-      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineW; ctx.stroke(); }
-    };
-
-    // Shade colours
-    const shade = (hex, amt) => {
-      const n = parseInt(hex.slice(1), 16);
-      const r = Math.max(0, Math.min(255, (n>>16) + amt));
-      const g = Math.max(0, Math.min(255, ((n>>8)&0xff) + amt));
-      const b = Math.max(0, Math.min(255, (n&0xff) + amt));
-      return `rgb(${r},${g},${b})`;
-    };
-
-    const wallLeft  = shade(wallCol, -30);   // left face (darker)
-    const wallRight = shade(wallCol, -10);   // right face (medium)
-    const wallTop   = shade(wallCol, 20);    // top/front (lighter)
-    const floorTop  = shade(floorCol, 10);
-    const floorSide = shade(floorCol, -20);
-    const edge = 'rgba(0,0,0,0.25)';
-
-    // ── FLOOR ──
-    poly([iso(0,0,0), iso(RL,0,0), iso(RL,0,RW), iso(0,0,RW)], floorTop, edge);
-
-    // Floor tile lines
-    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-    ctx.lineWidth = 0.5;
-    for (let i=1; i<RL; i++) {
-      const a = iso(i,0,0), b = iso(i,0,RW);
-      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
-    }
-    for (let j=1; j<RW; j++) {
-      const a = iso(0,0,j), b = iso(RL,0,j);
-      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
-    }
-
-    // ── BACK-LEFT WALL (along length) ──
-    poly([iso(0,0,0), iso(RL,0,0), iso(RL,RH,0), iso(0,RH,0)], wallLeft, edge);
-
-    // Wall tile lines (horizontal)
-    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
-    ctx.lineWidth = 0.5;
-    for (let h=0.5; h<RH; h+=0.5) {
-      const a = iso(0,h,0), b = iso(RL,h,0);
-      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
-    }
-
-    // ── BACK-RIGHT WALL (along width) ──
-    poly([iso(0,0,0), iso(0,0,RW), iso(0,RH,RW), iso(0,RH,0)], wallRight, edge);
-
-    for (let h=0.5; h<RH; h+=0.5) {
-      const a = iso(0,h,0), b = iso(0,h,RW);
-      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
-    }
-
-    // ── CEILING (semi-transparent) ──
-    ctx.globalAlpha = 0.18;
-    poly([iso(0,RH,0), iso(RL,RH,0), iso(RL,RH,RW), iso(0,RH,RW)], "rgba(255,255,255,0.95)", null);
-    ctx.globalAlpha = 1.0;
-
-    // ── CEILING EDGES ──
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 1.5;
-    [[iso(0,RH,0),iso(RL,RH,0)],[iso(0,RH,0),iso(0,RH,RW)],
-     [iso(RL,RH,0),iso(RL,RH,RW)],[iso(0,RH,RW),iso(RL,RH,RW)]].forEach(([a,b]) => {
-      ctx.beginPath(); ctx.moveTo(a.px,a.py); ctx.lineTo(b.px,b.py); ctx.stroke();
-    });
-
-    // ── SKIRTING BOARDS ──
-    const skH = 0.08;
-    poly([iso(0,0,0),iso(RL,0,0),iso(RL,skH,0),iso(0,skH,0)], shade(wallCol,-50), null);
-    poly([iso(0,0,0),iso(0,0,RW),iso(0,skH,RW),iso(0,skH,0)], shade(wallCol,-40), null);
-
-    // ── DIMENSION LABELS ──
-    ctx.fillStyle = '#1A5276';
-    ctx.font = 'bold 13px DM Sans, sans-serif';
-    ctx.textAlign = 'center';
-
-    // Length label
-    const lMid = iso(RL/2, 0, 0);
-    ctx.fillText(`${RL}m`, lMid.px, lMid.py + 18);
-
-    // Width label
-    const wMid = iso(0, 0, RW/2);
-    ctx.fillText(`${RW}m`, wMid.px - 18, wMid.py + 8);
-
-    // Height label
-    const hMid = iso(0, RH/2, 0);
-    ctx.save();
-    ctx.translate(hMid.px - 22, hMid.py);
-    ctx.fillStyle = '#1A5276';
-    ctx.fillText(`${RH}m`, 0, 0);
-    ctx.restore();
-
-    // ── ROOM LABEL ──
-    const centre = iso(RL/2, 0.05, RW/2);
-    ctx.fillStyle = 'rgba(15,25,35,0.75)';
-    ctx.beginPath();
-    ctx.roundRect(centre.px - 65, centre.py - 16, 130, 32, 4);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 13px DM Sans, sans-serif';
-    ctx.fillText(activeRoom, centre.px, centre.py);
-    ctx.fillStyle = '#1A5276';
-    ctx.font = '10px DM Sans, sans-serif';
-    ctx.fillText(`${(RL*RW).toFixed(1)} m²`, centre.px, centre.py + 14);
-
-    // ── FLOOR EDGE (thickness) ──
-    const floorT = 0.05;
-    poly([iso(0,0,0),iso(RL,0,0),iso(RL,-floorT,0),iso(0,-floorT,0)], floorSide, null);
-    poly([iso(0,0,0),iso(0,0,RW),iso(0,-floorT,RW),iso(0,-floorT,0)], floorSide, null);
-
-  }, [activeRoom, RL, RW, RH, wallCol, floorCol]);
-
-  // ── Floor plan 2D ───────────────────────────────────────────────────
-  useEffect(() => {
-    const canvas = planRef.current;
-    if (!canvas || tab !== 'plan') return;
-    const ctx = canvas.getContext('2d');
-    const CW = canvas.width, CH = canvas.height;
-    ctx.clearRect(0, 0, CW, CH);
-    ctx.fillStyle = '#0D1B2A';
-    ctx.fillRect(0, 0, CW, CH);
-
-    const S = Math.min((CW - 100) / RL, (CH - 100) / RW) * 0.82;
-    const ox = (CW - RL*S) / 2;
-    const oy = (CH - RW*S) / 2;
-
-    // Grid
-    ctx.strokeStyle = '#1E3A4A'; ctx.lineWidth = 0.5;
-    for (let x=0; x<=CW; x+=S) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,CH); ctx.stroke(); }
-    for (let y=0; y<=CH; y+=S) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(CW,y); ctx.stroke(); }
-
-    // Floor
-    ctx.fillStyle = floorCol; ctx.fillRect(ox, oy, RL*S, RW*S);
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)'; ctx.lineWidth = 1;
-    for (let i=1; i<RL; i++) { ctx.beginPath(); ctx.moveTo(ox+i*S,oy); ctx.lineTo(ox+i*S,oy+RW*S); ctx.stroke(); }
-    for (let j=1; j<RW; j++) { ctx.beginPath(); ctx.moveTo(ox,oy+j*S); ctx.lineTo(ox+RL*S,oy+j*S); ctx.stroke(); }
-
-    // Walls
-    ctx.strokeStyle = wallCol; ctx.lineWidth = 16;
-    ctx.strokeRect(ox, oy, RL*S, RW*S);
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1;
-    ctx.strokeRect(ox+8, oy+8, RL*S-16, RW*S-16);
-
-    // Dims
-    ctx.fillStyle = '#1A5276'; ctx.font = 'bold 12px DM Sans,sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(`${RL}m`, ox+RL*S/2, oy-12);
-    ctx.save(); ctx.translate(ox-12, oy+RW*S/2); ctx.rotate(-Math.PI/2);
-    ctx.fillText(`${RW}m`, 0, 0); ctx.restore();
-
-    // Label
-    ctx.fillStyle = 'rgba(15,25,35,0.75)'; ctx.beginPath();
-    ctx.roundRect(ox+RL*S/2-65, oy+RW*S/2-18, 130, 36, 4); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px DM Sans,sans-serif';
-    ctx.fillText(activeRoom, ox+RL*S/2, oy+RW*S/2-2);
-    ctx.fillStyle = '#1A5276'; ctx.font = '10px DM Sans,sans-serif';
-    ctx.fillText(`${(RL*RW).toFixed(1)} m²`, ox+RL*S/2, oy+RW*S/2+14);
-
-  }, [activeRoom, RL, RW, wallCol, floorCol, tab]);
-
-  const WALL_OPTS  = [['#E8E0D4','White'],['#E8D5B7','Beige'],['#8FAF8F','Sage'],['#5A5A5A','Charcoal'],['#C0614A','Terracotta'],['#1B2A4A','Navy']];
-  const FLOOR_OPTS = [['#A0784A','Teak'],['#C8A96E','Oak'],['#E8E4DC','Marble'],['#4A4540','Granite'],['#9A9590','Concrete']];
-
-  return (
-    <div style={{ display:'flex', height:'calc(100vh - 100px)', background:'#0D1B2A', overflow:'hidden' }}>
-      {/* Sidebar */}
-      <div style={{ width:180, minWidth:180, background:'#0A1520', padding:14,
-        borderRight:'1px solid #1E2D3A', overflowY:'auto', flexShrink:0 }}>
-
-        {rooms.length > 1 && (
-          <div style={{ marginBottom:14 }}>
-            <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Room</div>
-            {rooms.map(r=>(
-              <button key={r} onClick={()=>setActiveRoom(r)}
-                style={{ display:'block',width:'100%',padding:'5px 8px',marginBottom:3,
-                  borderRadius:2,border:'none',cursor:'pointer',textAlign:'left',
-                  fontFamily:'inherit',fontSize:11,
-                  background:activeRoom===r?'#1A5276':'#1E2D3A',
-                  color:activeRoom===r?'#fff':'#5A8A9A' }}>
-                {r}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div style={{ marginBottom:12 }}>
-          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Wall Colour</div>
-          <div style={{ display:'flex',flexWrap:'wrap',gap:4 }}>
-            {WALL_OPTS.map(([c,n])=>(
-              <button key={c} title={n} onClick={()=>setWallCol(c)}
-                style={{ width:26,height:26,borderRadius:2,cursor:'pointer',background:c,
-                  border:wallCol===c?'2px solid #1A5276':'1px solid #2A3A4A' }}/>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginBottom:12 }}>
-          <div style={{ fontSize:9,letterSpacing:2,color:'#1A5276',textTransform:'uppercase',marginBottom:6,fontWeight:700 }}>Floor</div>
-          <div style={{ display:'flex',flexWrap:'wrap',gap:4 }}>
-            {FLOOR_OPTS.map(([c,n])=>(
-              <button key={c} title={n} onClick={()=>setFloorCol(c)}
-                style={{ width:26,height:26,borderRadius:2,cursor:'pointer',background:c,
-                  border:floorCol===c?'2px solid #1A5276':'1px solid #2A3A4A' }}/>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ fontSize:10,color:'#3A5A6A',lineHeight:2,marginTop:12,
-          borderTop:'1px solid #1E2D3A',paddingTop:10 }}>
-          <div style={{ color:'#1A5276',fontWeight:700,marginBottom:4 }}>📐 {activeRoom}</div>
-          <div>{RL}m × {RW}m × {RH}m</div>
-          <div>{(RL*RW).toFixed(1)} m²</div>
-        </div>
-      </div>
-
-      {/* Canvas area */}
-      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-        {/* Tab bar */}
-        <div style={{ background:'#0A1520', padding:'6px 16px', display:'flex',
-          gap:8, borderBottom:'1px solid #1E2D3A', alignItems:'center' }}>
-          {[['iso','🏠 3D Isometric'],['plan','📐 Floor Plan']].map(([v,label])=>(
-            <button key={v} onClick={()=>setTab(v)}
-              style={{ padding:'4px 14px', borderRadius:2, cursor:'pointer', border:'none',
-                fontFamily:'inherit', fontSize:10, fontWeight:700, letterSpacing:1,
-                background:tab===v?'#1A5276':'#1E2D3A',
-                color:tab===v?'#fff':'#5A8A9A' }}>
-              {label}
-            </button>
-          ))}
-          <span style={{ marginLeft:'auto', fontSize:9, color:'#2A4A5A' }}>
-            Inputs from Dimensions tab · {RL}m × {RW}m × {RH}m high
-          </span>
-        </div>
-
-        {/* Canvases */}
-        <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
-          <canvas ref={isoRef} width={900} height={600}
-            style={{ width:'100%', height:'100%', display: tab==='iso' ? 'block' : 'none' }}/>
-          <canvas ref={planRef} width={900} height={600}
-            style={{ width:'100%', height:'100%', display: tab==='plan' ? 'block' : 'none' }}/>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-// ── CLIENT REPORT (standalone component so hooks work) ───────────────
 function ClientReport({ selected, setView, customers }) {
   const [showSigPad, setShowSigPad] = React.useState(null);
   // Load saved signatures from last audit log entry that has them
@@ -1659,6 +1368,13 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   }, [safeCall]);
 
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
+  useEffect(()=>{
+    const up  =()=>{ setIsOnline(true);  showToast("🌐 Back online — syncing…","success",3000); syncQ(); };
+    const down=()=>{ setIsOnline(false); showToast("📴 Offline — changes saved locally","warning",4000); };
+    window.addEventListener("online", up);
+    window.addEventListener("offline",down);
+    return ()=>{ window.removeEventListener("online",up); window.removeEventListener("offline",down); };
+  },[]);
 
   // ── Open edit — explicitly map every field ────────────────────────
   // ── Send welcome email via device mail app ───────────────────────────
@@ -1902,6 +1618,62 @@ High Rise Interiors, Hyderabad`
   const setDim     = (k, v) => setForm(f => ({...f, dimensions: {...f.dimensions, [k]: v}}));
   const toggleRoom = (r)    => setForm(f => ({...f, rooms: f.rooms.includes(r) ? f.rooms.filter(x=>x!==r) : [...f.rooms, r]}));
 
+  // ── Sync offline queue when back online ─────────────────────────────
+  const syncOfflineQueue = async () => {
+    const queue = JSON.parse(localStorage.getItem("hri_offline_queue")||"[]");
+    if (!queue.length) return;
+    let synced = 0, failed = 0;
+    for (const item of queue) {
+      try {
+        if (item.type === "upsert") {
+          await upsertCustomer(item.data);
+          synced++;
+        }
+      } catch(e) { failed++; }
+    }
+    // Remove synced items (remove all if no failures)
+    if (failed === 0) {
+      localStorage.removeItem("hri_offline_queue");
+      setOfflineQueue([]);
+      showToast(`✅ Synced ${synced} offline change${synced>1?"s":""} to database`,"success",4000);
+    } else {
+      showToast(`⚠️ Synced ${synced}, failed ${failed} — will retry when online`,"warning",4000);
+    }
+    fetchCustomers();
+  };
+
+  // ── Save to offline queue ─────────────────────────────────────────
+  const queueOffline = (formData) => {
+    const entry = { type:"upsert", data:formData, ts:Date.now(), name:formData.name };
+    const queue = JSON.parse(localStorage.getItem("hri_offline_queue")||"[]");
+    // Replace existing entry for same client if present
+    const idx = queue.findIndex(q => q.data.id === formData.id);
+    if (idx >= 0) queue[idx] = entry; else queue.push(entry);
+    localStorage.setItem("hri_offline_queue", JSON.stringify(queue));
+    setOfflineQueue([...queue]);
+  };
+
+  const syncQ = async () => {
+    const q = JSON.parse(localStorage.getItem("hri_q")||"[]");
+    if (!q.length) return;
+    let ok=0,fail=0;
+    for (const item of q) {
+      try { await upsertCustomer(item.data); ok++; }
+      catch { fail++; }
+    }
+    if (fail===0) { localStorage.removeItem("hri_q"); setOfflineQ([]); showToast(`✅ Synced ${ok} change${ok>1?"s":""}`, "success", 4000); }
+    else { showToast(`⚠️ Synced ${ok}, failed ${fail}`, "warning", 4000); }
+    fetchCustomers();
+  };
+  const queueSave = (data) => {
+    const q = JSON.parse(localStorage.getItem("hri_q")||"[]");
+    const idx = q.findIndex(x=>x.data.id===data.id);
+    const entry = {data, ts:Date.now()};
+    if (idx>=0) q[idx]=entry; else q.push(entry);
+    localStorage.setItem("hri_q", JSON.stringify(q));
+    setOfflineQ([...q]);
+  };
+
   const saveCustomer = async () => {
     if (!form.name.trim()) { showToast("Client name is required", "error"); return; }
     setSaving(true);
@@ -2028,7 +1800,7 @@ High Rise Interiors, Hyderabad`
   };
 
   const selected = customers.find(c => c.id === selectedId);
-  const TABS = ["personal","dimensions","materials","quotation","notes","inventory"];
+  const TABS = ["personal","rooms","quotation","notes","inventory"];
 
   // ── REPORT ───────────────────────────────────────────────────────────
   if (view==="report" && selected) {
@@ -2572,235 +2344,7 @@ High Rise Interiors, Hyderabad`
   }
 
   // ── 3D ROOM PLANNER ─────────────────────────────────────────────────
-  if (view==="room3d" && selected) {
-    const rooms = selected.rooms||[];
-    const firstRoom = rooms[0]||"Living Room";
-    const rd = selected.roomDetails?.[firstRoom]||{};
-    const L = parseFloat(rd.length||5);
-    const W = parseFloat(rd.width||4);
-    const H = parseFloat(rd.height||2.8);
-    return (
-      <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)", fontFamily:"Inter,-apple-system,sans-serif" }}>
-        <div style={{ background:"rgba(6,8,18,0.85)", padding:"12px 24px", display:"flex",
-          alignItems:"center", gap:12, borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
-          <div style={{ color:"#fff", fontSize:13, fontWeight:700, letterSpacing:2 }}>
-            3D Room Planner — {selected.name}
-          </div>
-          <div style={{ display:"flex", gap:6, marginLeft:16 }}>
-            {rooms.map(r=>(
-              <span key={r} style={{ background:"#1E2D3A", color:C.teal,
-                padding:"3px 10px", borderRadius:2, fontSize:10, fontWeight:700, cursor:"pointer" }}>
-                {r}
-              </span>
-            ))}
-          </div>
-        </div>
-        {(!rd.length && !rd.width) && (
-          <div style={{ background:"#1A2A1A", borderBottom:"1px solid #2A4A2A",
-            padding:"10px 24px", display:"flex", gap:12, alignItems:"center" }}>
-            <span style={{ fontSize:16 }}>⚠️</span>
-            <div style={{ fontSize:12, color:"#6AE86A", lineHeight:1.8 }}>
-              No dimensions for <strong style={{color:"#fff"}}>{firstRoom}</strong> yet.&nbsp;
-              Go to <strong style={{color:"#fff"}}>Edit → 📐 Dimensions</strong> tab,
-              select rooms and enter Length × Width × Height.
-              The 3D room will auto-update with those measurements.
-            </div>
-          </div>
-        )}
-        {/* Orbit hint */}
-        <div style={{ background:"#050D14", padding:"6px 24px", display:"flex",
-          gap:20, fontSize:10, color:"#3A5A6A", borderBottom:"1px solid #1E2D3A" }}>
-          <span>🖱 Drag to orbit</span>
-          <span>⚲ Scroll to zoom</span>
-          <span>📐 Uses dimensions from <strong style={{color:C.teal}}>Dimensions tab</strong></span>
-          <span style={{marginLeft:"auto"}}>Room: {L}m × {W}m × {H}m high = {(L*W).toFixed(1)} m²</span>
-        </div>
-        <Room3DEmbed length={L} width={W} height={H} roomType={firstRoom} rooms={rooms} roomDetails={selected.roomDetails||{}}/>
-      </div>
-    );
-  }
 
-  // ── INVOICE ───────────────────────────────────────────────────────────
-  if (view==="invoice" && selected) {
-    const d         = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
-    const invNum    = "HRI-" + String(selected.id).slice(-4).padStart(4,"0") + "-" + new Date().getFullYear();
-    const total     = Number(selected.quotation)||0;
-    const gst       = Math.round(total*0.18);
-    const grand     = total+gst;
-    const IV = {
-      sTitle:{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
-               color:C.teal,borderBottom:`1.5px solid ${C.line}`,paddingBottom:6,marginBottom:14,
-               fontFamily:"'DM Sans',sans-serif" },
-      tRow:  { display:"flex",justifyContent:"space-between",padding:"10px 14px",fontSize:13,
-               fontFamily:"'DM Sans',sans-serif" },
-      pill:  (bg,c)=>({ background:bg,color:c,padding:"3px 12px",borderRadius:2,
-                        fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",
-                        fontFamily:"'DM Sans',sans-serif" }),
-    };
-    return (
-      <div style={{ background:"#fff",minHeight:"100vh",
-                    fontFamily:"'DM Sans',system-ui,sans-serif",
-                    color:"#0F1923",paddingBottom:60 }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
-        <div className="np" style={{ background:"rgba(6,8,18,0.85)",padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
-          <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
-          <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
-          <span style={{ color:"#6b7280",fontSize:11,letterSpacing:1 }}>Tip: Save as PDF in print dialog</span>
-        </div>
-        <div style={{ maxWidth:820,margin:"0 auto",padding:"40px 48px" }}>
-          {/* Header */}
-          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:36,paddingBottom:24,borderBottom:`3px solid ${C.teal}` }}>
-            <div>
-              <div style={{ fontSize:28,fontWeight:700,color:C.red,letterSpacing:2,textTransform:"uppercase" }}>High Rise Interiors</div>
-              <div style={{ fontSize:12,color:"#6b7280",marginTop:4,lineHeight:1.8 }}>Hyderabad, Telangana, India<br/>GSTIN: [Your GST Number]</div>
-            </div>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:28,fontWeight:700,color:C.dark }}>INVOICE</div>
-              <div style={{ fontSize:13,color:"#6b7280",marginTop:6,lineHeight:1.9 }}>
-                <div><strong>Invoice No:</strong> {invNum}</div>
-                <div><strong>Date:</strong> {d}</div>
-              </div>
-            </div>
-          </div>
-          {/* Bill To */}
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:28 }}>
-            <div>
-              <div style={IV.sTitle}>Bill To</div>
-              <div style={{ fontSize:16,fontWeight:700,marginBottom:4 }}>{selected.name}</div>
-              <div style={{ fontSize:13,color:"#4A2A2A",lineHeight:1.9 }}>
-                {selected.address && <div>📍 {selected.address}</div>}
-                {selected.phone   && <div>📞 {selected.phone}</div>}
-                {selected.email   && <div>📧 {selected.email}</div>}
-              </div>
-            </div>
-            <div>
-              <div style={IV.sTitle}>Project Details</div>
-              <div style={{ fontSize:13,color:"#4A2A2A",lineHeight:1.9 }}>
-                <div><strong>Type:</strong> {selected.projectType}</div>
-                {selected.style     && <div><strong>Style:</strong> {selected.style}</div>}
-                {selected.startDate && <div><strong>Start:</strong> {selected.startDate}</div>}
-                {selected.timeline  && <div><strong>Duration:</strong> {selected.timeline}</div>}
-              </div>
-            </div>
-          </div>
-          {/* Rooms */}
-          {(selected.rooms||[]).length>0 && (
-            <div style={{ marginBottom:24 }}>
-              <div style={IV.sTitle}>Scope — Rooms Covered</div>
-              <div style={{ display:"flex",flexWrap:"wrap",gap:8 }}>{selected.rooms.map(r=><span key={r} style={IV.pill(C.tealL,C.teal)}>{r}</span>)}</div>
-            </div>
-          )}
-          {/* Line Items */}
-          <div style={{ marginBottom:28 }}>
-            <div style={IV.sTitle}>Invoice Items</div>
-            <div style={{ border:"1px solid #d1d5db",borderRadius:12,overflow:"hidden" }}>
-              <div style={{ ...IV.tRow,background:C.red,color:"#fff",fontWeight:700,fontSize:12,letterSpacing:1 }}>
-                <span style={{ flex:3 }}>Description</span><span style={{ flex:1,textAlign:"right" }}>Amount (₹)</span>
-              </div>
-              <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderBottom:"1px solid #e5e7eb" }}>
-                <span style={{ flex:3,lineHeight:1.7 }}><strong>Interior Design & Execution Work</strong><br/><span style={{ fontSize:12,color:"#6b7280" }}>{selected.projectType} — {selected.address}</span></span>
-                <span style={{ flex:1,textAlign:"right",fontWeight:600 }}>{fmt(total)||"As agreed"}</span>
-              </div>
-              {(selected.rooms||[]).map((r,i)=>(
-                <div key={i} style={{ ...IV.tRow,background:i%2===0?"#ffffff":"#f8f9fa",borderBottom:"1px solid #e5e7eb" }}>
-                  <span style={{ flex:3,fontSize:12,color:"#4A2A2A",paddingLeft:16 }}>↳ {r}</span>
-                  <span style={{ flex:1,textAlign:"right",fontSize:12,color:"#6b7280" }}>Included</span>
-                </div>
-              ))}
-              <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderTop:`1.5px solid ${C.line}` }}>
-                <span style={{ flex:3,color:"#6b7280" }}>Subtotal (Before GST)</span>
-                <span style={{ flex:1,textAlign:"right" }}>{fmt(total)||"—"}</span>
-              </div>
-              {total>0 && (
-                <div style={{ ...IV.tRow,background:"rgba(255,255,255,0.07)",borderTop:`1px solid ${C.line}` }}>
-                  <span style={{ flex:3,color:"#6b7280" }}>GST @ 18%</span>
-                  <span style={{ flex:1,textAlign:"right" }}>{fmt(gst)}</span>
-                </div>
-              )}
-              <div style={{ ...IV.tRow,background:C.red,color:"#fff" }}>
-                <span style={{ flex:3,fontWeight:700,fontSize:15 }}>Grand Total (Incl. GST)</span>
-                <span style={{ flex:1,textAlign:"right",fontWeight:700,fontSize:17 }}>{total>0?fmt(grand):fmt(total)||"As agreed"}</span>
-              </div>
-            </div>
-          </div>
-          {/* Payment Schedule */}
-          <div style={{ marginBottom:28 }}>
-            <div style={IV.sTitle}>Payment Schedule</div>
-            <div style={{ border:"1px solid #d1d5db",borderRadius:12,overflow:"hidden" }}>
-              <div style={{ ...IV.tRow,background:"#060812",color:"#fff",fontWeight:700,fontSize:11,letterSpacing:1 }}>
-                <span style={{ flex:1 }}>Phase</span><span style={{ flex:2 }}>Milestone</span>
-                <span style={{ flex:1,textAlign:"center" }}>%</span><span style={{ flex:1,textAlign:"right" }}>Amount</span>
-                <span style={{ flex:1,textAlign:"right" }}>Status</span>
-              </div>
-              {PAYMENT_PHASES.map((p,i)=>(
-                <div key={i} style={{ ...IV.tRow,background:i%2===0?"rgba(255,255,255,0.06)":"#fff",borderTop:`1px solid ${C.line}` }}>
-                  <span style={{ flex:1,fontWeight:700,color:C.red,fontSize:12 }}>{p.day}</span>
-                  <span style={{ flex:2,fontSize:12,color:"#4A2A2A" }}>{p.label}</span>
-                  <span style={{ flex:1,textAlign:"center",fontSize:12 }}>{p.pct}%</span>
-                  <span style={{ flex:1,textAlign:"right",fontWeight:600,fontSize:13 }}>{total>0?fmt(Math.round(total*p.pct/100)):"—"}</span>
-                  <span style={{ flex:1,textAlign:"right" }}><span style={i===0?IV.pill("rgba(255,159,10,0.12)","#856404"):IV.pill("rgba(255,255,255,0.08)","#9A9A9A")}>{i===0?"Due Now":"Pending"}</span></span>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Payment Terms */}
-          <div style={{ marginBottom:28 }}>
-            <div style={IV.sTitle}>Payment Terms</div>
-            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:10,padding:"16px 20px",border:"1px solid #e5e7eb",fontSize:13,lineHeight:2,color:"#4A2A2A" }}>
-              <div>• All payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
-              <div>• Work commences only after <strong>advance payment (35%)</strong> is received</div>
-              <div>• Each phase payment must be cleared before proceeding to next phase</div>
-              <div>• Delay in payment may cause equivalent delay in project execution</div>
-              <div>• GST @ 18% applicable and payable by the client as per government norms</div>
-            </div>
-          </div>
-          {/* No Refund + Disclaimers */}
-          <div style={{ marginBottom:28 }}>
-            <div style={IV.sTitle}>Terms, Conditions & Disclaimers</div>
-            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:3,padding:"16px 20px",border:"1px solid #e5e7eb",fontSize:13,lineHeight:2,color:"#4A4A2A" }}>
-              <div style={{ background:"rgba(255,255,255,0.06)",border:"1px solid #e5e7eb",borderRadius:8,padding:"10px 14px",marginBottom:12,fontSize:13,color:C.red,fontWeight:700 }}>
-                🚫 NO REFUND POLICY: All payments made are strictly non-refundable. Once payment is made and work has commenced, no refunds will be issued under any circumstances.
-              </div>
-              <div>1. <strong>Cancellation:</strong> Amounts paid till date are forfeited upon cancellation after commencement.</div>
-              <div>2. <strong>Scope Changes:</strong> Additions beyond agreed scope billed separately with written approval.</div>
-              <div>3. <strong>Material Prices:</strong> Valid for 30 days. Subject to market fluctuations.</div>
-              <div>4. <strong>Timeline:</strong> {selected.timeline||"Agreed duration"} is indicative. External delays excluded.</div>
-              <div>5. <strong>Warranty:</strong> 1-year workmanship warranty. Void if unauthorised modifications made.</div>
-              <div>6. <strong>Dispute Resolution:</strong> Exclusive jurisdiction of Hyderabad courts.</div>
-              <div>7. <strong>Force Majeure:</strong> Not liable for delays due to natural disasters or government restrictions.</div>
-            </div>
-          </div>
-          {/* Signature */}
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:32 }}>
-            <div style={{ borderTop:`2px solid ${C.dark}`,paddingTop:12 }}>
-              <div style={{ fontSize:12,color:"#6b7280",marginBottom:4 }}>Client Acceptance</div>
-              <div style={{ fontSize:14,fontWeight:700 }}>{selected.name}</div>
-              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:"#6b7280" }}>Signature / Date</div>
-            </div>
-            <div style={{ borderTop:`2px solid ${C.red}`,paddingTop:12 }}>
-              <div style={{ fontSize:12,color:"#6b7280",marginBottom:4 }}>Authorised by</div>
-              <div style={{ fontSize:14,fontWeight:700,color:C.teal,fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
-              <div style={{ fontSize:12,color:"#6b7280" }}>Hyderabad, Telangana</div>
-              <div style={{ marginTop:36,borderTop:`1px solid ${C.line}`,paddingTop:8,fontSize:11,color:"#6b7280" }}>Signature / Stamp / Date</div>
-            </div>
-          </div>
-          {/* Footer */}
-          <div style={{ borderTop:`2px solid ${C.line}`,paddingTop:16,marginTop:24 }}>
-            <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:"#6b7280",marginBottom:6 }}>
-              <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
-              <span>{invNum} | {d}</span>
-            </div>
-            <div style={{ fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",lineHeight:1.8 }}>
-              All payments are non-refundable. Confidential — intended solely for {selected.name}. Prices in INR ₹.
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── DETAIL ────────────────────────────────────────────────────────────
   if (view==="detail" && selected) return (
     <div style={{minHeight:"100vh",background:"linear-gradient(160deg,#0D1B3E 0%,#060812 45%,#1A0D2E 100%)",color:"rgba(255,255,255,0.92)",fontFamily:"Inter,-apple-system,BlinkMacSystemFont,sans-serif",position:"relative"}}>
       {/* Glow orbs */}
@@ -2813,7 +2357,7 @@ High Rise Interiors, Hyderabad`
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Client Profile</span></div>
         <div style={{ display:"flex",gap:10 }}>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("list")}>← Back</button>
-<button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("room3d")}>🧊 3D Room</button>
+
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("report")}>📄 Client Report</button>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("internal")}>🔧 Internal Report</button>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("vendor")}>🛒 Vendor Order</button>
@@ -3035,7 +2579,17 @@ High Rise Interiors, Hyderabad`
       <div style={S.hdr}>
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>Studio CRM</span></div>
         <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-          <span style={{ background:connected?"#27AE60":"#C0392B",color:"#fff",fontSize:10,padding:"3px 10px",borderRadius:20 }}>● {connected?"Connected":"Offline"}</span>
+          {/* Online/Offline status */}
+          {isOnline
+            ? <span style={{background:"rgba(48,209,88,0.15)",color:"#30D158",fontSize:10,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(48,209,88,0.3)",fontWeight:600}}>● Online</span>
+            : <span style={{background:"rgba(255,69,58,0.2)",color:"#FF453A",fontSize:10,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(255,69,58,0.4)",fontWeight:700}}>📴 Offline{pendingSync>0?` · ${pendingSync} queued`:""}</span>
+          }
+          {isOnline && pendingSync>0 && (
+            <button className="pill" onClick={syncOfflineQueue}
+              style={{background:"rgba(48,209,88,0.2)",border:"1px solid rgba(48,209,88,0.4)",color:"#30D158",fontWeight:700,fontSize:12}}>
+              ↑ Sync {pendingSync}
+            </button>
+          )}
           <span style={{ color:"rgba(255,255,255,0.6)",fontSize:11 }}>{user?.email}</span>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={fetchCustomers}>↻</button>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={exportCSV}>↓ CSV</button>
@@ -3141,7 +2695,7 @@ High Rise Interiors, Hyderabad`
       <div style={S.main}>
         {/* Tabs */}
         <div style={{ display:"flex",gap:6,marginBottom:24,flexWrap:"wrap" }}>
-          {[["personal","👤 Client"],["dimensions","📐 Dimensions"],["materials","🔧 Materials"],["quotation","💰 Quotation"],["notes","📝 Notes"],["inventory","📦 Inventory"]].map(([k,l])=>(
+          {[["personal","👤 Client"],["rooms","🏠 Rooms & Materials"],["quotation","💰 Quotation"],["notes","📝 Notes"],["inventory","📦 Inventory"]].map(([k,l])=>(
             <button key={k} style={S.tab(activeTab===k)} onClick={()=>setActiveTab(k)}>{l}</button>
           ))}
         </div>
@@ -3351,7 +2905,7 @@ Dimension rules:
                           }));
 
                           showToast(`✅ ${addedRooms.length} rooms applied — go to Dimensions tab`, "success", 5000);
-                          setTimeout(() => setActiveTab("dimensions"), 600);
+                          setTimeout(() => setActiveTab("rooms"), 600);
                         }} style={{ ...S.btn(), fontSize:12, width:"100%" }}>
                           ✓ Apply to Dimensions →
                         </button>
@@ -3367,7 +2921,7 @@ Dimension rules:
                       </div>
                     )}
                     {!form.floorPlanPending && (
-                      <button onClick={()=>setActiveTab("dimensions")}
+                      <button onClick={()=>setActiveTab("rooms")}
                         style={{ ...S.btn(), marginTop:10, fontSize:11 }}>
                         📐 Go to Dimensions →
                       </button>
@@ -3426,324 +2980,124 @@ Dimension rules:
           )}
 
           {/* ── DIMENSIONS ── */}
-          {activeTab==="dimensions" && (
+          {activeTab==="rooms" && (
             <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Select Rooms & Enter Dimensions</div>
-              <div style={{ fontSize:13, color:"rgba(255,255,255,0.5)", marginBottom:16, lineHeight:1.7 }}>
-                Select each room, enter its dimensions and upload a photo. All measurements in feet.
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Rooms — Dimensions & Materials</div>
+              <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",marginBottom:16,lineHeight:1.7}}>Select rooms, enter L×W×H. Sq ft and costs calculate automatically.</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
+                {getRooms(form).map(r=>(<button key={r} style={S.pill(form.rooms.includes(r))} onClick={()=>toggleRoom(r)}>{r}</button>))}
               </div>
-
-              {/* Room selector */}
-              <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:24 }}>
-                {getRooms(form).map(r=>(
-                  <button key={r} style={S.pill(form.rooms.includes(r))} onClick={()=>toggleRoom(r)}>{r}</button>
-                ))}
-              </div>
-
-              {/* Per-room dimension + photo cards */}
-              {form.rooms.length === 0 && (
-                <div style={{ textAlign:"center", padding:"32px", background:"rgba(255,255,255,0.05)", borderRadius:12, color:"rgba(255,255,255,0.5)", fontSize:13 }}>
-                  ☝️ Select rooms above to enter their dimensions
+              {form.rooms.length===0 && (
+                <div style={{textAlign:"center",padding:"32px",background:"rgba(255,255,255,0.05)",borderRadius:12,color:"rgba(255,255,255,0.5)",fontSize:13}}>
+                  ☝️ Select rooms above to enter dimensions and materials
                 </div>
               )}
-
-              {form.rooms.map(room => {
-                const rd = form.roomDetails?.[room] || {};
-                const setRD = (key, val) => setForm(f => ({
-                  ...f,
-                  roomDetails: { ...(f.roomDetails||{}), [room]: { ...(f.roomDetails?.[room]||{}), [key]: val } }
-                }));
-                const area = rd.length && rd.width ? (parseFloat(rd.length) * parseFloat(rd.width)).toFixed(0) : null;
-
+              {form.rooms.map(room=>{
+                const rd=form.roomDetails?.[room]||{};
+                const rm=form.roomMaterials?.[room]||{};
+                const applicableMats=ROOM_MATERIALS[room]||["plywood","laminate","ceiling","lights"];
+                const setRD=(key,val)=>setForm(f=>({...f,roomDetails:{...(f.roomDetails||{}),[room]:{...(f.roomDetails?.[room]||{}),[key]:val}}}));
+                const setRM=(mt,field,val)=>setForm(f=>({...f,roomMaterials:{...(f.roomMaterials||{}),[room]:{...(f.roomMaterials?.[room]||{}),[mt]:{...(f.roomMaterials?.[room]?.[mt]||{}),[field]:val}}}}));
+                const area=rd.length&&rd.width?(parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0):null;
+                const roomCost=applicableMats.reduce((t,mt)=>{
+                  const sel=rm[mt];if(!sel?.name)return t;
+                  const item=getCatalog(mt).find(m=>m.name===sel.name);
+                  return t+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+                },0);
                 return (
-                  <div key={room} className="glass" style={{borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
-                    {/* Room header */}
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-                      <div style={{ fontSize:15, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>🏠 {room}</div>
-                      {area && <span className="glass" style={{ color:"#FF453A", fontSize:12, fontWeight:700, padding:"3px 12px", borderRadius:20 }}>{area} sq ft</span>}
+                  <div key={room} className="glass" style={{padding:"20px",marginBottom:16}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                      <div style={{fontSize:15,fontWeight:700}}>🏠 {room}</div>
+                      {roomCost>0&&<div style={{fontSize:13,fontWeight:700,color:"#FF9F0A"}}>₹{roomCost.toLocaleString("en-IN")}</div>}
                     </div>
-
-                    {/* Dimensions */}
-                    <div style={{ display:"flex", gap:12, marginBottom:14, flexWrap:"wrap" }}>
-                      <div style={{ flex:1 }}>
-                        <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Length (ft)</label>
-                        <input className="glass-input" style={{}} type="number" value={rd.length||""} onChange={e=>setRD("length",e.target.value)} placeholder="0"/>
-                      </div>
-                      <div style={{ flex:1 }}>
-                        <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Width (ft)</label>
-                        <input className="glass-input" style={{}} type="number" value={rd.width||""} onChange={e=>setRD("width",e.target.value)} placeholder="0"/>
-                      </div>
-                      <div style={{ flex:1 }}>
-                        <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Height (ft)</label>
-                        <input className="glass-input" style={{}} type="number" value={rd.height||""} onChange={e=>setRD("height",e.target.value)} placeholder="0"/>
-                      </div>
-                    </div>
-
-                    {/* Subsections from Excel */}
-                    {ROOM_SUBSECTIONS[room] && (
-                      <div style={{ marginBottom:14 }}>
-                        <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Work Items</label>
-                        <div style={{ border:"1px solid rgba(255,255,255,0.12)", borderRadius:3, overflow:"hidden" }}>
-                          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:0,
-                            padding:"6px 12px", background:"#060812", fontSize:10, fontWeight:700,
-                            color:"#fff", letterSpacing:1.5, textTransform:"uppercase" }}>
-                            <span>Item</span><span>Type</span><span>Qty (sq ft)</span><span>Include?</span>
-                          </div>
-                          {ROOM_SUBSECTIONS[room].map((item, idx) => {
-                            const key = item.name.split(" ").join("_").toLowerCase();
-                            const sub = rd.subsections?.[key] || {};
-                            const setSub = (field, val) => setForm(f => ({
-                              ...f,
-                              roomDetails: {
-                                ...(f.roomDetails||{}),
-                                [room]: {
-                                  ...(f.roomDetails?.[room]||{}),
-                                  subsections: {
-                                    ...(f.roomDetails?.[room]?.subsections||{}),
-                                    [key]: { ...(f.roomDetails?.[room]?.subsections?.[key]||{}), [field]: val }
-                                  }
-                                }
-                              }
-                            }));
-                            return (
-                              <div key={key} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr",
-                                padding:"8px 12px", background:idx%2===0?C.white:C.smoke,
-                                borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
-                                <span style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.92)" }}>{item.name}</span>
-                                <span style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>{item.type}</span>
-                                <input style={{ ...S.input, padding:"4px 8px", fontSize:12, width:"80px" }}
-                                  type="number" value={sub.qty||""}
-                                  onChange={e=>setSub("qty",e.target.value)}
-                                  placeholder="0"/>
-                                <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer" }}>
-                                  <input type="checkbox" checked={!!sub.included}
-                                    onChange={e=>setSub("included",e.target.checked)}
-                                    style={{ width:14, height:14, accentColor:C.teal }}/>
-                                  <span style={{ fontSize:11, color:sub.included?C.teal:C.muted }}>
-                                    {sub.included?"Yes":"No"}
-                                  </span>
-                                </label>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Notes for this room */}
-                    <div style={{ marginBottom:14 }}>
-                      <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Room Notes</label>
-                      <input className="glass-input" style={{}} value={rd.notes||""} onChange={e=>setRD("notes",e.target.value)} placeholder={`Special requirements for ${room}…`}/>
-                    </div>
-
-                    {/* Photo upload */}
-                    <div>
-                      <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Room Photo(s)</label>
-                      <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"flex-start", marginTop:6 }}>
-                        {/* Photo previews */}
-                        {(rd.photos||[]).map((photo, idx) => (
-                          <div key={idx} style={{ position:"relative", width:100, height:100 }}>
-                            <img src={photo} alt={`${room} ${idx+1}`} style={{ width:100, height:100, objectFit:"cover", borderRadius:10, border:"1px solid rgba(255,255,255,0.18)" }}/>
-                            <button
-                              onClick={() => setRD("photos", (rd.photos||[]).filter((_,i)=>i!==idx))}
-                              style={{ position:"absolute", top:-6, right:-6, background:C.red, color:"#fff", border:"none", borderRadius:"50%", width:20, height:20, cursor:"pointer", fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit" }}>✕</button>
+                    <div style={{marginBottom:14}}>
+                      <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",marginBottom:10}}>📐 Dimensions</div>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr auto",gap:10,alignItems:"end"}}>
+                        {[["length","Length (ft)"],["width","Width (ft)"],["height","Height (ft)"]].map(([k,lbl])=>(
+                          <div key={k}>
+                            <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:5,display:"block",fontWeight:600}}>{lbl}</label>
+                            <input className="glass-input" type="number" min="0" step="0.1" value={rd[k]||""} onChange={e=>setRD(k,e.target.value)} placeholder="0"/>
                           </div>
                         ))}
-                        {/* Upload button */}
-                        <label style={{ width:100, height:100, border:`2px dashed ${C.border}`, borderRadius:10, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"rgba(255,255,255,0.5)", fontSize:11, letterSpacing:1, textAlign:"center", background:C.light }}>
-                          <span style={{ fontSize:24, marginBottom:4 }}>📷</span>
-                          <span>Add Photo</span>
-                          <input type="file" accept="image/*" multiple style={{ display:"none" }}
-                            onChange={e => {
-                              const files = Array.from(e.target.files);
-                              files.forEach(file => {
-                                const reader = new FileReader();
-                                reader.onload = ev => {
-                                  // Compress to max 800px, JPEG 0.72 quality before saving
-                                  const img = new Image();
-                                  img.onload = () => {
-                                    const canvas = document.createElement("canvas");
-                                    const maxW = 800;
-                                    const scale = img.width > maxW ? maxW/img.width : 1;
-                                    canvas.width  = Math.round(img.width  * scale);
-                                    canvas.height = Math.round(img.height * scale);
-                                    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-                                    const compressed = canvas.toDataURL("image/jpeg", 0.72);
-                                    setRD("photos", [...(rd.photos||[]), compressed]);
-                                  };
-                                  img.src = ev.target.result;
-                                };
-                                reader.readAsDataURL(file);
-                              });
-                              e.target.value = "";
-                            }}
-                          />
-                        </label>
+                        <div>
+                          {area
+                            ?<div style={{background:"rgba(10,132,255,0.2)",border:"1px solid rgba(10,132,255,0.4)",borderRadius:10,padding:"10px 14px",textAlign:"center",minWidth:90}}>
+                              <div style={{fontSize:18,fontWeight:800,color:"#0A84FF"}}>{parseInt(area).toLocaleString()}</div>
+                              <div style={{fontSize:9,color:"rgba(10,132,255,0.7)",letterSpacing:1,fontWeight:600}}>SQ FT</div>
+                             </div>
+                            :<div style={{background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"10px 14px",textAlign:"center",minWidth:90}}>
+                              <div style={{fontSize:12,color:"rgba(255,255,255,0.2)"}}>—</div>
+                              <div style={{fontSize:9,color:"rgba(255,255,255,0.2)",letterSpacing:1}}>SQ FT</div>
+                             </div>
+                          }
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-
-              {/* Total summary */}
-              {form.rooms.length > 0 && (
-                <div className="glass" style={{ borderRadius:12, padding:"16px 20px", border:"1px solid rgba(255,255,255,0.12)", marginTop:8 }}>
-                  <div style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:10 }}>Total Summary</div>
-                  <div style={{ display:"flex", gap:32, flexWrap:"wrap" }}>
-                    <div><span style={{ color:"rgba(255,255,255,0.5)", fontSize:13 }}>Rooms: </span><strong>{form.rooms.length}</strong></div>
-                    {(() => {
-                      const totalArea = form.rooms.reduce((sum, r) => {
-                        const rd = form.roomDetails?.[r] || {};
-                        return sum + (rd.length && rd.width ? parseFloat(rd.length)*parseFloat(rd.width) : 0);
-                      }, 0);
-                      return totalArea > 0 ? <div><span style={{ color:"rgba(255,255,255,0.5)", fontSize:13 }}>Total Area: </span><strong>{totalArea.toFixed(0)} sq ft</strong></div> : null;
-                    })()}
-                    {(() => {
-                      const photos = form.rooms.reduce((sum, r) => sum + ((form.roomDetails?.[r]?.photos)||[]).length, 0);
-                      return photos > 0 ? <div><span style={{ color:"rgba(255,255,255,0.5)", fontSize:13 }}>Photos: </span><strong>{photos} uploaded</strong></div> : null;
-                    })()}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── MATERIALS ── */}
-          {activeTab==="materials" && (
-            <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Room-wise Material Selection</div>
-              {form.rooms.length === 0 ? (
-                <div style={{ textAlign:"center", padding:"32px", background:"rgba(255,255,255,0.05)", borderRadius:12, color:"rgba(255,255,255,0.5)", fontSize:13 }}>
-                  ☝️ Please select rooms in the Dimensions tab first
-                </div>
-              ) : (
-                <>
-                  {form.rooms.map(room => {
-                    const applicableMats = ROOM_MATERIALS[room] || ["plywood","laminate","ceiling","lights"];
-                    const rm = form.roomMaterials?.[room] || {};
-                    const setRM = (matType, field, val) => setForm(f => ({
-                      ...f,
-                      roomMaterials: {
-                        ...(f.roomMaterials||{}),
-                        [room]: {
-                          ...(f.roomMaterials?.[room]||{}),
-                          [matType]: { ...(f.roomMaterials?.[room]?.[matType]||{}), [field]: val }
-                        }
-                      }
-                    }));
-
-                    // Calculate room material cost
-                    const roomCost = applicableMats.reduce((total, matType) => {
-                      const sel = rm[matType];
-                      if (!sel?.name) return total;
-                      const item = getCatalog(matType).find(m=>m.name===sel.name);
-                      if (!item) return total;
-                      const qty = parseFloat(sel.qty || 0);
-                      return total + (qty * item.price);
-                    }, 0);
-
-                    return (
-                      <div key={room} className="glass" style={{borderRadius:14, padding:"20px 24px", marginBottom:16, boxShadow:"0 2px 8px rgba(139,26,26,0.05)" }}>
-                        {/* Room header */}
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, paddingBottom:12, borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
-                          <div style={{ fontSize:15, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>🏠 {room}</div>
-                          {roomCost > 0 && <span style={{ background:C.red, color:"#fff", fontSize:13, fontWeight:700, padding:"4px 14px", borderRadius:20 }}>Est. {fmt(Math.round(roomCost))}</span>}
-                        </div>
-
-                        {/* Material rows */}
-                        {applicableMats.map(matType => {
-                          // Hardware has sub-categories (channels/hinges)
-                          const items = matType==="hardware"
-                            ? [...(MATERIAL_CATALOG.hardware.channels||[]), ...(MATERIAL_CATALOG.hardware.hinges||[])]
-                            : getCatalog(matType);
-                          const sel = rm[matType] || {};
-                          const selectedItem = items.find(m => m.name === sel.name);
-                          const lineTotal = selectedItem && sel.qty ? Math.round(parseFloat(sel.qty) * selectedItem.price) : null;
-
+                    <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",marginBottom:14}}/>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",marginBottom:10}}>🔧 Materials</div>
+                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                        {applicableMats.map(mt=>{
+                          const catalog=getCatalog(mt);
+                          const sel=rm[mt]||{};
+                          const item=catalog.find(m=>m.name===sel.name);
+                          const autoQty=area&&item?(mt==="hardware"||mt==="handles"?null:mt==="lights"?Math.ceil(parseFloat(area)/20):Math.ceil(parseFloat(area))):null;
+                          const linePrice=item&&sel.qty?parseFloat(sel.qty)*item.price:0;
                           return (
-                            <div key={matType} style={{ marginBottom:14, background:"rgba(255,255,255,0.07)", borderRadius:10, padding:"12px 16px", border:"1px solid rgba(255,255,255,0.12)" }}>
-                              <div style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:10, fontWeight:700 }}>{MATERIAL_LABELS[matType]}</div>
-                              <div style={{ display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end" }}>
-                                {/* Material selector */}
-                                <div style={{ flex:2 }}>
-                                  <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Brand / Type</label>
-                                  <select className="glass-input" style={{}} value={sel.name||""} onChange={e => setRM(matType, "name", e.target.value)}>
-                                    <option value="">Select {MATERIAL_LABELS[matType]}</option>
-                                    {matType==="hardware" ? (
-                                      <>
-                                        <optgroup label="── Drawer Channels & Runners ──">
-                                          {(MATERIAL_CATALOG.hardware.channels||[]).map(m=>(
-                                            <option key={m.name} value={m.name}>{m.name} — ₹{m.price}/{m.unit}</option>
-                                          ))}
-                                        </optgroup>
-                                        <optgroup label="── Hinges & Accessories ──">
-                                          {(MATERIAL_CATALOG.hardware.hinges||[]).map(m=>(
-                                            <option key={m.name} value={m.name}>{m.name} — ₹{m.price}/{m.unit}</option>
-                                          ))}
-                                        </optgroup>
-                                      </>
-                                    ) : items.map(m => (
-                                      <option key={m.name} value={m.name}>{m.name} — ₹{m.price}/{m.unit}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                {/* Quantity */}
-                                <div style={{ flex:1 }}>
-                                  <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Qty ({selectedItem?.unit||"unit"})</label>
-                                  <input className="glass-input" style={{}} type="number" value={sel.qty||""} onChange={e => setRM(matType, "qty", e.target.value)} placeholder="0"/>
-                                </div>
-                                {/* Rate display */}
-                                <div style={{ flex:1 }}>
-                                  <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Rate</label>
-                                  <div style={{ ...S.input, background:"rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.5)", cursor:"default" }}>
-                                    {selectedItem ? `₹${selectedItem.price}/${selectedItem.unit}` : "—"}
-                                  </div>
-                                </div>
-                                {/* Line total */}
-                                <div style={{ flex:1 }}>
-                                  <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Total</label>
-                                  <div style={{ ...S.input, background:lineTotal?C.light:"#F5F5F5", color:lineTotal?C.red:C.muted, fontWeight:700, cursor:"default" }}>
-                                    {lineTotal ? fmt(lineTotal) : "—"}
-                                  </div>
-                                </div>
+                            <div key={mt} style={{display:"grid",gridTemplateColumns:"110px 1fr 80px 70px 90px",gap:8,alignItems:"center",background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 12px"}}>
+                              <div style={{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.5)",letterSpacing:1,textTransform:"uppercase"}}>{MATERIAL_LABELS[mt]||mt}</div>
+                              <select className="glass-input" style={{fontSize:12,padding:"6px 10px"}}
+                                value={sel.name||""}
+                                onChange={e=>{
+                                  const chosen=getCatalog(mt).find(m=>m.name===e.target.value);
+                                  setRM(mt,"name",e.target.value);
+                                  if(autoQty&&!sel.qty)setRM(mt,"qty",String(autoQty));
+                                  if(chosen?.unit)setRM(mt,"unit",chosen.unit);
+                                }}>
+                                <option value="">— select —</option>
+                                {catalog.map(m=><option key={m.name} value={m.name}>{m.name}{m.price?` (₹${m.price}/${m.unit||"unit"})`:""}</option>)}
+                              </select>
+                              <input className="glass-input" type="number" min="0" style={{fontSize:12,padding:"6px 8px",textAlign:"center"}} placeholder="Qty" value={sel.qty||""} onChange={e=>setRM(mt,"qty",e.target.value)}/>
+                              <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",textAlign:"center"}}>
+                                {item?.unit||"—"}{autoQty&&!sel.qty&&<div style={{fontSize:9,color:"rgba(10,132,255,0.6)"}}>~{autoQty}</div>}
+                              </div>
+                              <div style={{fontSize:12,fontWeight:700,color:linePrice>0?"#FF9F0A":"rgba(255,255,255,0.2)",textAlign:"right"}}>
+                                {linePrice>0?`₹${linePrice.toLocaleString("en-IN")}`:"—"}
                               </div>
                             </div>
                           );
                         })}
                       </div>
-                    );
-                  })}
-
-                  {/* Grand total across all rooms */}
-                  {(() => {
-                    const grandTotal = form.rooms.reduce((total, room) => {
-                      const applicableMats = ROOM_MATERIALS[room] || [];
-                      const rm = form.roomMaterials?.[room] || {};
-                      return total + applicableMats.reduce((rt, matType) => {
-                        const sel = rm[matType];
-                        if (!sel?.name) return rt;
-                        const item = getCatalog(matType).find(m=>m.name===sel.name);
-                        if (!item) return rt;
-                        return rt + (parseFloat(sel.qty||0) * item.price);
-                      }, 0);
-                    }, 0);
-
-                    return grandTotal > 0 ? (
-                      <div style={{ background:C.red, borderRadius:14, padding:"20px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <div>
-                          <div style={{ color:"#fff", fontSize:12, letterSpacing:2, textTransform:"uppercase" }}>Estimated Material Cost</div>
-                          <div style={{ color:"rgba(191,90,242,0.12)", fontSize:11, marginTop:4 }}>Based on selected materials & quantities</div>
-                        </div>
-                        <div style={{ color:"#fff", fontSize:26, fontWeight:700 }}>{fmt(Math.round(grandTotal))}</div>
+                    </div>
+                    {roomCost>0&&(
+                      <div style={{marginTop:12,borderTop:"1px solid rgba(255,255,255,0.08)",paddingTop:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <span style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontWeight:600,letterSpacing:1,textTransform:"uppercase"}}>Room Total</span>
+                        <span style={{fontSize:16,fontWeight:800,color:"#FF9F0A"}}>₹{roomCost.toLocaleString("en-IN")}</span>
                       </div>
-                    ) : null;
-                  })()}
-                </>
-              )}
+                    )}
+                  </div>
+                );
+              })}
+              {(()=>{
+                const grand=form.rooms.reduce((t,room)=>{
+                  const mats=ROOM_MATERIALS[room]||["plywood","laminate","ceiling","lights"];
+                  const rm=form.roomMaterials?.[room]||{};
+                  return t+mats.reduce((rt,mt)=>{
+                    const sel=rm[mt];if(!sel?.name)return rt;
+                    const item=getCatalog(mt).find(m=>m.name===sel.name);
+                    return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
+                  },0);
+                },0);
+                return form.rooms.length>0&&grand>0?(
+                  <div className="glass" style={{padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,69,58,0.1)",borderColor:"rgba(255,69,58,0.3)"}}>
+                    <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.7)"}}>Total Material Cost — All Rooms</span>
+                    <span style={{fontSize:22,fontWeight:800,color:"#FF453A"}}>₹{grand.toLocaleString("en-IN")}</span>
+                  </div>
+                ):null;
+              })()}
             </div>
           )}
 
-          {/* ── QUOTATION ── */}
           {activeTab==="quotation" && (
             <div>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>{getDocTerm(form.status)} (INR ₹)</div>
@@ -4225,4 +3579,5 @@ Dimension rules:
       </div>
     </div>
   );
+
 }
