@@ -19,28 +19,61 @@ const TIMELINES = ["30 Days","45 Days","60 Days","75 Days","90 Days","120 Days",
 // Each phase has: id, name, color, icon, depends (phase ids that must start first),
 // defaultStart (day offset from project start), defaultDuration (days)
 // Work types from quotation: Box, Frame, Ceiling, Kitchen, Wardrobe, Bed, Panel, Tiles, Granite, Mirror, Drawer, Service, Transport
+// PROJECT_PHASES — stored as % of total duration so they scale to 30/45/60/90 days
+// startPct: when phase begins (0–100%), durPct: how long it runs as % of total
+// payBefore: true = payment due BEFORE this phase starts
 const PROJECT_PHASES = [
-  { id:"design",    name:"Design & Procurement",    icon:"📐", color:"#0A84FF", day:1,  dur:10,
+  { id:"design",    name:"Design & Procurement",    icon:"📐", color:"#0A84FF",
+    startPct:0,  durPct:17,
     desc:"Design freeze, material selection, orders placed for plywood/laminates/hardware" },
-  { id:"civil",     name:"Civil & Prep Work",        icon:"🏗", color:"#FF9F0A", day:8,  dur:8,
+  { id:"civil",     name:"Civil & Prep Work",        icon:"🏗", color:"#FF9F0A",
+    startPct:13, durPct:13,
     desc:"Electrical & plumbing rough-in, wall prep, tile hacking, waterproofing" },
-  { id:"framework", name:"Box & Frame Work",         icon:"📦", color:"#BF5AF2", day:12, dur:17,
+  { id:"framework", name:"Box & Frame Work",         icon:"📦", color:"#BF5AF2",
+    startPct:20, durPct:28,
     desc:"All carpentry: entrance, TV unit, crockery units, wardrobes, kitchen cabinets, study tables" },
-  { id:"deco",      name:"Deco & Finishing",         icon:"✨", color:"#FF6B9D", day:25, dur:16,
+  { id:"deco",      name:"Deco & Finishing",         icon:"✨", color:"#FF6B9D",
+    startPct:42, durPct:26,
     desc:"Laminate pasting, profile doors, louvers, panels, acrylic/PVD work, dressing walls" },
-  { id:"ceiling",   name:"False Ceiling & Lighting", icon:"💡", color:"#30D158", day:30, dur:13,
+  { id:"ceiling",   name:"False Ceiling & Lighting", icon:"💡", color:"#30D158",
+    startPct:50, durPct:22,
     desc:"Gypsum board fixing, cove lighting, spot lights, POP design, ceiling painting" },
-  { id:"tiles",     name:"Granite & Tiles",          icon:"🪨", color:"#FF9F0A", day:35, dur:11,
+  { id:"tiles",     name:"Granite & Tiles",          icon:"🪨", color:"#FF9F0A",
+    startPct:58, durPct:18,
     desc:"Kitchen granite, backslash tiles, pooja tiles, bathroom tiles, entrance tiles" },
-  { id:"hardware",  name:"Hardware & Fittings",      icon:"🔧", color:"#8E8E93", day:40, dur:11,
+  { id:"hardware",  name:"Hardware & Fittings",      icon:"🔧", color:"#8E8E93",
+    startPct:66, durPct:18,
     desc:"Hinges, hydraulics, channels, sliding tracks, handles, sink, bathroom accessories" },
-  { id:"painting",  name:"Painting",                 icon:"🎨", color:"#FF453A", day:42, dur:11,
+  { id:"painting",  name:"Painting",                 icon:"🎨", color:"#FF453A",
+    startPct:70, durPct:18,
     desc:"Putty + primer, 2 coats paint all rooms, touch-ups on carpentry" },
-  { id:"finishing", name:"Final Fittings",            icon:"⚡", color:"#0A84FF", day:50, dur:8,
+  { id:"finishing", name:"Final Fittings",            icon:"⚡", color:"#0A84FF",
+    startPct:83, durPct:13,
     desc:"Lights/fans, switch plates, cushion fitting, mirrors, bathroom lighting & exhaust" },
-  { id:"handover",  name:"Snag & Handover",          icon:"🏠", color:"#30D158", day:57, dur:4,
+  { id:"handover",  name:"Snag & Handover",          icon:"🏠", color:"#30D158",
+    startPct:95, durPct:5,
     desc:"Client walkthrough, punch list fixes, deep cleaning, handover" },
 ];
+
+// Compute actual days from % given total duration
+const phaseDay = (phasePct, total) => Math.max(1, Math.round(phasePct/100 * total) + 1);
+const phaseDur = (durPct, total)   => Math.max(1, Math.round(durPct/100 * total));
+
+// Payment schedule — payment due BEFORE each phase starts
+// Tied to project phases so days scale automatically
+const buildPaymentSchedule = (total, quotation) => {
+  const q = parseFloat(quotation) || 0;
+  return [
+    { pct:40, label:"Advance",    when:"Before project starts (Day 1)",
+      phaseRef:"design",   day:1 },
+    { pct:35, label:"Phase 2",    when:"After box framework complete — before deco",
+      phaseRef:"deco",     day:phaseDay(42, total) },
+    { pct:20, label:"Phase 3",    when:"After wardrobes & ceiling — before finishing",
+      phaseRef:"finishing", day:phaseDay(83, total) },
+    { pct:5,  label:"Handover",   when:"On the day of handover",
+      phaseRef:"handover",  day:phaseDay(95, total) },
+  ].map(p => ({ ...p, amount: Math.round(q * p.pct / 100) }));
+};
 
 // ── Property type → budget + rooms defaults ───────────────────────────
 const PROPERTY_TYPES = ["Studio","1 BHK","2 BHK","3 BHK","4 BHK","Villa","Independent House","Commercial","Office"];
@@ -597,12 +630,7 @@ const AREA_TYPES = new Set(["Box","Frame","Open Box","Panel","Profile Door","Lou
   "Tiles","Granite","Mirror","POP Design"]);
 
 
-const PAYMENT_PHASES = [
-  { day:"Day 1",  label:"Advance (before project starts)",          pct:35 },
-  { day:"Day 15", label:"Phase 2 (After box frame work)",            pct:35 },
-  { day:"Day 25", label:"Phase 3 (After wardrobes, before deco)",   pct:20 },
-  { day:"Day 45", label:"Phase 4 (On handover day)",                pct:10 },
-];
+// PAYMENT_PHASES replaced by buildPaymentSchedule(totalDays, quotationAmount) — see above
 
 const EMPTY = {
   id:null, name:"", email:"", phone:"", address:"",
@@ -1202,6 +1230,58 @@ Hyderabad`);
             ))}
           </div>
         </div>
+
+        {/* ── Project Timeline ── */}
+        <div style={{ marginBottom:32 }}>
+          <div style={RS.sTitle}>Project Timeline</div>
+          {(()=>{
+            const total = parseInt(selected.timeline)||60;
+            const start = selected.startDate ? new Date(selected.startDate) : null;
+            const plan  = selected.projectPlan||{};
+            const getD  = (pct) => Math.max(1,Math.round(pct/100*total)+1);
+            const getDur= (pct) => Math.max(1,Math.round(pct/100*total));
+            const fmtDate = (dayOff) => {
+              if(!start) return `Day ${dayOff}`;
+              const d=new Date(start); d.setDate(d.getDate()+dayOff-1);
+              return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+            };
+            const STATUS_DOT = {"Not Started":"#d1d5db","In Progress":"#0A84FF","Completed":"#30D158","On Hold":"#FF453A"};
+            return (
+              <div>
+                {start&&<div style={{fontSize:12,color:"#6b7280",marginBottom:12}}>Project Duration: {total} working days · Start: {start.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</div>}
+                {PROJECT_PHASES.map((ph,i)=>{
+                  const st  = plan[ph.id]?.status||"Not Started";
+                  const sd  = getD(ph.startPct);
+                  const dur = getDur(ph.durPct);
+                  const barL= (ph.startPct)+'%';
+                  const barW= (ph.durPct)+'%';
+                  return (
+                    <div key={ph.id} style={{display:"grid",gridTemplateColumns:"20px 180px 1fr 100px",gap:8,alignItems:"center",marginBottom:6}}>
+                      <span style={{fontSize:13}}>{ph.icon}</span>
+                      <span style={{fontSize:12,fontWeight:600,color:"#374151"}}>{ph.name}</span>
+                      <div style={{position:"relative",height:10,background:"#f3f4f6",borderRadius:5,overflow:"hidden"}}>
+                        <div style={{position:"absolute",left:barL,width:barW,height:"100%",borderRadius:5,
+                          background:st==="Completed"?"#30D158":st==="In Progress"?ph.color:"#d1d5db"}}/>
+                      </div>
+                      <span style={{fontSize:10,color:"#6b7280",textAlign:"right"}}>{fmtDate(sd)} → {fmtDate(sd+dur-1)}</span>
+                    </div>
+                  );
+                })}
+                {/* Payment milestones */}
+                <div style={{marginTop:16,padding:"12px 16px",background:"#f9fafb",borderRadius:6,border:"1px solid #e5e7eb"}}>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#6b7280",marginBottom:8}}>Payment Schedule</div>
+                  {buildPaymentSchedule(total, selected.quotation).map((p,i)=>(
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4,color:"#374151"}}>
+                      <span><strong>{p.label} ({p.pct}%)</strong> — {p.when}</span>
+                      <span style={{fontWeight:700,color:"#0F1923"}}>{p.amount>0?`₹${p.amount.toLocaleString("en-IN")}`:""}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
         {/* Scope — Room wise Products & Materials */}
         <div style={{ marginBottom:32 }}>
           <div style={RS.sTitle}>Scope of Work</div>
@@ -1751,6 +1831,61 @@ Hyderabad, Telangana`
     showToast("📧 Mail app opened — remember to attach the Client Report PDF", "success");
   };
 
+  // ── Welcome Email — sent on new client creation ─────────────────────
+  const welcomeEmail = (client) => {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+    const timeStr = now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+    const prop    = client.propertyType || "home";
+    const budget  = client.budget  || "as discussed";
+    const style   = client.style   || "your preferred style";
+    const addr    = client.address || "your property";
+
+    const subject = `Welcome to High Rise Interiors, ${client.name.split(" ")[0]}! 🏠`;
+    const body    =
+`Dear ${client.name},
+
+Thank you so much for visiting High Rise Interiors and for the wonderful conversation we had today (${dateStr} at ${timeStr}). It was truly a pleasure getting to know you and understanding your vision for your ${prop}.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHY INTERIORS MATTER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Your home is more than four walls — it is the backdrop to every memory your family will ever create. A well-designed interior doesn't just look beautiful; it shapes how you feel when you wake up, how you unwind after a long day, and how your guests feel the moment they walk through the door. Studies show that people who live in thoughtfully designed spaces report higher productivity, better sleep, and deeper happiness. This is not a luxury — it is an investment in your quality of life.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUR COMMITMENT TO YOU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+At High Rise Interiors, we have one promise: to treat your home exactly as we would treat our own. Every nail, every panel, every coat of paint is executed with care, precision, and pride. We do not cut corners — we cut timelines. Our team of craftsmen, designers, and project managers work as a single unit so that your ${prop} is delivered on time, within budget, and beyond expectation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT WE DISCUSSED TODAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Property     : ${addr}
+Type         : ${prop}
+Style        : ${style}
+Budget Range : ${budget}
+${client.startDate ? "Expected Start : "+client.startDate : "Start Date    : To be confirmed"}
+
+We are excited about the possibilities for your space and will be preparing a detailed scope of work and quotation for your review.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEXT STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Our design consultant will reach out within 24 hours to schedule a site visit
+2. We will prepare a detailed quotation within 3 working days
+3. Once approved, we will share your personal project timeline
+
+Please feel free to reach out anytime at +91-6304980890. We are here for you every step of the way.
+
+Once again, thank you for trusting us with your dream home. We can't wait to create something extraordinary together.
+
+Warmly,
+The High Rise Interiors Team
+Hyderabad · +91-6304980890`;
+
+    window.location.href = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   // ── Status Change Email Agent ─────────────────────────────────────────
   // Triggered automatically whenever client status changes
   const statusEmailAgent = (client, oldStatus, newStatus) => {
@@ -2074,9 +2209,15 @@ High Rise Interiors, Hyderabad`
         showToast("✓ Client updated", "success");
 
         if (statusChanged) {
+          // Auto-generate referral code when going Active
+          if (formToSave.status === "Active" && !formToSave.referralCode) {
+            const code = `HRI-${String(formToSave.id||"").slice(-4).padStart(4,"0")}-${Math.random().toString(36).slice(2,5).toUpperCase()}`;
+            await safeCall(t => sb(`${TABLE}?id=eq.${formToSave.id}`, "PATCH", { referral_code: code }, t));
+            formToSave.referralCode = code;
+            showToast(`🎟 Referral code generated: ${code}`, "success", 4000);
+          }
           showToast(`🔄 Status → ${formToSave.status} · Preparing email…`, "info");
           setView("list");
-          // Small delay to let navigation settle before opening mail
           setTimeout(() => {
             statusEmailAgent(formToSave, existingClient.status, formToSave.status);
           }, 800);
@@ -2096,10 +2237,32 @@ High Rise Interiors, Hyderabad`
         showToast("✓ Client saved", "success");
         setView("list");
 
+        // ── Auto-populate notes with meeting summary ──────────────
+        const now = new Date();
+        const meetingNote = [
+          `📅 ${now.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})} · ${now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}`,
+          `👤 Client: ${savedClient.name}${savedClient.phone?" · "+savedClient.phone:""}`,
+          savedClient.address ? `📍 Property: ${savedClient.address}` : "",
+          savedClient.propertyType ? `🏠 Type: ${savedClient.propertyType}` : "",
+          savedClient.budget ? `💰 Budget discussed: ${savedClient.budget}` : "",
+          savedClient.style ? `🎨 Style preference: ${savedClient.style}` : "",
+          savedClient.startDate ? `📆 Expected start: ${savedClient.startDate}` : "",
+          "",
+          "📝 Discussion Summary:",
+          `• Client visited / called to discuss interior work for their ${savedClient.propertyType||"property"}`,
+          `• Initial brief shared. Quotation to be prepared.`,
+          `• Next step: Site visit & design consultation`,
+        ].filter(Boolean).join("\n");
+
+        if (!savedClient.notes) {
+          await safeCall(t => sb(`${TABLE}?id=eq.${savedClient.id}`, "PATCH", { notes: meetingNote }, t));
+        }
+
+        // ── Welcome email ──────────────────────────────────────────
         if (formToSave.email) {
           showToast("📧 Composing welcome email…", "info");
           setTimeout(() => {
-            statusEmailAgent(savedClient, "New", "Lead");
+            welcomeEmail(savedClient);
           }, 600);
         }
       }
@@ -2251,51 +2414,80 @@ High Rise Interiors, Hyderabad`
             ))}
           </div>
 
-          {/* Rooms — Products, Materials, Sq Ft & Cost */}
+
+          {/* Project Timeline */}
+          <div style={IR.sec}>Project Timeline</div>
+          {(()=>{
+            const total = parseInt(selected.timeline)||60;
+            const start = selected.startDate ? new Date(selected.startDate) : null;
+            const plan  = selected.projectPlan||{};
+            const getD  = (pct) => Math.max(1,Math.round(pct/100*total)+1);
+            const getDur= (pct) => Math.max(1,Math.round(pct/100*total));
+            const fmtDate = (dayOff) => {
+              if(!start) return `Day ${dayOff}`;
+              const d=new Date(start); d.setDate(d.getDate()+dayOff-1);
+              return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+            };
+            return (
+              <div>
+                {start&&<div style={{fontSize:11,color:C.grey,marginBottom:8}}>Duration: {total} days · Start: {start.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</div>}
+                <div style={{border:"1px solid #e5e7eb",borderRadius:3,overflow:"hidden",marginBottom:12}}>
+                  <div style={{display:"grid",gridTemplateColumns:"24px 1fr 2fr 80px 80px",gap:0}}>
+                    {["","Phase","Description","Start","End"].map((h,i)=>(<div key={i} style={IR.th}>{h}</div>))}
+                  </div>
+                  {PROJECT_PHASES.map((ph,i)=>{
+                    const st=plan[ph.id]?.status||"Not Started";
+                    const sd=getD(ph.startPct); const dur=getDur(ph.durPct);
+                    return (
+                      <div key={ph.id} style={{display:"grid",gridTemplateColumns:"24px 1fr 2fr 80px 80px",background:i%2===0?"#fff":"#f9fafb",borderTop:"1px solid #f3f4f6"}}>
+                        <div style={{...IR.td(i),fontSize:14,textAlign:"center"}}>{ph.icon}</div>
+                        <div style={IR.td(i)}><strong>{ph.name}</strong>{st!=="Not Started"&&<span style={{...IR.tag(st==="Completed"?C.green:st==="In Progress"?C.teal:C.grey),marginLeft:4,fontSize:8}}>{st}</span>}</div>
+                        <div style={{...IR.td(i),fontSize:10,color:C.grey}}>{ph.desc}</div>
+                        <div style={IR.td(i)}>{fmtDate(sd)}</div>
+                        <div style={IR.td(i)}>{fmtDate(sd+dur-1)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Payment schedule */}
+                <div style={{border:"1px solid #e5e7eb",borderRadius:3,overflow:"hidden"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:0}}>
+                    {["Payment","When","Day","Amount"].map(h=>(<div key={h} style={IR.th}>{h}</div>))}
+                  </div>
+                  {buildPaymentSchedule(total, selected.quotation).map((p,i)=>(
+                    <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",background:i%2===0?"#fff":"#f9fafb",borderTop:"1px solid #f3f4f6"}}>
+                      <div style={IR.td(i)}><strong>{p.label} — {p.pct}%</strong></div>
+                      <div style={{...IR.td(i),fontSize:10,color:C.grey}}>{p.when}</div>
+                      <div style={IR.td(i)}>Day {p.day}</div>
+                      <div style={{...IR.td(i),fontWeight:700}}>{p.amount>0?`₹${p.amount.toLocaleString("en-IN")}`:""}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Rooms — Products, Materials & Sq Ft (no pricing) */}
           <div style={IR.sec}>Scope of Work — Products & Materials</div>
           {(selected.rooms||[]).map(r => {
             const works = (selected.roomWork?.[r]||[]).filter(w=>w.product);
             if (!works.length) return null;
-            const roomTotal = works.reduce((t,w)=>{
-              if(w.price) return t+parseFloat(w.price);
-              let cat = getCatalog(w.matType||"plywood");
-              let itm = cat.find(m=>m.name===w.brand);
-              if (!itm && w.brand) {
-                for (const mt of ["plywood","laminate","hardware","glass","ceiling","lights","handles"]) {
-                  const found = getCatalog(mt).find(m=>m.name===w.brand);
-                  if (found) { itm=found; break; }
-                }
-              }
-              if(!itm) return t;
-              const sqft = w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):0;
-              const qty  = QTY_TYPES.has(w.type)?parseFloat(w.qty)||1:sqft;
-              return t+(qty*itm.price);
-            },0);
             return (
               <div key={r} style={{ marginBottom:14, border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr 1fr", background:"#1e293b", padding:"8px 12px" }}>
+                {/* Room header */}
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr", background:"#1e293b", padding:"8px 12px" }}>
                   <div style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {r}</div>
-                  {["Type","H × W","Sq Ft","Material","Amount"].map(h=>(
+                  {["Type","H × W","Sq Ft / Qty","Material"].map(h=>(
                     <div key={h} style={{ color:"rgba(255,255,255,0.6)", fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", textAlign:"center" }}>{h}</div>
                   ))}
                 </div>
+                {/* Work item rows */}
                 {works.map((w,wi)=>{
-                  // Try matType first, then search all catalogs for the brand
-                  let catalog = getCatalog(w.matType||"plywood");
-                  let item    = catalog.find(m=>m.name===w.brand);
-                  if (!item && w.brand) {
-                    for (const mt of ["plywood","laminate","hardware","glass","ceiling","lights","handles"]) {
-                      const c = getCatalog(mt);
-                      const found = c.find(m=>m.name===w.brand);
-                      if (found) { item = found; break; }
-                    }
-                  }
-                  const sqft     = w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):null;
-                  const isQty    = QTY_TYPES.has(w.type);
-                  const qty      = isQty?parseFloat(w.qty)||1:sqft||0;
-                  const lineAmt  = w.price?parseFloat(w.price):(item&&qty?qty*item.price:0);
+                  const sqft  = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : null;
+                  const isQty = QTY_TYPES.has(w.type);
+                  const qtyDisplay = isQty ? `${w.qty||1} units` : sqft ? `${sqft.toFixed(1)} sq ft` : "—";
                   return (
-                    <div key={wi} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr 1fr",
+                    <div key={wi} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr",
                       padding:"8px 12px", borderTop:"1px solid #f3f4f6",
                       background:wi%2===0?"#fff":"#f9fafb", alignItems:"center" }}>
                       <div>
@@ -2304,49 +2496,16 @@ High Rise Interiors, Hyderabad`
                       </div>
                       <div style={{ fontSize:11, color:"#6b7280", textAlign:"center" }}>{w.type}</div>
                       <div style={{ fontSize:11, color:"#374151", textAlign:"center" }}>
-                        {w.height&&w.width?`${w.height}×${w.width}`:(isQty?`qty: ${w.qty||1}`:"—")}
+                        {w.height&&w.width ? `${w.height}×${w.width}` : (isQty?`qty: ${w.qty||1}`:"—")}
                       </div>
-                      <div style={{ fontSize:12, fontWeight:700, color:"#0A84FF", textAlign:"center" }}>
-                        {isQty?`${qty} units`:(sqft?`${sqft.toFixed(1)} sq ft`:"—")}
-                      </div>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#0A84FF", textAlign:"center" }}>{qtyDisplay}</div>
                       <div style={{ fontSize:11, color:"#374151", textAlign:"center" }}>{w.brand||"—"}</div>
-                      <div style={{ fontSize:12, fontWeight:700, textAlign:"right", color:lineAmt>0?"#0F1923":"#9ca3af" }}>
-                        {lineAmt>0?`₹${Math.round(lineAmt).toLocaleString("en-IN")}`:"—"}
-                      </div>
                     </div>
                   );
                 })}
-                {roomTotal>0&&(
-                  <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr 1fr",
-                    padding:"8px 12px", background:"#f0f9ff", borderTop:"2px solid #bae6fd" }}>
-                    <div style={{ fontWeight:700, fontSize:12, color:"#0369a1", gridColumn:"1/6" }}>Room Total</div>
-                    <div style={{ fontWeight:800, fontSize:13, color:"#0369a1", textAlign:"right" }}>₹{Math.round(roomTotal).toLocaleString("en-IN")}</div>
-                  </div>
-                )}
               </div>
             );
           })}
-          {/* Grand total across all rooms */}
-          {(()=>{
-            const grand = Object.values(selected.roomWork||{}).reduce((t,works)=>
-              t+(works||[]).reduce((rt,w)=>{
-                if(w.price) return rt+parseFloat(w.price);
-                const catalog=getCatalog(w.matType||"plywood");
-                const item=catalog.find(m=>m.name===w.brand);
-                if(!item) return rt;
-                const sqft=w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):0;
-                const qty=QTY_TYPES.has(w.type)?parseFloat(w.qty)||1:sqft;
-                return rt+(qty*item.price);
-              },0)
-            ,0);
-            return grand>0?(
-              <div style={{ display:"flex", justifyContent:"space-between", padding:"10px 16px",
-                background:"#0F1923", borderRadius:3, marginBottom:14 }}>
-                <span style={{ fontWeight:700, color:"#fff", fontSize:13 }}>Total Material Cost — All Rooms</span>
-                <span style={{ fontWeight:800, color:"#38bdf8", fontSize:15 }}>₹{Math.round(grand).toLocaleString("en-IN")}</span>
-              </div>
-            ):null;
-          })()}
 
           {/* Work Items — Subsections */}
           {allSubsections.length > 0 && (
@@ -4258,10 +4417,16 @@ Dimension rules:
               {form.quotation && (
                 <div>
                   <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>{getDocTerm(form.status)} Payment Schedule</div>
-                  {PAYMENT_PHASES.map((p,i)=>(
+                  {buildPaymentSchedule(parseInt(form.timeline)||60, form.quotation).map((p,i)=>(
                     <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,0.05)",borderRadius:12,padding:"14px 18px",marginBottom:10,border:"1px solid rgba(255,255,255,0.12)" }}>
-                      <div><div style={{ fontWeight:700,fontSize:13,color:"#0A84FF" }}>{p.day} — {p.pct}% — {p.label}</div></div>
-                      <div style={{ fontSize:18,fontWeight:700,color:"#0A84FF" }}>{fmt(Math.round(Number(form.quotation)*p.pct/100))}</div>
+                      <div>
+                        <div style={{ fontWeight:700,fontSize:13,color:"#0A84FF" }}>{p.label} — {p.pct}%</div>
+                        <div style={{ fontSize:11,color:"rgba(255,255,255,0.45)",marginTop:3 }}>{p.when}</div>
+                      </div>
+                      <div style={{ textAlign:"right" }}>
+                        {p.amount>0 && <div style={{ fontSize:18,fontWeight:700,color:"#0A84FF" }}>₹{p.amount.toLocaleString("en-IN")}</div>}
+                        <div style={{ fontSize:11,color:"rgba(255,255,255,0.4)" }}>Day {p.day}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -4475,8 +4640,11 @@ Dimension rules:
               {(()=>{
                 const startDate = form.startDate ? new Date(form.startDate) : null;
                 const totalDays = parseInt(form.timeline)||60;
-                // Get plan overrides from form
                 const plan = form.projectPlan || {};
+
+                // Compute actual day numbers from % for this project duration
+                const getActualDay = (pct) => Math.max(1, Math.round(pct/100 * totalDays) + 1);
+                const getActualDur = (pct) => Math.max(1, Math.round(pct/100 * totalDays));
 
                 const getPhaseDate = (dayOffset) => {
                   if (!startDate) return null;
@@ -4521,11 +4689,11 @@ Dimension rules:
                       const phaseData = plan[phase.id] || {};
                       const status    = phaseData.status || "Not Started";
                       const sc        = STATUS_COLORS[status];
-                      const startDay  = phaseData.startDay  || phase.day;
-                      const dur       = phaseData.duration  || phase.dur;
-                      const endDay    = startDay + dur - 1;
+                      const startDay  = phaseData.startDay || getActualDay(phase.startPct);
+                      const dur       = phaseData.duration || getActualDur(phase.durPct);
+                      const endDay    = Math.min(startDay + dur - 1, totalDays);
                       const barLeft   = ((startDay-1)/totalDays)*100;
-                      const barWidth  = (dur/totalDays)*100;
+                      const barWidth  = Math.min((dur/totalDays)*100, 100-barLeft);
 
                       return (
                         <div key={phase.id} style={{marginBottom:10,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,0.08)"}}>
