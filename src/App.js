@@ -1174,53 +1174,57 @@ Hyderabad`);
             ))}
           </div>
         </div>
-        {/* Scope — Room wise Dimensions */}
+        {/* Scope — Room wise Products & Materials */}
         <div style={{ marginBottom:32 }}>
-          <div style={RS.sTitle}>Scope of Work — Room Dimensions</div>
+          <div style={RS.sTitle}>Scope of Work</div>
           {(selected.rooms||[]).length>0 ? (
             <div>
-              {/* Table header */}
-              <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"8px 12px", background:C.red, borderRadius:"10px 10px 0 0" }}>
-                {["Room","Length (ft)","Width (ft)","Height (ft)","Area (sq ft)"].map(h=>(
-                  <div key={h} style={{ fontSize:11, fontWeight:700, color:"#fff", letterSpacing:1, textTransform:"uppercase" }}>{h}</div>
-                ))}
-              </div>
               {selected.rooms.map((r,i) => {
-                const rd = selected.roomDetails?.[r] || {};
-                const area = rd.length && rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
-                  return (
-                  <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:i%2===0?"rgba(255,255,255,0.06)":C.light, borderBottom:"1px solid #e5e7eb" }}>
-                    <div style={{ fontWeight:700, fontSize:13, color:"#0F1923" }}>🏠 {r}</div>
-                    <div style={{ fontSize:13 }}>{rd.length||"—"}</div>
-                    <div style={{ fontSize:13 }}>{rd.width||"—"}</div>
-                    <div style={{ fontSize:13 }}>{rd.height||"—"}</div>
-                    <div style={{ fontSize:13, fontWeight:700 }}>{area !== "—" ? `${area} sq ft` : "—"}</div>
+                const works = (selected.roomWork?.[r]||[]).filter(w=>w.product);
+                if (!works.length) return null;
+                return (
+                  <div key={r} style={{ marginBottom:16, border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
+                    {/* Room header */}
+                    <div style={{ padding:"8px 14px", background:"#0F1923", display:"flex", justifyContent:"space-between" }}>
+                      <span style={{ fontWeight:700, fontSize:13, color:"#fff" }}>🏠 {r}</span>
+                    </div>
+                    {/* Column headers */}
+                    <div style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr", gap:0,
+                      background:"#f3f4f6", padding:"7px 14px" }}>
+                      {["Product / Type","Material","Qty / Area"].map(h=>(
+                        <div key={h} style={{ fontSize:10, fontWeight:700, color:"#6b7280", letterSpacing:1, textTransform:"uppercase" }}>{h}</div>
+                      ))}
+                    </div>
+                    {/* Work rows */}
+                    {works.map((w,wi)=>{
+                      const sqft = w.height&&w.width ? (parseFloat(w.height)*parseFloat(w.width)).toFixed(1) : null;
+                      const isQty = QTY_TYPES && QTY_TYPES.has(w.type);
+                      const qtyDisplay = isQty ? `${w.qty||1} units` : sqft ? `${sqft} sq ft` : "—";
+                      return (
+                        <div key={wi} style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr", gap:0,
+                          padding:"8px 14px", borderTop:"1px solid #f3f4f6",
+                          background:wi%2===0?"#fff":"#f9fafb" }}>
+                          <div>
+                            <div style={{ fontWeight:600, fontSize:13, color:"#0F1923" }}>{w.product}</div>
+                            <div style={{ fontSize:11, color:"#6b7280", marginTop:1 }}>{w.type}{w.notes?` · ${w.notes}`:""}</div>
+                          </div>
+                          <div style={{ fontSize:12, color:"#374151" }}>{w.brand||"—"}</div>
+                          <div style={{ fontSize:12, color:"#374151", fontWeight:600 }}>{qtyDisplay}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}
-              {/* Total row */}
-              {(() => {
-                const totalArea = (selected.rooms||[]).reduce((sum,r) => {
-                  const rd = selected.roomDetails?.[r]||{};
-                  return sum + (rd.length&&rd.width ? parseFloat(rd.length)*parseFloat(rd.width) : 0);
-                }, 0);
-                return totalArea > 0 ? (
-                  <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:8, padding:"10px 12px", background:C.red, borderRadius:"0 0 10px 10px" }}>
-                    <div style={{ fontWeight:700, fontSize:13, color:"#fff" }}>Total</div>
-                    <div/><div/><div/>
-                    <div style={{ fontWeight:700, fontSize:14, color:"#fff" }}>{totalArea.toFixed(0)} sq ft</div>
-                  </div>
-                ) : <div style={{ borderRadius:"0 0 10px 10px", border:"1px solid #e5e7eb", borderTop:"none" }}/>;
-              })()}
               {/* Room photos */}
               {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
-                <div style={{ marginTop:16 }}>
-                  <div style={{ fontSize:11, letterSpacing:2, color:"#6b7280", textTransform:"uppercase", marginBottom:10 }}>Room Photos</div>
+                <div style={{ marginTop:8 }}>
+                  <div style={{ fontSize:11, letterSpacing:2, color:"#6b7280", textTransform:"uppercase", marginBottom:8 }}>Room Photos</div>
                   {(selected.rooms||[]).map(r => {
                     const photos = selected.roomDetails?.[r]?.photos||[];
                     if (!photos.length) return null;
-                      return (
-                      <div key={r} style={{ marginBottom:12 }}>
+                    return (
+                      <div key={r} style={{ marginBottom:10 }}>
                         <div style={{ fontSize:12, fontWeight:700, color:C.red, marginBottom:6 }}>🏠 {r}</div>
                         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                           {photos.map((p,i)=><img key={i} src={p} alt={r} style={{ width:100, height:100, objectFit:"cover", borderRadius:8, border:"1px solid #d1d5db" }}/>)}
@@ -2219,28 +2223,88 @@ High Rise Interiors, Hyderabad`
             ))}
           </div>
 
-          {/* Rooms & Dimensions */}
-          <div style={IR.sec}>Room Dimensions</div>
-          <div style={{ border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
-            <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr", gap:0 }}>
-              {["Room","Length (ft)","Width (ft)","Height (ft)","Area (sq ft)"].map(h=>(
-                <div key={h} style={IR.th}>{h}</div>
-              ))}
-            </div>
-            {(selected.rooms||[]).map((r,i) => {
-              const rd = selected.roomDetails?.[r]||{};
-              const area = rd.length&&rd.width ? (parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0) : "—";
-              return (
-                <div key={r} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr" }}>
-                  <div style={IR.td(i)}><strong style={{ color:C.teal }}>🏠 {r}</strong></div>
-                  <div style={IR.td(i)}>{rd.length||"—"}</div>
-                  <div style={IR.td(i)}>{rd.width||"—"}</div>
-                  <div style={IR.td(i)}>{rd.height||"—"}</div>
-                  <div style={{ ...IR.td(i), fontWeight:700 }}>{area!=="—"?`${area} sq ft`:"—"}</div>
+          {/* Rooms — Products, Materials, Sq Ft & Cost */}
+          <div style={IR.sec}>Scope of Work — Products & Materials</div>
+          {(selected.rooms||[]).map(r => {
+            const works = (selected.roomWork?.[r]||[]).filter(w=>w.product);
+            if (!works.length) return null;
+            const roomTotal = works.reduce((t,w)=>{
+              if(w.price) return t+parseFloat(w.price);
+              const catalog = getCatalog(w.matType||"plywood");
+              const item    = catalog.find(m=>m.name===w.brand);
+              if(!item) return t;
+              const sqft = w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):0;
+              const qty  = QTY_TYPES.has(w.type)?parseFloat(w.qty)||1:sqft;
+              return t+(qty*item.price);
+            },0);
+            return (
+              <div key={r} style={{ marginBottom:14, border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr 1fr", background:"#1e293b", padding:"8px 12px" }}>
+                  <div style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {r}</div>
+                  {["Type","H × W","Sq Ft","Material","Amount"].map(h=>(
+                    <div key={h} style={{ color:"rgba(255,255,255,0.6)", fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", textAlign:"center" }}>{h}</div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
+                {works.map((w,wi)=>{
+                  const catalog  = getCatalog(w.matType||"plywood");
+                  const item     = catalog.find(m=>m.name===w.brand);
+                  const sqft     = w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):null;
+                  const isQty    = QTY_TYPES.has(w.type);
+                  const qty      = isQty?parseFloat(w.qty)||1:sqft||0;
+                  const lineAmt  = w.price?parseFloat(w.price):(item&&qty?qty*item.price:0);
+                  return (
+                    <div key={wi} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr 1fr",
+                      padding:"8px 12px", borderTop:"1px solid #f3f4f6",
+                      background:wi%2===0?"#fff":"#f9fafb", alignItems:"center" }}>
+                      <div>
+                        <div style={{ fontWeight:600, fontSize:12, color:"#0F1923" }}>{w.product}</div>
+                        {w.notes&&<div style={{ fontSize:10, color:"#9ca3af" }}>{w.notes}</div>}
+                      </div>
+                      <div style={{ fontSize:11, color:"#6b7280", textAlign:"center" }}>{w.type}</div>
+                      <div style={{ fontSize:11, color:"#374151", textAlign:"center" }}>
+                        {w.height&&w.width?`${w.height}×${w.width}`:(isQty?`qty: ${w.qty||1}`:"—")}
+                      </div>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#0A84FF", textAlign:"center" }}>
+                        {isQty?`${qty} units`:(sqft?`${sqft.toFixed(1)} sq ft`:"—")}
+                      </div>
+                      <div style={{ fontSize:11, color:"#374151", textAlign:"center" }}>{w.brand||"—"}</div>
+                      <div style={{ fontSize:12, fontWeight:700, textAlign:"right", color:lineAmt>0?"#0F1923":"#9ca3af" }}>
+                        {lineAmt>0?`₹${Math.round(lineAmt).toLocaleString("en-IN")}`:"—"}
+                      </div>
+                    </div>
+                  );
+                })}
+                {roomTotal>0&&(
+                  <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr 1fr",
+                    padding:"8px 12px", background:"#f0f9ff", borderTop:"2px solid #bae6fd" }}>
+                    <div style={{ fontWeight:700, fontSize:12, color:"#0369a1", gridColumn:"1/6" }}>Room Total</div>
+                    <div style={{ fontWeight:800, fontSize:13, color:"#0369a1", textAlign:"right" }}>₹{Math.round(roomTotal).toLocaleString("en-IN")}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {/* Grand total across all rooms */}
+          {(()=>{
+            const grand = Object.values(selected.roomWork||{}).reduce((t,works)=>
+              t+(works||[]).reduce((rt,w)=>{
+                if(w.price) return rt+parseFloat(w.price);
+                const catalog=getCatalog(w.matType||"plywood");
+                const item=catalog.find(m=>m.name===w.brand);
+                if(!item) return rt;
+                const sqft=w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):0;
+                const qty=QTY_TYPES.has(w.type)?parseFloat(w.qty)||1:sqft;
+                return rt+(qty*item.price);
+              },0)
+            ,0);
+            return grand>0?(
+              <div style={{ display:"flex", justifyContent:"space-between", padding:"10px 16px",
+                background:"#0F1923", borderRadius:3, marginBottom:14 }}>
+                <span style={{ fontWeight:700, color:"#fff", fontSize:13 }}>Total Material Cost — All Rooms</span>
+                <span style={{ fontWeight:800, color:"#38bdf8", fontSize:15 }}>₹{Math.round(grand).toLocaleString("en-IN")}</span>
+              </div>
+            ):null;
+          })()}
 
           {/* Work Items — Subsections */}
           {allSubsections.length > 0 && (
