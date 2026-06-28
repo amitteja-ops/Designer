@@ -1591,6 +1591,11 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const [customers,    setCustomers]    = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [saving,       setSaving]       = useState(false);
+  const [renderStyles,    setRenderStyles]    = useState({});
+  const [renderPrompts,   setRenderPrompts]   = useState({});
+  const [renderingRoom,   setRenderingRoom]   = useState(null);
+  const [renderErrors,    setRenderErrors]    = useState({});
+  const RENDER_STYLES = ["Modern Contemporary","Luxury","Scandinavian","Industrial","Classic Traditional","Bohemian","Art Deco"];
   const [isOnline,     setIsOnline]     = useState(navigator.onLine);
   const [offlineQ,     setOfflineQ]     = useState(()=>{try{return JSON.parse(localStorage.getItem("hri_q")||"[]");}catch{return [];}});
   const pendingSync = offlineQ.length;
@@ -1936,6 +1941,36 @@ High Rise Interiors, Hyderabad`
     if (idx >= 0) queue[idx] = entry; else queue.push(entry);
     localStorage.setItem("hri_offline_queue", JSON.stringify(queue));
     setOfflineQueue([...queue]);
+  };
+
+  const doRenderRoom = async (room, photoBase64) => {
+    const style  = renderStyles[room]  || "Luxury";
+    const prompt = renderPrompts[room] || "";
+    setRenderingRoom(room);
+    setRenderErrors(e => ({...e, [room]:""}));
+    try {
+      const res = await fetch("/api/render-room", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ imageBase64: photoBase64, style, prompt }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Render failed");
+      const newRender = { url: data.imageUrl, style, ts: Date.now() };
+      setForm(f => ({
+        ...f,
+        roomDetails: {
+          ...(f.roomDetails||{}),
+          [room]: {
+            ...(f.roomDetails?.[room]||{}),
+            renders: [newRender, ...(f.roomDetails?.[room]?.renders||[])],
+          }
+        }
+      }));
+    } catch(e) {
+      setRenderErrors(err => ({...err, [room]: e.message}));
+    }
+    setRenderingRoom(null);
   };
 
   const syncQ = async () => {
@@ -3518,150 +3553,109 @@ Dimension rules:
                     })}
 
                     {/* ── Room Photos + AI Render ── */}
-                    {(()=>{
-                      const STYLES = ["Modern Contemporary","Luxury","Scandinavian","Industrial","Classic Traditional","Bohemian","Art Deco"];
-                      const [renderStyle,   setRenderStyle]   = React.useState("Luxury");
-                      const [renderPrompt,  setRenderPrompt]  = React.useState("");
-                      const [rendering,     setRendering]     = React.useState(false);
-                      const [renderError,   setRenderError]   = React.useState("");
-                      const [renderResults, setRenderResults] = React.useState(rd.renders||[]);
-
-                      const doRender = async (photoBase64) => {
-                        setRendering(true); setRenderError("");
-                        try {
-                          const res = await fetch("/api/render-room", {
-                            method:"POST",
-                            headers:{"Content-Type":"application/json"},
-                            body: JSON.stringify({ imageBase64: photoBase64, style: renderStyle, prompt: renderPrompt }),
-                          });
-                          const data = await res.json();
-                          if (!res.ok) throw new Error(data.error||"Render failed");
-                          const newRender = { url: data.imageUrl, style: renderStyle, ts: Date.now(), sourcePhoto: photoBase64 };
-                          const updated = [newRender, ...(rd.renders||[])];
-                          setRenderResults(updated);
-                          setRD("renders", updated);
-                        } catch(e) { setRenderError(e.message); }
-                        setRendering(false);
-                      };
-
-                      return (
-                        <div style={{marginTop:14,marginBottom:4}}>
-                          {/* Section header */}
-                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                            <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>
-                              📸 Reference Photos & AI Renders
-                            </div>
-                            {(rd.photos||[]).length>0&&(
-                              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                                <select className="glass-input" style={{fontSize:11,padding:"4px 8px",width:"auto"}}
-                                  value={renderStyle} onChange={e=>setRenderStyle(e.target.value)}>
-                                  {STYLES.map(s=><option key={s} value={s}>{s}</option>)}
-                                </select>
-                                <input className="glass-input" style={{fontSize:11,padding:"4px 8px",width:140}}
-                                  placeholder="Extra prompt (optional)"
-                                  value={renderPrompt} onChange={e=>setRenderPrompt(e.target.value)}/>
-                              </div>
-                            )}
+                    {/* ── Photos & AI Renders ── */}
+                    <div style={{marginTop:14,marginBottom:4}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                        <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>
+                          📸 Photos & AI Renders
+                        </div>
+                        {(rd.photos||[]).length>0 && (
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <select className="glass-input" style={{fontSize:11,padding:"3px 8px",width:"auto"}}
+                              value={renderStyles[room]||"Luxury"}
+                              onChange={e=>setRenderStyles(s=>({...s,[room]:e.target.value}))}>
+                              {RENDER_STYLES.map(s=><option key={s} value={s}>{s}</option>)}
+                            </select>
                           </div>
+                        )}
+                      </div>
 
-                          {/* Photos row */}
-                          <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"flex-start",marginBottom:10}}>
-                            {(rd.photos||[]).map((photo,pi)=>(
-                              <div key={pi} style={{position:"relative",display:"flex",flexDirection:"column",gap:4}}>
-                                <img src={photo} alt={`${room} ${pi+1}`}
-                                  style={{width:90,height:90,objectFit:"cover",borderRadius:10,border:"1px solid rgba(255,255,255,0.14)",cursor:"pointer"}}
-                                  onClick={()=>window.open(photo,"_blank")}/>
-                                <div style={{display:"flex",gap:4}}>
-                                  <button onClick={()=>doRender(photo)} disabled={rendering}
-                                    style={{flex:1,padding:"3px 0",borderRadius:6,border:"1px solid rgba(191,90,242,0.4)",
-                                      background:"rgba(191,90,242,0.15)",color:"#BF5AF2",cursor:rendering?"not-allowed":"pointer",
-                                      fontFamily:"inherit",fontSize:9,fontWeight:700}}>
-                                    {rendering?"⏳":"✨ Render"}
-                                  </button>
-                                  <button onClick={()=>setRD("photos",(rd.photos||[]).filter((_,i)=>i!==pi))}
-                                    style={{padding:"3px 6px",borderRadius:6,border:"1px solid rgba(255,69,58,0.3)",
-                                      background:"rgba(255,69,58,0.12)",color:"#FF453A",cursor:"pointer",
-                                      fontFamily:"inherit",fontSize:9}}>✕</button>
+                      {/* Photo thumbnails */}
+                      <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"flex-start",marginBottom:8}}>
+                        {(rd.photos||[]).map((photo,pi)=>(
+                          <div key={pi} style={{position:"relative",display:"flex",flexDirection:"column",gap:3}}>
+                            <img src={photo} alt={`${room} ${pi+1}`}
+                              style={{width:80,height:80,objectFit:"cover",borderRadius:10,
+                                border:"1px solid rgba(255,255,255,0.14)",cursor:"pointer"}}
+                              onClick={()=>window.open(photo,"_blank")}/>
+                            <div style={{display:"flex",gap:3}}>
+                              <button onClick={()=>doRenderRoom(room,photo)}
+                                disabled={renderingRoom===room}
+                                style={{flex:1,padding:"3px 0",borderRadius:6,
+                                  border:"1px solid rgba(191,90,242,0.4)",
+                                  background:renderingRoom===room?"rgba(255,255,255,0.05)":"rgba(191,90,242,0.15)",
+                                  color:renderingRoom===room?"rgba(255,255,255,0.3)":"#BF5AF2",
+                                  cursor:renderingRoom===room?"not-allowed":"pointer",
+                                  fontFamily:"inherit",fontSize:9,fontWeight:700}}>
+                                {renderingRoom===room?"⏳":"✨ AI"}
+                              </button>
+                              <button onClick={()=>setRD("photos",(rd.photos||[]).filter((_,i)=>i!==pi))}
+                                style={{padding:"3px 6px",borderRadius:6,
+                                  border:"1px solid rgba(255,69,58,0.3)",
+                                  background:"rgba(255,69,58,0.12)",color:"#FF453A",
+                                  cursor:"pointer",fontFamily:"inherit",fontSize:9}}>✕</button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Upload button */}
+                        <label style={{width:80,height:80,borderRadius:10,
+                          border:"1px dashed rgba(255,255,255,0.18)",
+                          background:"rgba(255,255,255,0.04)",display:"flex",
+                          flexDirection:"column",alignItems:"center",
+                          justifyContent:"center",cursor:"pointer",gap:4}}>
+                          <span style={{fontSize:22}}>📷</span>
+                          <span style={{fontSize:9,color:"rgba(255,255,255,0.35)"}}>Add Photo</span>
+                          <input type="file" accept="image/*" multiple style={{display:"none"}}
+                            onChange={e=>{
+                              [...e.target.files].forEach(file=>{
+                                const reader=new FileReader();
+                                reader.onload=ev=>setRD("photos",[...(rd.photos||[]),ev.target.result]);
+                                reader.readAsDataURL(file);
+                              });
+                              e.target.value="";
+                            }}/>
+                        </label>
+                      </div>
+
+                      {/* Render error */}
+                      {renderErrors[room] && (
+                        <div style={{fontSize:11,color:"#FF453A",background:"rgba(255,69,58,0.1)",
+                          borderRadius:8,padding:"6px 10px",marginBottom:8}}>
+                          ⚠️ {renderErrors[room]}
+                        </div>
+                      )}
+
+                      {/* Render results */}
+                      {(rd.renders||[]).length>0 && (
+                        <div style={{marginTop:8}}>
+                          <div style={{fontSize:9,fontWeight:700,letterSpacing:1.5,
+                            color:"rgba(191,90,242,0.6)",textTransform:"uppercase",marginBottom:6}}>
+                            ✨ AI Renders
+                          </div>
+                          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                            {(rd.renders||[]).map((r,ri)=>(
+                              <div key={ri} style={{position:"relative"}}>
+                                <img src={r.url} alt={r.style}
+                                  style={{width:120,height:90,objectFit:"cover",borderRadius:10,
+                                    border:"1px solid rgba(191,90,242,0.4)",cursor:"pointer"}}
+                                  onClick={()=>window.open(r.url,"_blank")}/>
+                                <div style={{position:"absolute",bottom:3,left:3,right:3,
+                                  background:"rgba(0,0,0,0.7)",borderRadius:5,padding:"2px 5px",
+                                  fontSize:8,color:"#fff",textAlign:"center",fontWeight:600}}>
+                                  ✨ {r.style}
                                 </div>
+                                <button onClick={()=>setRD("renders",(rd.renders||[]).filter((_,i)=>i!==ri))}
+                                  style={{position:"absolute",top:-5,right:-5,width:16,height:16,
+                                    borderRadius:"50%",background:"#FF453A",border:"none",
+                                    color:"#fff",cursor:"pointer",fontSize:8,
+                                    fontFamily:"inherit",padding:0,lineHeight:1}}>✕</button>
                               </div>
                             ))}
-
-                            {/* Upload button */}
-                            <label style={{width:90,height:90,borderRadius:10,border:"1px dashed rgba(255,255,255,0.18)",
-                              background:"rgba(255,255,255,0.04)",display:"flex",flexDirection:"column",
-                              alignItems:"center",justifyContent:"center",cursor:"pointer",gap:4}}>
-                              <span style={{fontSize:22}}>📷</span>
-                              <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:0.5}}>Add Photo</span>
-                              <input type="file" accept="image/*" multiple style={{display:"none"}}
-                                onChange={e=>{
-                                  const files=[...e.target.files];
-                                  files.forEach(file=>{
-                                    const reader=new FileReader();
-                                    reader.onload=ev=>setRD("photos",[...(rd.photos||[]),ev.target.result]);
-                                    reader.readAsDataURL(file);
-                                  });
-                                  e.target.value="";
-                                }}/>
-                            </label>
                           </div>
-
-                          {/* Render error */}
-                          {renderError&&(
-                            <div style={{background:"rgba(255,69,58,0.12)",border:"1px solid rgba(255,69,58,0.3)",
-                              borderRadius:8,padding:"8px 12px",fontSize:12,color:"#FF453A",marginBottom:8}}>
-                              ⚠️ {renderError}
-                            </div>
-                          )}
-
-                          {/* Rendering spinner */}
-                          {rendering&&(
-                            <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",
-                              background:"rgba(191,90,242,0.1)",border:"1px solid rgba(191,90,242,0.3)",
-                              borderRadius:10,marginBottom:8}}>
-                              <div style={{width:20,height:20,borderRadius:"50%",border:"2px solid #BF5AF2",
-                                borderTopColor:"transparent",animation:"spin 0.8s linear infinite"}}/>
-                              <span style={{fontSize:13,color:"#BF5AF2",fontWeight:600}}>
-                                AI rendering {renderStyle} style… (~15-30s)
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Render results */}
-                          {(rd.renders||[]).length>0&&(
-                            <div>
-                              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(191,90,242,0.7)",
-                                textTransform:"uppercase",marginBottom:8}}>✨ AI Renders</div>
-                              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                                {(rd.renders||[]).map((r,ri)=>(
-                                  <div key={ri} style={{position:"relative"}}>
-                                    <img src={r.url} alt={r.style}
-                                      style={{width:140,height:105,objectFit:"cover",borderRadius:10,
-                                        border:"1px solid rgba(191,90,242,0.4)",cursor:"pointer"}}
-                                      onClick={()=>window.open(r.url,"_blank")}/>
-                                    <div style={{position:"absolute",bottom:4,left:4,right:4,
-                                      background:"rgba(0,0,0,0.7)",borderRadius:6,padding:"2px 6px",
-                                      fontSize:9,color:"rgba(255,255,255,0.9)",fontWeight:600,textAlign:"center"}}>
-                                      ✨ {r.style}
-                                    </div>
-                                    <button onClick={()=>setRD("renders",(rd.renders||[]).filter((_,i)=>i!==ri))}
-                                      style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",
-                                        background:"#FF453A",border:"none",color:"#fff",cursor:"pointer",
-                                        fontSize:9,fontFamily:"inherit",padding:0,lineHeight:1}}>✕</button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {(rd.photos||[]).length===0&&(rd.renders||[]).length===0&&(
-                            <div style={{textAlign:"center",padding:"16px",background:"rgba(255,255,255,0.03)",
-                              borderRadius:10,color:"rgba(255,255,255,0.3)",fontSize:12}}>
-                              📷 Upload a room photo to enable AI rendering
-                            </div>
-                          )}
                         </div>
-                      );
-                    })()}
+                      )}
+                    </div>
 
                     {/* Add row button */}
                     <button onClick={addWork}
