@@ -15,6 +15,33 @@ const STATUSES = ["Lead","Active","In Progress","Completed","On Hold"];
 const BUDGETS = ["Under ₹5L","₹5L–₹10L","₹10L–₹15L","₹15L–₹20L","₹20L–₹25L","₹25L–₹30L","₹30L–₹35L","₹35L–₹50L","₹45L–₹70L","Above ₹70L"];
 const TIMELINES = ["30 Days","45 Days","60 Days","75 Days","90 Days","120 Days","Custom"];
 
+// ── Project Plan Phases — based on actual interior work sequence ──────
+// Each phase has: id, name, color, icon, depends (phase ids that must start first),
+// defaultStart (day offset from project start), defaultDuration (days)
+// Work types from quotation: Box, Frame, Ceiling, Kitchen, Wardrobe, Bed, Panel, Tiles, Granite, Mirror, Drawer, Service, Transport
+const PROJECT_PHASES = [
+  { id:"design",    name:"Design & Procurement",    icon:"📐", color:"#0A84FF", day:1,  dur:10,
+    desc:"Design freeze, material selection, orders placed for plywood/laminates/hardware" },
+  { id:"civil",     name:"Civil & Prep Work",        icon:"🏗", color:"#FF9F0A", day:8,  dur:8,
+    desc:"Electrical & plumbing rough-in, wall prep, tile hacking, waterproofing" },
+  { id:"framework", name:"Box & Frame Work",         icon:"📦", color:"#BF5AF2", day:12, dur:17,
+    desc:"All carpentry: entrance, TV unit, crockery units, wardrobes, kitchen cabinets, study tables" },
+  { id:"deco",      name:"Deco & Finishing",         icon:"✨", color:"#FF6B9D", day:25, dur:16,
+    desc:"Laminate pasting, profile doors, louvers, panels, acrylic/PVD work, dressing walls" },
+  { id:"ceiling",   name:"False Ceiling & Lighting", icon:"💡", color:"#30D158", day:30, dur:13,
+    desc:"Gypsum board fixing, cove lighting, spot lights, POP design, ceiling painting" },
+  { id:"tiles",     name:"Granite & Tiles",          icon:"🪨", color:"#FF9F0A", day:35, dur:11,
+    desc:"Kitchen granite, backslash tiles, pooja tiles, bathroom tiles, entrance tiles" },
+  { id:"hardware",  name:"Hardware & Fittings",      icon:"🔧", color:"#8E8E93", day:40, dur:11,
+    desc:"Hinges, hydraulics, channels, sliding tracks, handles, sink, bathroom accessories" },
+  { id:"painting",  name:"Painting",                 icon:"🎨", color:"#FF453A", day:42, dur:11,
+    desc:"Putty + primer, 2 coats paint all rooms, touch-ups on carpentry" },
+  { id:"finishing", name:"Final Fittings",            icon:"⚡", color:"#0A84FF", day:50, dur:8,
+    desc:"Lights/fans, switch plates, cushion fitting, mirrors, bathroom lighting & exhaust" },
+  { id:"handover",  name:"Snag & Handover",          icon:"🏠", color:"#30D158", day:57, dur:4,
+    desc:"Client walkthrough, punch list fixes, deep cleaning, handover" },
+];
+
 // ── Property type → budget + rooms defaults ───────────────────────────
 const PROPERTY_TYPES = ["Studio","1 BHK","2 BHK","3 BHK","4 BHK","Villa","Independent House","Commercial","Office"];
 
@@ -589,6 +616,7 @@ const EMPTY = {
   roomDetails:{},
   roomMaterials:{},
   roomWork: {},
+  projectPlan: {},
   rebateType:"amount", rebateValue:"", labourPct:50,
   auditLog:[],              // [{ts, type, user, summary, snapshot, signatures}]
   inventory:{},             // per-material status: { key: {status, orderedDate, deliveredDate, notes} }
@@ -2116,7 +2144,7 @@ High Rise Interiors, Hyderabad`
   };
 
   const selected = customers.find(c => c.id === selectedId);
-  const TABS = ["personal","rooms","quotation","notes","inventory"];
+  const TABS = ["personal","rooms","quotation","notes","inventory","plan"];
 
   // ── REPORT ───────────────────────────────────────────────────────────
   if (view==="report" && selected) {
@@ -2230,12 +2258,18 @@ High Rise Interiors, Hyderabad`
             if (!works.length) return null;
             const roomTotal = works.reduce((t,w)=>{
               if(w.price) return t+parseFloat(w.price);
-              const catalog = getCatalog(w.matType||"plywood");
-              const item    = catalog.find(m=>m.name===w.brand);
-              if(!item) return t;
+              let cat = getCatalog(w.matType||"plywood");
+              let itm = cat.find(m=>m.name===w.brand);
+              if (!itm && w.brand) {
+                for (const mt of ["plywood","laminate","hardware","glass","ceiling","lights","handles"]) {
+                  const found = getCatalog(mt).find(m=>m.name===w.brand);
+                  if (found) { itm=found; break; }
+                }
+              }
+              if(!itm) return t;
               const sqft = w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):0;
               const qty  = QTY_TYPES.has(w.type)?parseFloat(w.qty)||1:sqft;
-              return t+(qty*item.price);
+              return t+(qty*itm.price);
             },0);
             return (
               <div key={r} style={{ marginBottom:14, border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
@@ -2246,8 +2280,16 @@ High Rise Interiors, Hyderabad`
                   ))}
                 </div>
                 {works.map((w,wi)=>{
-                  const catalog  = getCatalog(w.matType||"plywood");
-                  const item     = catalog.find(m=>m.name===w.brand);
+                  // Try matType first, then search all catalogs for the brand
+                  let catalog = getCatalog(w.matType||"plywood");
+                  let item    = catalog.find(m=>m.name===w.brand);
+                  if (!item && w.brand) {
+                    for (const mt of ["plywood","laminate","hardware","glass","ceiling","lights","handles"]) {
+                      const c = getCatalog(mt);
+                      const found = c.find(m=>m.name===w.brand);
+                      if (found) { item = found; break; }
+                    }
+                  }
                   const sqft     = w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):null;
                   const isQty    = QTY_TYPES.has(w.type);
                   const qty      = isQty?parseFloat(w.qty)||1:sqft||0;
@@ -3208,7 +3250,7 @@ if (view==="vendor" && selected) {
       <div style={S.main}>
         {/* Tabs */}
         <div style={{ display:"flex",gap:6,marginBottom:24,flexWrap:"wrap" }}>
-          {[["personal","👤 Client"],["rooms","🏠 Rooms & Materials"],["quotation","💰 Quotation"],["notes","📝 Notes"],["inventory","📦 Inventory"]].map(([k,l])=>(
+          {[["personal","👤 Client"],["rooms","🏠 Rooms & Materials"],["quotation","💰 Quotation"],["notes","📝 Notes"],["inventory","📦 Inventory"],["plan","📅 Project Plan"]].map(([k,l])=>(
             <button key={k} style={S.tab(activeTab===k)} onClick={()=>setActiveTab(k)}>{l}</button>
           ))}
         </div>
@@ -4405,6 +4447,133 @@ Dimension rules:
                 onChange={e=>setF("notes",e.target.value)}
                 placeholder={"Describe scope of work:\n\nDrawing: TV unit 10ft with PVD partition\nKitchen: U-shape acrylic finish\nMaster Bedroom: Wall-to-wall wardrobe\n\nOut of scope: Electrical accessories, curtains\nDiscussion: Client wants delivery by March"}
               />
+            </div>
+          )}
+
+          {/* ── PROJECT PLAN TAB ── */}
+          {activeTab==="plan" && (
+            <div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:16}}>
+                📅 Project Plan
+              </div>
+
+              {/* Start date + duration info */}
+              {form.startDate ? (
+                <div style={{background:"rgba(10,132,255,0.08)",border:"1px solid rgba(10,132,255,0.2)",borderRadius:10,padding:"12px 16px",marginBottom:16,display:"flex",gap:20,flexWrap:"wrap",alignItems:"center"}}>
+                  <div><span style={{fontSize:11,color:"rgba(255,255,255,0.4)"}}>Start Date</span><div style={{fontSize:14,fontWeight:700,color:"#0A84FF"}}>{form.startDate}</div></div>
+                  <div><span style={{fontSize:11,color:"rgba(255,255,255,0.4)"}}>Duration</span><div style={{fontSize:14,fontWeight:700,color:"#0A84FF"}}>{form.timeline||"60 Days"}</div></div>
+                  <div><span style={{fontSize:11,color:"rgba(255,255,255,0.4)"}}>Property</span><div style={{fontSize:14,fontWeight:700,color:"#0A84FF"}}>{form.propertyType||"3 BHK"}</div></div>
+                  <div style={{marginLeft:"auto",fontSize:11,color:"rgba(255,255,255,0.35)"}}>Tap a phase to change its status</div>
+                </div>
+              ) : (
+                <div style={{background:"rgba(255,159,10,0.08)",border:"1px solid rgba(255,159,10,0.2)",borderRadius:10,padding:"10px 14px",marginBottom:16,fontSize:12,color:"#FF9F0A"}}>
+                  ⚠️ Set a Start Date in the Client tab to activate the project timeline
+                </div>
+              )}
+
+              {/* Gantt-style phase list */}
+              {(()=>{
+                const startDate = form.startDate ? new Date(form.startDate) : null;
+                const totalDays = parseInt(form.timeline)||60;
+                // Get plan overrides from form
+                const plan = form.projectPlan || {};
+
+                const getPhaseDate = (dayOffset) => {
+                  if (!startDate) return null;
+                  const d = new Date(startDate);
+                  d.setDate(d.getDate() + dayOffset - 1);
+                  return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+                };
+
+                const STATUSES = ["Not Started","In Progress","Completed","On Hold"];
+                const STATUS_COLORS = {
+                  "Not Started": { bg:"rgba(255,255,255,0.07)", c:"rgba(255,255,255,0.4)", dot:"#6b7280" },
+                  "In Progress": { bg:"rgba(10,132,255,0.15)",  c:"#0A84FF",               dot:"#0A84FF" },
+                  "Completed":   { bg:"rgba(48,209,88,0.15)",   c:"#30D158",               dot:"#30D158" },
+                  "On Hold":     { bg:"rgba(255,69,58,0.15)",   c:"#FF453A",               dot:"#FF453A" },
+                };
+
+                const cycleStatus = (phaseId) => {
+                  const current = plan[phaseId]?.status || "Not Started";
+                  const idx = STATUSES.indexOf(current);
+                  const next = STATUSES[(idx+1) % STATUSES.length];
+                  setForm(f=>({...f, projectPlan:{...(f.projectPlan||{}),[phaseId]:{...(f.projectPlan?.[phaseId]||{}),status:next}}}));
+                };
+
+                const completedCount = PROJECT_PHASES.filter(p=>(plan[p.id]?.status||"Not Started")==="Completed").length;
+                const progressPct = Math.round(completedCount/PROJECT_PHASES.length*100);
+
+                return (
+                  <div>
+                    {/* Overall progress */}
+                    <div style={{marginBottom:16}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                        <span style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,0.6)"}}>Overall Progress</span>
+                        <span style={{fontSize:12,fontWeight:700,color:"#30D158"}}>{completedCount}/{PROJECT_PHASES.length} phases · {progressPct}%</span>
+                      </div>
+                      <div style={{height:6,background:"rgba(255,255,255,0.08)",borderRadius:3,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${progressPct}%`,background:"linear-gradient(90deg,#0A84FF,#30D158)",borderRadius:3,transition:"width 0.4s"}}/>
+                      </div>
+                    </div>
+
+                    {/* Phase rows */}
+                    {PROJECT_PHASES.map((phase,pi) => {
+                      const phaseData = plan[phase.id] || {};
+                      const status    = phaseData.status || "Not Started";
+                      const sc        = STATUS_COLORS[status];
+                      const startDay  = phaseData.startDay  || phase.day;
+                      const dur       = phaseData.duration  || phase.dur;
+                      const endDay    = startDay + dur - 1;
+                      const barLeft   = ((startDay-1)/totalDays)*100;
+                      const barWidth  = (dur/totalDays)*100;
+
+                      return (
+                        <div key={phase.id} style={{marginBottom:10,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,0.08)"}}>
+                          {/* Phase header */}
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                            <span style={{fontSize:18}}>{phase.icon}</span>
+                            <div style={{flex:1}}>
+                              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                                <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.92)"}}>{phase.name}</span>
+                                <button onClick={()=>cycleStatus(phase.id)}
+                                  style={{padding:"2px 10px",borderRadius:100,border:"none",cursor:"pointer",
+                                    fontFamily:"inherit",fontSize:10,fontWeight:700,
+                                    background:sc.bg,color:sc.c}}>
+                                  {status}
+                                </button>
+                              </div>
+                              <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2}}>{phase.desc}</div>
+                            </div>
+                            {startDate && (
+                              <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",textAlign:"right",flexShrink:0}}>
+                                <div>Day {startDay}–{endDay}</div>
+                                <div style={{color:"rgba(255,255,255,0.25)"}}>{getPhaseDate(startDay)} → {getPhaseDate(endDay)}</div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Gantt bar */}
+                          <div style={{position:"relative",height:8,background:"rgba(255,255,255,0.06)",borderRadius:4,overflow:"hidden"}}>
+                            <div style={{
+                              position:"absolute",left:`${barLeft}%`,width:`${Math.min(barWidth, 100-barLeft)}%`,
+                              height:"100%",borderRadius:4,
+                              background:status==="Completed"?"#30D158":status==="In Progress"?phase.color:"rgba(255,255,255,0.15)",
+                              transition:"all 0.3s"
+                            }}/>
+                          </div>
+
+                          {/* Notes field */}
+                          <input className="glass-input"
+                            style={{marginTop:8,fontSize:11,padding:"5px 10px",width:"100%",boxSizing:"border-box"}}
+                            placeholder={`Notes for ${phase.name}...`}
+                            value={phaseData.notes||""}
+                            onChange={e=>setForm(f=>({...f,projectPlan:{...(f.projectPlan||{}),[phase.id]:{...(f.projectPlan?.[phase.id]||{}),notes:e.target.value}}}))}/>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
 

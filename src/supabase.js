@@ -128,6 +128,7 @@ export const toRow = (f) => {
     referral_code:      f.referralCode       || null,
     client_access_code: f.clientAccessCode   || null,
     room_work:          f.roomWork && Object.keys(f.roomWork).length ? JSON.stringify(f.roomWork) : null,
+    project_plan:       f.projectPlan && Object.keys(f.projectPlan).length ? JSON.stringify(f.projectPlan) : null,
   applied_referral:   f.appliedReferralCode|| null,
   referral_discount:  f.referralDiscount   || false,
   labour_pct:         f.labourPct          != null ? Number(f.labourPct) : 50,
@@ -192,6 +193,7 @@ export const fromRow = (r) => {
     referralCode:       r.referral_code      || "",
     clientAccessCode:   r.client_access_code  || "",
     roomWork:           r.room_work ? (typeof r.room_work==="string"?JSON.parse(r.room_work):r.room_work) : {},
+    projectPlan:        r.project_plan ? (typeof r.project_plan==="string"?JSON.parse(r.project_plan):r.project_plan) : {},
     appliedReferralCode:r.applied_referral   || "",
     referralDiscount:   r.referral_discount  || false,
     roomMaterials:      r.room_materials
