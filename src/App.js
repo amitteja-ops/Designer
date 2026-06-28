@@ -1921,9 +1921,8 @@ Hyderabad · +91-6304980890`;
 
     // Use window.open to avoid navigating away from the CRM
     const mailUrl = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    const win = window.open(mailUrl, '_blank');
-    // Fallback: if popup blocked, use location
-    if (!win) window.location.href = mailUrl;
+    // On iOS/iPad, window.location.href opens Mail app correctly for mailto:
+    window.location.href = mailUrl;
   };
 
   // ── Status Change Email Agent ─────────────────────────────────────────
@@ -2077,8 +2076,9 @@ High Rise Interiors, Hyderabad`
       rebateType:        c.rebateType        || "amount",
       propertyType:      c.propertyType      || "3 BHK",
     });
+    setSelectedId(c.id);
     setActiveTab("personal");
-    setView("detail");
+    setView("form");
   };
 
   const openNew    = () => {
@@ -2095,7 +2095,7 @@ High Rise Interiors, Hyderabad`
       projectPlan:  {},
     });
     setActiveTab("personal");
-    setView("detail");
+    setView("form");
   };
   const openDetail = (c) => { setSelectedId(c.id); setView("detail"); };
   const setF       = (k, v) => setForm(f => ({...f, [k]: v}));
