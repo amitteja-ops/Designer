@@ -12,8 +12,135 @@ const getRooms = (form) => {
 const ROOMS = DEFAULT_ROOMS; // fallback for places that don't have form context
 const STYLES = ["Modern Contemporary","Classic Traditional","Minimalist","Luxury","Scandinavian","Industrial","Bohemian","Art Deco","Mediterranean","Rustic"];
 const STATUSES = ["Lead","Active","In Progress","Completed","On Hold"];
-const BUDGETS = ["Under ₹5L","₹5L–₹10L","₹10L–₹15L","₹15L–₹20L","₹20L–₹25L","₹25L–₹30L","Above ₹30L"];
+const BUDGETS = ["Under ₹5L","₹5L–₹10L","₹10L–₹15L","₹15L–₹20L","₹20L–₹25L","₹25L–₹30L","₹30L–₹35L","₹35L–₹50L","₹45L–₹70L","Above ₹70L"];
 const TIMELINES = ["30 Days","45 Days","60 Days","75 Days","90 Days","120 Days","Custom"];
+
+// ── Property type → budget + rooms defaults ───────────────────────────
+const PROPERTY_TYPES = ["Studio","1 BHK","2 BHK","3 BHK","4 BHK","Villa","Independent House","Commercial","Office"];
+
+const PROPERTY_BUDGET_MAP = {
+  "Studio":            "₹15L–₹20L",
+  "1 BHK":             "₹20L–₹25L",
+  "2 BHK":             "₹25L–₹30L",
+  "3 BHK":             "₹30L–₹35L",
+  "4 BHK":             "₹35L–₹50L",
+  "Villa":             "₹45L–₹70L",
+  "Independent House": "₹45L–₹70L",
+  "Commercial":        "₹25L–₹30L",
+  "Office":            "₹20L–₹25L",
+};
+
+const PROPERTY_ROOMS_MAP = {
+  "Studio":            ["Entrance","Living Area","Kitchen","Bathroom"],
+  "1 BHK":             ["Entrance","Living Area","Kitchen","Master Bedroom","Bathroom"],
+  "2 BHK":             ["Entrance","Drawing Room","Living Area","Kitchen","Master Bedroom","Children Bedroom","Bathroom"],
+  "3 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom"],
+  "4 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony"],
+  "Villa":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony"],
+  "Independent House": ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony"],
+  "Commercial":        ["Entrance","Living Area","Bathroom"],
+  "Office":            ["Entrance","Living Area","Bathroom"],
+};
+
+// ── Default room work items from Ajay quotation ───────────────────────
+// These are pre-filled when a client is created, based on property type
+const DEFAULT_ROOM_WORK = {
+  "Entrance": [
+    {id:1, product:"Shoe Rack",     type:"Box",   height:"4",  width:"5",  qty:"1", matType:"plywood", brand:"", notes:"",  price:""},
+    {id:2, product:"Entrance Frame",type:"Frame", height:"8.5",width:"4",  qty:"1", matType:"plywood", brand:"", notes:"",  price:""},
+  ],
+  "Drawing Room": [
+    {id:1, product:"TV Unit Bottom Box",      type:"Box",         height:"2",  width:"8",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:2, product:"TV Unit Back Panel",      type:"Panel",       height:"8",  width:"8",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:3, product:"TV Unit Long Unit",       type:"Box",         height:"7",  width:"1.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:4, product:"TV Unit Long Unit Profile",type:"Profile Door",height:"7", width:"1.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:5, product:"TV Unit Side Louvers",    type:"Louvers",     height:"9",  width:"4",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:6, product:"TV Unit Partition",       type:"Frame",       height:"8",  width:"5",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:7, product:"False Ceiling",           type:"Ceiling",     height:"13", width:"12", qty:"1", matType:"ceiling", brand:"", notes:"Dining ceiling", price:""},
+  ],
+  "Living Area": [
+    {id:1, product:"Crockery Top Box",        type:"Open Box",    height:"3.5",width:"7.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:2, product:"Crockery Profile Glass",  type:"Profile Door",height:"3.5",width:"7.5",qty:"1", matType:"glass",   brand:"", notes:"", price:""},
+    {id:3, product:"Crockery Long Glass Box", type:"Open Box",    height:"7",  width:"1.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:4, product:"Crockery Bottom Box",     type:"Box",         height:"3",  width:"8",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:5, product:"Crockery Top Loft",       type:"Frame",       height:"3",  width:"9.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:6, product:"Diamond Mirror",          type:"Diamond Mirror",height:"2",width:"8",  qty:"1", matType:"glass",   brand:"", notes:"", price:""},
+    {id:7, product:"False Ceiling",           type:"Ceiling",     height:"12", width:"9.8",qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+  ],
+  "Dining": [
+    {id:1, product:"False Ceiling",           type:"Ceiling",     height:"13", width:"12", qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+  ],
+  "Pooja": [
+    {id:1, product:"Pooja Box",               type:"Box",         height:"8",  width:"5",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:2, product:"Pooja Door",              type:"Pooja Profile Door",height:"8",width:"5",qty:"1",matType:"plywood",brand:"", notes:"", price:""},
+    {id:3, product:"Pooja Tiles",             type:"Tiles",       height:"7",  width:"14", qty:"1", matType:"",        brand:"", notes:"", price:""},
+    {id:4, product:"Pooja Draws",             type:"Drawer",      height:"",   width:"",   qty:"3", matType:"hardware",brand:"", notes:"", price:""},
+    {id:5, product:"False Ceiling",           type:"Ceiling",     height:"5.5",width:"3.5",qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+  ],
+  "Master Bedroom": [
+    {id:1, product:"Wardrobe",                type:"Box",         height:"7",  width:"7",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:2, product:"Wardrobe Loft",           type:"Frame",       height:"2.5",width:"11", qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:3, product:"Bed Back Panel",          type:"Panel",       height:"3",  width:"14", qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:4, product:"Study Table",             type:"Box",         height:"2.6",width:"4",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:5, product:"Hydraulic Bed",           type:"Bed",         height:"6",  width:"6.5",qty:"1", matType:"",        brand:"", notes:"Queen size", price:""},
+    {id:6, product:"Bed Cushion",             type:"Cushion",     height:"2",  width:"24", qty:"1", matType:"",        brand:"", notes:"", price:""},
+    {id:7, product:"Dressing Wardrobe",       type:"Box",         height:"7",  width:"7.8",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:8, product:"Dressing Wardrobe Loft",  type:"Box",         height:"2",  width:"7.8",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:9, product:"Dressing Mirror Wall",    type:"Box",         height:"8",  width:"5",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:10,product:"Dressing Mirror",         type:"Mirror",      height:"4",  width:"3",  qty:"1", matType:"glass",   brand:"", notes:"", price:""},
+    {id:11,product:"False Ceiling",           type:"Ceiling",     height:"15", width:"13", qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+  ],
+  "Children Bedroom": [
+    {id:1, product:"Wardrobe",                type:"Box",         height:"7",  width:"6",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:2, product:"Wardrobe Loft",           type:"Frame",       height:"2",  width:"6",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:3, product:"Window Below Box",        type:"Box",         height:"2.3",width:"4",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:4, product:"Hydraulic Bed",           type:"Bed",         height:"6",  width:"6.5",qty:"1", matType:"",        brand:"", notes:"", price:""},
+    {id:5, product:"Bed Cushion",             type:"Cushion",     height:"2",  width:"24", qty:"1", matType:"",        brand:"", notes:"", price:""},
+    {id:6, product:"Dressing",               type:"Box",          height:"7",  width:"2.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:7, product:"Dressing Mirror",         type:"Mirror",      height:"4",  width:"2.5",qty:"1", matType:"glass",   brand:"", notes:"", price:""},
+    {id:8, product:"False Ceiling",           type:"Ceiling",     height:"11.6",width:"12",qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+  ],
+  "Guest Bedroom": [
+    {id:1, product:"Wardrobe",                type:"Box",         height:"7",  width:"6",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:2, product:"Wardrobe Loft",           type:"Frame",       height:"2",  width:"7",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:3, product:"Used Clothes Pullout",    type:"Box",         height:"7",  width:"1",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:4, product:"Hydraulic Bed",           type:"Bed",         height:"6",  width:"6.5",qty:"1", matType:"",        brand:"", notes:"", price:""},
+    {id:5, product:"Bed Cushion",             type:"Cushion",     height:"2",  width:"24", qty:"1", matType:"",        brand:"", notes:"", price:""},
+    {id:6, product:"False Ceiling",           type:"Ceiling",     height:"12", width:"12", qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+  ],
+  "Kitchen": [
+    {id:1, product:"Kitchen Counter Below",   type:"Kitchen",     height:"3",  width:"16", qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:2, product:"Kitchen Long Unit",       type:"Kitchen",     height:"7.5",width:"3",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:3, product:"Kitchen Loft",            type:"Kitchen",     height:"2",  width:"20", qty:"1", matType:"plywood", brand:"", notes:"Loft 2", price:""},
+    {id:4, product:"Kitchen Loft Acrylic",    type:"Acrylic Box Frame",height:"2.5",width:"8",qty:"1",matType:"plywood",brand:"",notes:"Loft 1", price:""},
+    {id:5, product:"Kitchen Loft Profile",    type:"Profile Door",height:"2.5",width:"8",  qty:"1", matType:"glass",   brand:"", notes:"", price:""},
+    {id:6, product:"Kitchen Backslash Tiles", type:"Tiles",       height:"2",  width:"30", qty:"1", matType:"",        brand:"", notes:"", price:""},
+    {id:7, product:"Granite Platform",        type:"Granite",     height:"3",  width:"4",  qty:"1", matType:"",        brand:"", notes:"Wash area", price:""},
+    {id:8, product:"Sink",                    type:"Sink",        height:"",   width:"",   qty:"3", matType:"",        brand:"", notes:"", price:""},
+    {id:9, product:"False Ceiling",           type:"Ceiling",     height:"13.4",width:"8.6",qty:"1",matType:"ceiling", brand:"", notes:"", price:""},
+  ],
+  "Bathroom": [
+    {id:1, product:"Bathroom Mirror",         type:"Mirror",      height:"",   width:"",   qty:"1", matType:"glass",   brand:"", notes:"", price:""},
+    {id:2, product:"Bathroom Accessories",    type:"Service",     height:"",   width:"",   qty:"1", matType:"",        brand:"", notes:"", price:""},
+    {id:3, product:"Bathroom Lighting",       type:"Service",     height:"",   width:"",   qty:"1", matType:"lights",  brand:"", notes:"", price:""},
+  ],
+};
+
+// Build default roomWork for a given property type
+const buildDefaultRoomWork = (propType) => {
+  const rooms = PROPERTY_ROOMS_MAP[propType] || [];
+  const rw = {};
+  rooms.forEach((room, ri) => {
+    const items = DEFAULT_ROOM_WORK[room];
+    if (items) {
+      rw[room] = items.map((item, ii) => ({
+        ...item,
+        id: Date.now() + ri * 100 + ii,
+      }));
+    }
+  });
+  return rw;
+};
 const PLYWOOD_OPTIONS = ["Century Club Prime","Green Ply HDHMR","Sainik 710","Block Boards","WPVC"];
 const LAMINATE_OPTIONS = ["Virgo","Croma","Acrylic Sheets"];
 const HARDWARE_OPTIONS = ["Nimmi Hinges","Nimmi Channels","Hettich Tandem"];
@@ -300,74 +427,141 @@ const MATERIAL_LABELS = {
 
 // ── Work Types — what is being built in each room ─────────────────────
 // Each entry: { label, materials[], icon }
-// ── Product catalog — matches High Rise Interiors quotation format ─────
-// Products: name, defaultType, materials (for brand selection)
-const PRODUCTS = [
-  // Boxes & Frame work
-  { name:"Shoe Rack",               type:"Box",              mats:["plywood","laminate","hardware"] },
-  { name:"Entrance Frame",          type:"Frame",            mats:["plywood","laminate"] },
-  { name:"Wardrobe",                type:"Box",              mats:["plywood","laminate","hardware"] },
-  { name:"Wardrobe Loft",           type:"Frame",            mats:["plywood","laminate"] },
-  { name:"Window Below Box",        type:"Box",              mats:["plywood","laminate","hardware"] },
-  { name:"Used Clothes Pullout",    type:"Box",              mats:["plywood","laminate","hardware"] },
-  { name:"Study Table",             type:"Box",              mats:["plywood","laminate","hardware"] },
-  { name:"Wash Area Box",           type:"Box",              mats:["plywood","laminate"] },
-  // TV Unit
-  { name:"TV Unit Bottom Box",      type:"Box",              mats:["plywood","laminate","hardware"] },
-  { name:"TV Unit Back Panel",      type:"Panel",            mats:["plywood","laminate"] },
-  { name:"TV Unit Long Unit",       type:"Box",              mats:["plywood","laminate"] },
-  { name:"TV Unit Long Unit Profile",type:"Profile Door",    mats:["plywood","laminate","glass"] },
-  { name:"TV Unit Side Louvers",    type:"Louvers",          mats:["plywood","laminate"] },
-  { name:"TV Unit Partition",       type:"Frame",            mats:["plywood","laminate"] },
-  // Crockery / Living
-  { name:"Crockery Top Box",        type:"Open Box",         mats:["plywood","laminate"] },
-  { name:"Crockery Profile Glass",  type:"Profile Door",     mats:["plywood","laminate","glass"] },
-  { name:"Crockery Long Glass Box", type:"Open Box",         mats:["plywood","laminate"] },
-  { name:"Crockery Bottom Box",     type:"Box",              mats:["plywood","laminate","hardware"] },
-  { name:"Crockery Top Loft",       type:"Frame",            mats:["plywood","laminate"] },
-  { name:"Diamond Mirror",          type:"Diamond Mirror",   mats:["glass"] },
-  // Dressing
-  { name:"Dressing Wardrobe",       type:"Box",              mats:["plywood","laminate","hardware"] },
-  { name:"Dressing Wardrobe Loft",  type:"Box",              mats:["plywood","laminate"] },
-  { name:"Dressing Mirror Wall",    type:"Box",              mats:["plywood","laminate"] },
-  { name:"Dressing Mirror",         type:"Mirror",           mats:["glass"] },
-  // Bed
-  { name:"Hydraulic Bed",           type:"Bed",              mats:[] },
-  { name:"Bed Cushion",             type:"Cushion",          mats:[] },
-  { name:"Bed Back Panel",          type:"Panel",            mats:["plywood","laminate"] },
-  // Ceiling
-  { name:"False Ceiling",           type:"Ceiling",          mats:["ceiling","lights"] },
-  // Pooja
-  { name:"Pooja Box",               type:"Box",              mats:["plywood","laminate","hardware"] },
-  { name:"Pooja Door",              type:"Pooja Profile Door",mats:["plywood","laminate","glass"] },
-  { name:"Pooja Tiles",             type:"Tiles",            mats:[] },
-  { name:"Pooja Draws",             type:"Drawer",           mats:["hardware"] },
-  { name:"Pooja Ceiling",           type:"Ceiling",          mats:["ceiling","lights"] },
-  // Kitchen
-  { name:"Kitchen Counter",         type:"Kitchen",          mats:["plywood","laminate","hardware","handles"] },
-  { name:"Kitchen Long Unit",       type:"Kitchen",          mats:["plywood","laminate","hardware","handles"] },
-  { name:"Kitchen Loft",            type:"Kitchen",          mats:["plywood","laminate"] },
-  { name:"Kitchen Loft Acrylic",    type:"Acrylic Box Frame",mats:["plywood","laminate"] },
-  { name:"Kitchen Loft Profile",    type:"Profile Door",     mats:["plywood","laminate","glass"] },
-  { name:"Kitchen Backslash Tiles", type:"Tiles",            mats:[] },
-  { name:"Granite Platform",        type:"Granite",          mats:[] },
-  { name:"Wash Area Granite",       type:"Granite",          mats:[] },
-  { name:"Sink",                    type:"Sink",             mats:[] },
-  { name:"POP Design",              type:"POP Design",       mats:[] },
-  // Accessories / Others (qty-based, no W×H)
-  { name:"Channels & Accessories",  type:"Channels",         mats:["hardware"] },
-  { name:"Small Drawers",           type:"Drawer",           mats:["hardware"] },
-  { name:"Medium Drawers",          type:"Drawer",           mats:["hardware"] },
-  { name:"Bathroom Mirror",         type:"Mirror",           mats:["glass"] },
-  { name:"Bathroom Accessories",    type:"Service",          mats:[] },
-  { name:"Bathroom Lighting",       type:"Service",          mats:["lights"] },
-  { name:"Electrical & Plumbing",   type:"Service",          mats:[] },
-  { name:"Paints",                  type:"Service",          mats:[] },
-  { name:"Transport & Cleaning",    type:"Transport",        mats:[] },
-  { name:"Custom Item",             type:"Box",              mats:["plywood","laminate","hardware"] },
+// ── Products per room — matches High Rise Interiors quotation format ─────
+const ROOM_PRODUCTS = {
+  "Entrance": [
+    { name:"Shoe Rack",              type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Entrance Frame",         type:"Frame",         mats:["plywood","laminate"] },
+    { name:"Entrance Ceiling",       type:"Ceiling",       mats:["ceiling","lights"] },
+    { name:"Tiles",                  type:"Tiles",         mats:[] },
+  ],
+  "Drawing Room": [
+    { name:"TV Unit Bottom Box",     type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"TV Unit Back Panel",     type:"Panel",         mats:["plywood","laminate"] },
+    { name:"TV Unit Long Unit",      type:"Box",           mats:["plywood","laminate"] },
+    { name:"TV Unit Long Unit Profile",type:"Profile Door",mats:["plywood","laminate","glass"] },
+    { name:"TV Unit Side Louvers",   type:"Louvers",       mats:["plywood","laminate"] },
+    { name:"TV Unit Partition",      type:"Frame",         mats:["plywood","laminate"] },
+    { name:"Diamond Mirror",         type:"Diamond Mirror",mats:["glass"] },
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+    { name:"POP Design",             type:"POP Design",    mats:[] },
+    { name:"Tiles",                  type:"Tiles",         mats:[] },
+  ],
+  "Living Area": [
+    { name:"Crockery Top Box",       type:"Open Box",      mats:["plywood","laminate"] },
+    { name:"Crockery Profile Glass", type:"Profile Door",  mats:["plywood","laminate","glass"] },
+    { name:"Crockery Long Glass Box",type:"Open Box",      mats:["plywood","laminate"] },
+    { name:"Crockery Bottom Box",    type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Crockery Top Loft",      type:"Frame",         mats:["plywood","laminate"] },
+    { name:"Granite Platform",       type:"Granite",       mats:[] },
+    { name:"Diamond Mirror",         type:"Diamond Mirror",mats:["glass"] },
+    { name:"POP Design",             type:"POP Design",    mats:[] },
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+  ],
+  "Dining": [
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+    { name:"POP Design",             type:"POP Design",    mats:[] },
+    { name:"Crockery Unit",          type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Granite Platform",       type:"Granite",       mats:[] },
+    { name:"Tiles",                  type:"Tiles",         mats:[] },
+  ],
+  "Master Bedroom": [
+    { name:"Wardrobe",               type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Wardrobe Loft",          type:"Frame",         mats:["plywood","laminate"] },
+    { name:"Dressing Wardrobe",      type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Dressing Wardrobe Loft", type:"Box",           mats:["plywood","laminate"] },
+    { name:"Dressing Mirror Wall",   type:"Box",           mats:["plywood","laminate"] },
+    { name:"Dressing Mirror",        type:"Mirror",        mats:["glass"] },
+    { name:"Bed Back Panel",         type:"Panel",         mats:["plywood","laminate"] },
+    { name:"Study Table",            type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Hydraulic Bed",          type:"Bed",           mats:[] },
+    { name:"Bed Cushion",            type:"Cushion",       mats:[] },
+    { name:"TV Unit",                type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+    { name:"POP Design",             type:"POP Design",    mats:[] },
+  ],
+  "Children Bedroom": [
+    { name:"Wardrobe",               type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Wardrobe Loft",          type:"Frame",         mats:["plywood","laminate"] },
+    { name:"Window Below Box",       type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Hydraulic Bed",          type:"Bed",           mats:[] },
+    { name:"Bed Cushion",            type:"Cushion",       mats:[] },
+    { name:"Dressing",               type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Dressing Mirror",        type:"Mirror",        mats:["glass"] },
+    { name:"Study Table",            type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+  ],
+  "Guest Bedroom": [
+    { name:"Wardrobe",               type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Wardrobe Loft",          type:"Frame",         mats:["plywood","laminate"] },
+    { name:"Used Clothes Pullout",   type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Hydraulic Bed",          type:"Bed",           mats:[] },
+    { name:"Bed Cushion",            type:"Cushion",       mats:[] },
+    { name:"Dressing",               type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Dressing Mirror",        type:"Mirror",        mats:["glass"] },
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+  ],
+  "Kitchen": [
+    { name:"Kitchen Counter Below",  type:"Kitchen",       mats:["plywood","laminate","hardware","handles"] },
+    { name:"Kitchen Long Unit",      type:"Kitchen",       mats:["plywood","laminate","hardware","handles"] },
+    { name:"Kitchen Loft",           type:"Kitchen",       mats:["plywood","laminate"] },
+    { name:"Kitchen Loft Acrylic",   type:"Acrylic Box Frame",mats:["plywood","laminate"] },
+    { name:"Kitchen Loft Profile",   type:"Profile Door",  mats:["plywood","laminate","glass"] },
+    { name:"Backslash Tiles",        type:"Tiles",         mats:[] },
+    { name:"Granite Platform",       type:"Granite",       mats:[] },
+    { name:"Sink",                   type:"Sink",          mats:[] },
+    { name:"Wash Area",              type:"Box",           mats:["plywood","laminate"] },
+    { name:"Wash Area Granite",      type:"Granite",       mats:[] },
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+  ],
+  "Pooja": [
+    { name:"Pooja Box",              type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Pooja Door",             type:"Pooja Profile Door",mats:["plywood","laminate","glass"] },
+    { name:"Pooja Tiles",            type:"Tiles",         mats:[] },
+    { name:"Pooja Draws",            type:"Drawer",        mats:["hardware"] },
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+    { name:"Diamond Mirror",         type:"Diamond Mirror",mats:["glass"] },
+  ],
+  "Balcony": [
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+    { name:"Tiles",                  type:"Tiles",         mats:[] },
+    { name:"Partition",              type:"Frame",         mats:["plywood","laminate"] },
+  ],
+  "Bathroom": [
+    { name:"Bathroom Mirror",        type:"Mirror",        mats:["glass"] },
+    { name:"Bathroom Accessories",   type:"Service",       mats:[] },
+    { name:"Bathroom Lighting",      type:"Service",       mats:["lights"] },
+    { name:"Tiles",                  type:"Tiles",         mats:[] },
+  ],
+  "Study Room": [
+    { name:"Study Table",            type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Bookshelf",              type:"Open Box",      mats:["plywood","laminate"] },
+    { name:"Wardrobe",               type:"Box",           mats:["plywood","laminate","hardware"] },
+    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+  ],
+};
+
+// Fallback for custom rooms — show everything
+const ALL_PRODUCTS = [
+  { name:"Box Work",               type:"Box",           mats:["plywood","laminate","hardware"] },
+  { name:"Frame Work",             type:"Frame",         mats:["plywood","laminate"] },
+  { name:"Open Box",               type:"Open Box",      mats:["plywood","laminate"] },
+  { name:"Profile Door",           type:"Profile Door",  mats:["plywood","laminate","glass"] },
+  { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+  { name:"Tiles",                  type:"Tiles",         mats:[] },
+  { name:"Granite",                type:"Granite",       mats:[] },
+  { name:"Mirror",                 type:"Mirror",        mats:["glass"] },
+  { name:"Hydraulic Bed",          type:"Bed",           mats:[] },
+  { name:"Bed Cushion",            type:"Cushion",       mats:[] },
+  { name:"Drawer",                 type:"Drawer",        mats:["hardware"] },
+  { name:"Service",                type:"Service",       mats:[] },
+  { name:"Custom Item",            type:"Box",           mats:["plywood","laminate","hardware"] },
 ];
 
-// Types that use qty (count) instead of W×H
+// Helper: get products for a room
+const getProductsForRoom = (room) => ROOM_PRODUCTS[room] || ALL_PRODUCTS;
+
+// Types that use qty (count) not W×H
 const QTY_TYPES = new Set(["Service","Transport","Sink","Drawer","Bed","Cushion","Channels"]);
 
 // Types that use W×H for area calculation  
@@ -385,14 +579,16 @@ const PAYMENT_PHASES = [
 
 const EMPTY = {
   id:null, name:"", email:"", phone:"", address:"",
-  status:"Lead", projectType:"Residential",
-  budget:"", timeline:"", startDate:"",
-  rooms:[], dimensions:{ length:"", width:"", height:"" },
-  style:"", notes:"",
+  status:"Lead", projectType:"Residential", propertyType:"3 BHK",
+  budget:"₹30L–₹35L", timeline:"60 Days", startDate:"",
+  rooms:["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom"],
+  dimensions:{ length:"", width:"", height:"" },
+  style:"Luxury", notes:"",
   quotation:"", previousQuotation:"", revisedQuotation:"",
   plywood:"", laminate:"", hardware:"", glass:"", ceiling:"", lights:"", handles:"",
   roomDetails:{},
   roomMaterials:{},
+  roomWork: {},
   rebateType:"amount", rebateValue:"", labourPct:50,
   auditLog:[],              // [{ts, type, user, summary, snapshot, signatures}]
   inventory:{},             // per-material status: { key: {status, orderedDate, deliveredDate, notes} }
@@ -1700,7 +1896,8 @@ High Rise Interiors, Hyderabad`
     setView("form");
   };
 
-  const openNew    = () => { setForm({...EMPTY}); setActiveTab("personal"); setView("form"); };
+  const openNew    = () => { setForm({...EMPTY, startDate:new Date().toISOString().split("T")[0], roomWork:buildDefaultRoomWork("3 BHK")});
+    setActiveTab("personal"); setView("form"); };
   const openDetail = (c) => { setSelectedId(c.id); setView("detail"); };
   const setF       = (k, v) => setForm(f => ({...f, [k]: v}));
   const setDim     = (k, v) => setForm(f => ({...f, dimensions: {...f.dimensions, [k]: v}}));
@@ -1995,10 +2192,12 @@ High Rise Interiors, Hyderabad`
               ["Client",       selected.name],
               ["Phone",        selected.phone],
               ["Address",      selected.address],
+              ["Property Type",selected.propertyType],
               ["Project Type", selected.projectType],
+              ["Interior Style",selected.style],
+              ["Budget",       selected.budget],
               ["Start Date",   selected.startDate],
               ["Duration",     selected.timeline],
-              ["Style",        selected.style],
               ["Status",       selected.status],
             ].filter(([,v])=>v).map(([l,v])=>(
               <div key={l} style={{ display:"flex", gap:8, padding:"5px 0", borderBottom:"1px solid #e5e7eb", fontSize:12 }}>
@@ -2357,7 +2556,7 @@ High Rise Interiors, Hyderabad`
               <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>{selected.address}</div>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-              {[["Project",selected.projectType],["Style",selected.style],["Start",selected.startDate],["Duration",selected.timeline]].filter(([,v])=>v).map(([l,v])=>(
+              {[["Property",selected.propertyType],["Project",selected.projectType],["Style",selected.style],["Budget",selected.budget],["Start",selected.startDate],["Duration",selected.timeline]].filter(([,v])=>v).map(([l,v])=>(
                 <div key={l}><div style={{ fontSize:9, color:"#6b7280", letterSpacing:1, textTransform:"uppercase" }}>{l}</div><div style={{ fontSize:12, fontWeight:600 }}>{v}</div></div>
               ))}
             </div>
@@ -2479,7 +2678,10 @@ High Rise Interiors, Hyderabad`
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
                 <div>
                   <div style={{fontSize:24,fontWeight:700,letterSpacing:-0.5,marginBottom:4}}>{selected.name}</div>
-                  <div style={{color:"rgba(255,255,255,0.5)",fontSize:13}}>{selected.projectType}</div>
+                  <div style={{color:"rgba(255,255,255,0.5)",fontSize:13}}>
+                    {selected.propertyType && <span style={{marginRight:6}}>{selected.propertyType} ·</span>}
+                    {selected.projectType}
+                  </div>
                 </div>
                 <span className={{"Lead":"badge badge-lead","Active":"badge badge-active","In Progress":"badge badge-inprogress","Completed":"badge badge-completed","On Hold":"badge badge-onhold"}[selected.status]||"badge"} style={{fontSize:11}}>{selected.status}</span>
               </div>
@@ -3059,8 +3261,18 @@ Dimension rules:
                 <input className="glass-input" style={{}} value={form.address} onChange={e=>setF("address",e.target.value)} placeholder="EIPL Cornerstone T2, 803, Hyderabad, Telangana"/>
               </div>
               <div style={S.row}>
-                <Field label="Project Type">
-                  <Select value={form.projectType} onChange={v=>setF("projectType",v)} options={["Residential","Villa","Apartment","Commercial","Office"]}/>
+                <Field label="Property Type">
+                  <select className="glass-input" style={{}}
+                    value={form.propertyType||"3 BHK"}
+                    onChange={e=>{
+                      const pt = e.target.value;
+                      const budget = PROPERTY_BUDGET_MAP[pt] || "";
+                      const rooms  = PROPERTY_ROOMS_MAP[pt]  || [];
+                      const rw     = buildDefaultRoomWork(pt);
+                      setForm(f=>({...f, propertyType:pt, budget, rooms, roomWork:rw}));
+                    }}>
+                    {PROPERTY_TYPES.map(p=><option key={p} value={p}>{p}</option>)}
+                  </select>
                 </Field>
                 <Field label="Budget Range">
                   <Select value={form.budget} onChange={v=>setF("budget",v)} options={BUDGETS} placeholder="Select budget"/>
@@ -3122,7 +3334,7 @@ Dimension rules:
 
                 const addWork = ()=>{
                   // Default product = first in list; auto-fill type and default material
-                  const prod = PRODUCTS[0];
+                  const prod = getProductsForRoom(room)[0]||ALL_PRODUCTS[0];
                   const defaultBrands = {};
                   prod.mats.forEach(mt=>{
                     // Use room default if exists, otherwise lowest price item
@@ -3188,7 +3400,7 @@ Dimension rules:
 
                     {/* Work item rows */}
                     {works.map((w,wi)=>{
-                      const prod = PRODUCTS.find(p=>p.name===w.product)||PRODUCTS[PRODUCTS.length-1];
+                      const prod = getProductsForRoom(room).find(p=>p.name===w.product)||getProductsForRoom(room)[0]||ALL_PRODUCTS[0];
                       const useQty = QTY_TYPES.has(w.type);
                       const sqft   = w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):null;
                       const catalog = getCatalog(w.matType||"plywood");
@@ -3204,7 +3416,7 @@ Dimension rules:
                             <select className="glass-input" style={{fontSize:12,padding:"5px 6px"}}
                               value={w.product||""}
                               onChange={e=>{
-                                const p=PRODUCTS.find(x=>x.name===e.target.value)||PRODUCTS[PRODUCTS.length-1];
+                                const p=getProductsForRoom(room).find(x=>x.name===e.target.value)||getProductsForRoom(room)[0]||ALL_PRODUCTS[0];
                                 // Auto-fill type; compute default brands
                                 const defs={};
                                 p.mats.forEach(mt=>{
@@ -3213,7 +3425,7 @@ Dimension rules:
                                 });
                                 updWork(w.id,"product",e.target.value,{type:p.type,matType:p.mats[0]||"",brand:defs[p.mats[0]||""]||"",allBrands:defs,price:""});
                               }}>
-                              {PRODUCTS.map(p=><option key={p.name} value={p.name}>{p.name}</option>)}
+                              {getProductsForRoom(room).map(p=><option key={p.name} value={p.name}>{p.name}</option>)}
                             </select>
 
                             {/* Type (auto-filled, editable) */}
@@ -3304,6 +3516,152 @@ Dimension rules:
                         </div>
                       );
                     })}
+
+                    {/* ── Room Photos + AI Render ── */}
+                    {(()=>{
+                      const STYLES = ["Modern Contemporary","Luxury","Scandinavian","Industrial","Classic Traditional","Bohemian","Art Deco"];
+                      const [renderStyle,   setRenderStyle]   = React.useState("Luxury");
+                      const [renderPrompt,  setRenderPrompt]  = React.useState("");
+                      const [rendering,     setRendering]     = React.useState(false);
+                      const [renderError,   setRenderError]   = React.useState("");
+                      const [renderResults, setRenderResults] = React.useState(rd.renders||[]);
+
+                      const doRender = async (photoBase64) => {
+                        setRendering(true); setRenderError("");
+                        try {
+                          const res = await fetch("/api/render-room", {
+                            method:"POST",
+                            headers:{"Content-Type":"application/json"},
+                            body: JSON.stringify({ imageBase64: photoBase64, style: renderStyle, prompt: renderPrompt }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error||"Render failed");
+                          const newRender = { url: data.imageUrl, style: renderStyle, ts: Date.now(), sourcePhoto: photoBase64 };
+                          const updated = [newRender, ...(rd.renders||[])];
+                          setRenderResults(updated);
+                          setRD("renders", updated);
+                        } catch(e) { setRenderError(e.message); }
+                        setRendering(false);
+                      };
+
+                      return (
+                        <div style={{marginTop:14,marginBottom:4}}>
+                          {/* Section header */}
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                            <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>
+                              📸 Reference Photos & AI Renders
+                            </div>
+                            {(rd.photos||[]).length>0&&(
+                              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                <select className="glass-input" style={{fontSize:11,padding:"4px 8px",width:"auto"}}
+                                  value={renderStyle} onChange={e=>setRenderStyle(e.target.value)}>
+                                  {STYLES.map(s=><option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <input className="glass-input" style={{fontSize:11,padding:"4px 8px",width:140}}
+                                  placeholder="Extra prompt (optional)"
+                                  value={renderPrompt} onChange={e=>setRenderPrompt(e.target.value)}/>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Photos row */}
+                          <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"flex-start",marginBottom:10}}>
+                            {(rd.photos||[]).map((photo,pi)=>(
+                              <div key={pi} style={{position:"relative",display:"flex",flexDirection:"column",gap:4}}>
+                                <img src={photo} alt={`${room} ${pi+1}`}
+                                  style={{width:90,height:90,objectFit:"cover",borderRadius:10,border:"1px solid rgba(255,255,255,0.14)",cursor:"pointer"}}
+                                  onClick={()=>window.open(photo,"_blank")}/>
+                                <div style={{display:"flex",gap:4}}>
+                                  <button onClick={()=>doRender(photo)} disabled={rendering}
+                                    style={{flex:1,padding:"3px 0",borderRadius:6,border:"1px solid rgba(191,90,242,0.4)",
+                                      background:"rgba(191,90,242,0.15)",color:"#BF5AF2",cursor:rendering?"not-allowed":"pointer",
+                                      fontFamily:"inherit",fontSize:9,fontWeight:700}}>
+                                    {rendering?"⏳":"✨ Render"}
+                                  </button>
+                                  <button onClick={()=>setRD("photos",(rd.photos||[]).filter((_,i)=>i!==pi))}
+                                    style={{padding:"3px 6px",borderRadius:6,border:"1px solid rgba(255,69,58,0.3)",
+                                      background:"rgba(255,69,58,0.12)",color:"#FF453A",cursor:"pointer",
+                                      fontFamily:"inherit",fontSize:9}}>✕</button>
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* Upload button */}
+                            <label style={{width:90,height:90,borderRadius:10,border:"1px dashed rgba(255,255,255,0.18)",
+                              background:"rgba(255,255,255,0.04)",display:"flex",flexDirection:"column",
+                              alignItems:"center",justifyContent:"center",cursor:"pointer",gap:4}}>
+                              <span style={{fontSize:22}}>📷</span>
+                              <span style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:0.5}}>Add Photo</span>
+                              <input type="file" accept="image/*" multiple style={{display:"none"}}
+                                onChange={e=>{
+                                  const files=[...e.target.files];
+                                  files.forEach(file=>{
+                                    const reader=new FileReader();
+                                    reader.onload=ev=>setRD("photos",[...(rd.photos||[]),ev.target.result]);
+                                    reader.readAsDataURL(file);
+                                  });
+                                  e.target.value="";
+                                }}/>
+                            </label>
+                          </div>
+
+                          {/* Render error */}
+                          {renderError&&(
+                            <div style={{background:"rgba(255,69,58,0.12)",border:"1px solid rgba(255,69,58,0.3)",
+                              borderRadius:8,padding:"8px 12px",fontSize:12,color:"#FF453A",marginBottom:8}}>
+                              ⚠️ {renderError}
+                            </div>
+                          )}
+
+                          {/* Rendering spinner */}
+                          {rendering&&(
+                            <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",
+                              background:"rgba(191,90,242,0.1)",border:"1px solid rgba(191,90,242,0.3)",
+                              borderRadius:10,marginBottom:8}}>
+                              <div style={{width:20,height:20,borderRadius:"50%",border:"2px solid #BF5AF2",
+                                borderTopColor:"transparent",animation:"spin 0.8s linear infinite"}}/>
+                              <span style={{fontSize:13,color:"#BF5AF2",fontWeight:600}}>
+                                AI rendering {renderStyle} style… (~15-30s)
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Render results */}
+                          {(rd.renders||[]).length>0&&(
+                            <div>
+                              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(191,90,242,0.7)",
+                                textTransform:"uppercase",marginBottom:8}}>✨ AI Renders</div>
+                              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                                {(rd.renders||[]).map((r,ri)=>(
+                                  <div key={ri} style={{position:"relative"}}>
+                                    <img src={r.url} alt={r.style}
+                                      style={{width:140,height:105,objectFit:"cover",borderRadius:10,
+                                        border:"1px solid rgba(191,90,242,0.4)",cursor:"pointer"}}
+                                      onClick={()=>window.open(r.url,"_blank")}/>
+                                    <div style={{position:"absolute",bottom:4,left:4,right:4,
+                                      background:"rgba(0,0,0,0.7)",borderRadius:6,padding:"2px 6px",
+                                      fontSize:9,color:"rgba(255,255,255,0.9)",fontWeight:600,textAlign:"center"}}>
+                                      ✨ {r.style}
+                                    </div>
+                                    <button onClick={()=>setRD("renders",(rd.renders||[]).filter((_,i)=>i!==ri))}
+                                      style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",
+                                        background:"#FF453A",border:"none",color:"#fff",cursor:"pointer",
+                                        fontSize:9,fontFamily:"inherit",padding:0,lineHeight:1}}>✕</button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {(rd.photos||[]).length===0&&(rd.renders||[]).length===0&&(
+                            <div style={{textAlign:"center",padding:"16px",background:"rgba(255,255,255,0.03)",
+                              borderRadius:10,color:"rgba(255,255,255,0.3)",fontSize:12}}>
+                              📷 Upload a room photo to enable AI rendering
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Add row button */}
                     <button onClick={addWork}
