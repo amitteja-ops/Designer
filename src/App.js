@@ -1852,50 +1852,23 @@ High Rise Interiors, Hyderabad`
 
 
   const openEdit = (c) => {
+    // Spread all fields from the customer object — single source of truth
     setForm({
+      ...EMPTY,          // baseline defaults for any missing fields
+      ...c,              // all fields from the loaded customer
+      // Ensure critical fields have safe fallbacks
       id:                c.id                || null,
-      name:              c.name              || "",
-      email:             c.email             || "",
-      phone:             c.phone             || "",
-      address:           c.address           || "",
-      status:            c.status            || "Lead",
-      projectType:       c.projectType       || "Residential",
-      budget:            c.budget            || "",
-      timeline:          c.timeline          || "",
-      startDate:         c.startDate         || "",
-      rooms:             c.rooms             || [],
-      dimensions: {
-        length:          c.dimensions?.length || "",
-        width:           c.dimensions?.width  || "",
-        height:          c.dimensions?.height || "",
-      },
-      style:             c.style             || "",
-      notes:             c.notes             || "",
-      quotation:         c.quotation         || "",
-      previousQuotation: c.previousQuotation || "",
-      revisedQuotation:  c.revisedQuotation  || "",
-      plywood:           c.plywood           || "",
-      laminate:          c.laminate          || "",
-      hardware:          c.hardware          || "",
-      glass:             c.glass             || "",
-      ceiling:           c.ceiling           || "",
-      lights:            c.lights            || "",
-      handles:           c.handles           || "",
+      dimensions:        c.dimensions        || { length:"", width:"", height:"" },
       roomDetails:       c.roomDetails       || {},
       roomMaterials:     c.roomMaterials     || {},
-      rebateType:        c.rebateType        || "amount",
-      rebateValue:       c.rebateValue       || "",
-      customRooms:         c.customRooms         || [],
-      floorPlanUrl:        c.floorPlanUrl        || "",
-      floorPlanData:       c.floorPlanData       || null,
-      floorPlanPending:    c.floorPlanPending    || null,
-      auditLog:            c.auditLog            || [],
-      inventory:           c.inventory           || {},
-      referralCode:        c.referralCode        || "",
-      clientAccessCode:    c.clientAccessCode    || "",
-      appliedReferralCode: c.appliedReferralCode || "",
-      referralDiscount:   c.referralDiscount   || false,
+      roomWork:          c.roomWork          || {},
+      inventory:         c.inventory         || {},
+      auditLog:          c.auditLog          || [],
+      rooms:             c.rooms             || [],
+      customRooms:       c.customRooms       || [],
       labourPct:         c.labourPct         != null ? c.labourPct : 50,
+      rebateType:        c.rebateType        || "amount",
+      propertyType:      c.propertyType      || "3 BHK",
     });
     setActiveTab("personal");
     setView("form");
@@ -2152,15 +2125,19 @@ High Rise Interiors, Hyderabad`
 
     // Build full materials order list from roomMaterials
     const allMaterials = {};
-    Object.entries(selected.roomMaterials||{}).forEach(([room, mats]) => {
-      Object.entries(mats).forEach(([matType, sel]) => {
-        if (!sel?.name || !sel?.qty) return;
-        const item = getCatalog(matType).find(m=>m.name===sel.name);
+    Object.entries(selected.roomWork||{}).forEach(([room, works]) => {
+      (works||[]).forEach(w => {
+        if (!w.brand || !w.matType) return;
+        const catalog = getCatalog(w.matType);
+        const item = catalog.find(m=>m.name===w.brand);
         if (!item) return;
-        const k = `${matType}||${sel.name}`;
-        if (!allMaterials[k]) allMaterials[k] = { matType, name:sel.name, unit:item.unit, price:item.price, qty:0, rooms:[] };
-        allMaterials[k].qty += parseFloat(sel.qty);
-        allMaterials[k].rooms.push(room);
+        const sqft = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : 0;
+        const qty  = QTY_TYPES.has(w.type) ? parseFloat(w.qty)||1 : sqft;
+        if (!qty) return;
+        const k = `${w.matType}||${w.brand}`;
+        if (!allMaterials[k]) allMaterials[k] = { matType:w.matType, name:w.brand, unit:item.unit, price:item.price, qty:0, rooms:[] };
+        allMaterials[k].qty += qty;
+        if (!allMaterials[k].rooms.includes(room)) allMaterials[k].rooms.push(room);
       });
     });
 
@@ -2444,39 +2421,166 @@ High Rise Interiors, Hyderabad`
 
 
   // ── VENDOR ORDER REPORT ──────────────────────────────────────────────
-  if (view==="vendor" && selected) {
+  if (view==="invoice" && selected) {
+    const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+    const invNum = `HRI-INV-${String(selected.id||"").slice(-4).padStart(4,"0")}-${new Date().getFullYear()}`;
+    const lp = selected.labourPct != null ? selected.labourPct : 50;
+
+    // Build line items from roomWork
+    const lineItems = [];
+    Object.entries(selected.roomWork||{}).forEach(([room, works]) => {
+      (works||[]).forEach(w => {
+        if (!w.product) return;
+        const catalog = getCatalog(w.matType||"plywood");
+        const item    = catalog.find(m=>m.name===w.brand);
+        const sqft    = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : 0;
+        const qty     = QTY_TYPES.has(w.type) ? parseFloat(w.qty)||1 : sqft;
+        const rate    = item?.price || 0;
+        const total   = w.price ? parseFloat(w.price) : qty * rate;
+        lineItems.push({ room, product:w.product, type:w.type, height:w.height, width:w.width,
+          brand:w.brand, qty:qty.toFixed(1), unit:QTY_TYPES.has(w.type)?"units":"sq ft",
+          rate, total, notes:w.notes });
+      });
+    });
+
+    const subtotal   = lineItems.reduce((t,l)=>t+l.total,0);
+    const gst        = Math.round(subtotal * 0.05);
+    const grandTotal = subtotal + gst;
+
+    const RS = {
+      page:  { background:"#fff", color:"#0F1923", fontFamily:"Arial,sans-serif", padding:40, maxWidth:900, margin:"0 auto" },
+      hdr:   { borderBottom:"3px solid #0F1923", paddingBottom:16, marginBottom:24 },
+      co:    { fontSize:22, fontWeight:700, letterSpacing:-0.5 },
+      sub:   { fontSize:12, color:"#6b7280", marginTop:4 },
+      sec:   { marginBottom:24 },
+      sTitle:{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:"#6b7280", borderBottom:"1px solid #e5e7eb", paddingBottom:6, marginBottom:12 },
+      th:    (i) => ({ padding:"8px 10px", background:i===0?"#0F1923":"#f3f4f6", color:i===0?"#fff":"#374151", fontSize:11, fontWeight:700, letterSpacing:0.5 }),
+      td:    (i) => ({ padding:"8px 10px", fontSize:12, background:i%2===0?"#fff":"#f9fafb", borderBottom:"1px solid #e5e7eb" }),
+      row:   { display:"flex", justifyContent:"space-between", marginBottom:6, fontSize:13 },
+      total: { display:"flex", justifyContent:"space-between", fontWeight:700, fontSize:15, borderTop:"2px solid #0F1923", paddingTop:10, marginTop:8 },
+    };
+
+    const fmt = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
+
+    return (
+      <div style={{ background:"#fff", minHeight:"100vh" }}>
+        <div style={{ padding:"12px 24px", background:"#0F1923", display:"flex", gap:16, alignItems:"center", displayPrint:"none" }}>
+          <button onClick={()=>setView("detail")} style={{ background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", color:"#fff", padding:"7px 16px", borderRadius:8, cursor:"pointer", fontFamily:"inherit", fontSize:13 }}>← Back</button>
+          <button onClick={()=>window.print()} style={{ background:"#0A84FF", border:"none", color:"#fff", padding:"7px 16px", borderRadius:8, cursor:"pointer", fontFamily:"inherit", fontSize:13, fontWeight:600 }}>🖨 Print / PDF</button>
+          <span style={{ color:"rgba(255,255,255,0.6)", fontSize:13 }}>Invoice · {selected.name}</span>
+        </div>
+
+        <div style={RS.page}>
+          {/* Header */}
+          <div style={{ ...RS.hdr, display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <div style={RS.co}>HIGH RISE INTERIORS</div>
+              <div style={RS.sub}>+91-6304980890</div>
+              <div style={RS.sub}>Hyderabad, Telangana</div>
+            </div>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:26, fontWeight:800, letterSpacing:-1, color:"#0F1923" }}>INVOICE</div>
+              <div style={{ fontSize:13, color:"#6b7280", marginTop:4 }}># {invNum}</div>
+              <div style={{ fontSize:13, color:"#6b7280" }}>Date: {d}</div>
+            </div>
+          </div>
+
+          {/* Bill To */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:32, marginBottom:28 }}>
+            <div>
+              <div style={RS.sTitle}>Bill To</div>
+              <div style={{ fontWeight:700, fontSize:14 }}>{selected.name}</div>
+              {selected.phone   && <div style={{ fontSize:13, color:"#6b7280", marginTop:3 }}>{selected.phone}</div>}
+              {selected.email   && <div style={{ fontSize:13, color:"#6b7280" }}>{selected.email}</div>}
+              {selected.address && <div style={{ fontSize:13, color:"#6b7280", marginTop:3 }}>{selected.address}</div>}
+            </div>
+            <div>
+              <div style={RS.sTitle}>Project Details</div>
+              {[["Property",selected.propertyType],["Style",selected.style],["Start",selected.startDate],["Duration",selected.timeline]]
+                .filter(([,v])=>v).map(([l,v])=>(
+                <div key={l} style={RS.row}><span style={{ color:"#6b7280" }}>{l}</span><span style={{ fontWeight:600 }}>{v}</span></div>
+              ))}
+            </div>
+          </div>
+
+          {/* Line items table */}
+          <div style={RS.sec}>
+            <div style={RS.sTitle}>Work Items</div>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead>
+                <tr>
+                  {["Room","Product","Type","H × W","Sq Ft / Qty","Brand","Amount"].map((h,i)=>(
+                    <th key={h} style={RS.th(i)}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {lineItems.map((l,i)=>(
+                  <tr key={i}>
+                    <td style={RS.td(i)}>{l.room}</td>
+                    <td style={RS.td(i)}><strong>{l.product}</strong>{l.notes&&<div style={{fontSize:10,color:"#9ca3af"}}>{l.notes}</div>}</td>
+                    <td style={RS.td(i)}>{l.type}</td>
+                    <td style={RS.td(i)}>{l.height&&l.width?`${l.height} × ${l.width}`:"—"}</td>
+                    <td style={{ ...RS.td(i), textAlign:"center" }}>{l.qty} {l.unit}</td>
+                    <td style={RS.td(i)}>{l.brand||"—"}</td>
+                    <td style={{ ...RS.td(i), textAlign:"right", fontWeight:600 }}>{l.total>0?fmt(l.total):"—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals */}
+          <div style={{ maxWidth:320, marginLeft:"auto" }}>
+            <div style={RS.row}><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
+            <div style={RS.row}><span>GST (5%)</span><span>{fmt(gst)}</span></div>
+            <div style={RS.total}><span>Total</span><span style={{ color:"#0F1923" }}>{fmt(grandTotal)}</span></div>
+          </div>
+
+          {/* Payment terms */}
+          <div style={{ marginTop:32, padding:"16px 20px", background:"#f9fafb", borderRadius:8 }}>
+            <div style={RS.sTitle}>Payment Terms</div>
+            {[["Advance (before project starts)","40%"],["Phase 2 (after box framework)","35%"],
+              ["Phase 3 (after wardrobes, before finishing)","20%"],["Phase 4 (handover day)","5%"]]
+              .map(([l,v])=>(<div key={l} style={RS.row}><span style={{ color:"#6b7280" }}>{l}</span><span style={{ fontWeight:600 }}>{v}</span></div>))}
+          </div>
+
+          {/* Footer */}
+          <div style={{ marginTop:32, borderTop:"1px solid #e5e7eb", paddingTop:16, fontSize:11, color:"#9ca3af", textAlign:"center" }}>
+            Thank you for choosing High Rise Interiors · +91-6304980890 · Hyderabad, Telangana
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+if (view==="vendor" && selected) {
     const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
     const orderNum = `HRI-PO-${String(selected.id).slice(-4).padStart(4,"0")}-${new Date().getFullYear()}`;
 
     // Build consolidated material list linked to inventory status
     const orderItems = [];
-    Object.entries(selected.roomMaterials||{}).forEach(([room, mats]) => {
-      Object.entries(mats).forEach(([matType, sel]) => {
-        if (!sel?.name || !sel?.qty) return;
-        const item    = getCatalog(matType).find(m=>m.name===sel.name);
-        const invKey  = `${room}__${sel.name}`;
+    Object.entries(selected.roomWork||{}).forEach(([room, works]) => {
+      (works||[]).forEach(w => {
+        if (!w.brand || !w.product) return;
+        const invKey  = `${room}__${w.id}`;
         const invStat = selected.inventory?.[invKey] || { status:"Pending" };
-        const key     = `${matType}||${sel.name}`;
-        const existing = orderItems.find(o=>o.key===key);
-        if (existing) {
-          existing.qty     += parseFloat(sel.qty);
-          existing.rooms.push(room);
-          // If any room shows Pending/Ordered keep that status
-          if (invStat.status==="Pending") existing.status = "Pending";
-          else if (invStat.status==="Ordered" && existing.status!=="Pending") existing.status = "Ordered";
-        } else {
-          orderItems.push({
-            key, matType, name:sel.name,
-            qty:     parseFloat(sel.qty),
-            unit:    item?.unit||"",
-            rooms:   [room],
-            status:  invStat.status||"Pending",
-            orderedDate:   invStat.orderedDate,
-            deliveredDate: invStat.deliveredDate,
-            installedDate: invStat.installedDate,
-            notes:   invStat.notes||"",
-          });
-        }
+        const catalog = getCatalog(w.matType||"plywood");
+        const item    = catalog.find(m=>m.name===w.brand);
+        const sqft    = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : 0;
+        const qty     = QTY_TYPES.has(w.type) ? parseFloat(w.qty)||1 : sqft;
+        const key     = `${room}__${w.id}`;
+        orderItems.push({
+          key, matType:w.matType||"plywood", name:w.brand,
+          product: w.product, type: w.type,
+          qty, unit: QTY_TYPES.has(w.type) ? "units" : "sq ft",
+          rooms:   [room],
+          status:  invStat.status||"Pending",
+          orderedDate:   invStat.orderedDate,
+          deliveredDate: invStat.deliveredDate,
+          installedDate: invStat.installedDate,
+          notes:   invStat.notes||"",
+        });
       });
     });
 
@@ -2522,8 +2626,9 @@ High Rise Interiors, Hyderabad`
             {items.map((o,i)=>(
               <div key={o.key} style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr 1fr 2fr 2fr" }}>
                 <div style={VR.td(i)}>
-                  <span style={{ background:C.tealL, color:C.teal, padding:"2px 6px", borderRadius:2, fontSize:9, fontWeight:700 }}>
-                    {MATERIAL_LABELS[o.matType]||o.matType}
+                  <div style={{ fontWeight:700, fontSize:12 }}>{o.product}</div>
+                  <span style={{ background:"rgba(10,132,255,0.1)", color:"#0A84FF", padding:"1px 6px", borderRadius:2, fontSize:9, fontWeight:700 }}>
+                    {o.type}
                   </span>
                 </div>
                 <div style={{ ...VR.td(i), fontWeight:600 }}>{o.name}</div>
@@ -3422,7 +3527,69 @@ Dimension rules:
                       </div>
                     </div>
 
-                    <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",marginBottom:14}}/>
+                    <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",marginBottom:12}}/>
+
+                    {/* ── Room Material Defaults bar ── */}
+                    {(()=>{
+                      const MAT_TYPES = ["plywood","laminate","hardware","glass","ceiling"];
+                      const cheapest = (mt) => {
+                        const c = getCatalog(mt);
+                        if (!c.length) return "";
+                        return [...c].sort((a,b)=>(a.price||0)-(b.price||0))[0].name;
+                      };
+                      const getRoomDefault = (mt) => {
+                        // Find first work item in this room that has this matType set
+                        const hit = works.find(w=>w.matType===mt&&w.brand);
+                        return hit ? hit.brand : cheapest(mt);
+                      };
+                      const applyToRoom = (mt, brand) => {
+                        setWorks(ws => ws.map(w => {
+                          const prod = getProductsForRoom(room).find(p=>p.name===w.product)||{mats:[]};
+                          if (prod.mats.includes(mt) || w.matType===mt) {
+                            return {...w, matType:mt, brand, price:""};
+                          }
+                          return w;
+                        }));
+                      };
+                      return (
+                        <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,
+                          padding:"10px 12px",marginBottom:12,
+                          border:"1px solid rgba(255,255,255,0.08)"}}>
+                          <div style={{fontSize:9,fontWeight:700,letterSpacing:2,
+                            color:"rgba(255,255,255,0.35)",textTransform:"uppercase",marginBottom:8}}>
+                            🎨 Room Material Defaults — applies to all items
+                          </div>
+                          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                            {MAT_TYPES.map(mt=>{
+                              const catalog = getCatalog(mt);
+                              if (!catalog.length) return null;
+                              const current = getRoomDefault(mt);
+                              return (
+                                <div key={mt} style={{display:"flex",flexDirection:"column",gap:3,minWidth:130,flex:1}}>
+                                  <label style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",
+                                    letterSpacing:1,textTransform:"uppercase"}}>
+                                    {MATERIAL_LABELS[mt]||mt}
+                                  </label>
+                                  <select className="glass-input"
+                                    style={{fontSize:11,padding:"5px 8px"}}
+                                    value={current}
+                                    onChange={e=>applyToRoom(mt,e.target.value)}>
+                                    {catalog.map(m=>(
+                                      <option key={m.name} value={m.name}>
+                                        {m.name} {m.price?`₹${m.price}`:""}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginTop:6}}>
+                            Changing a material above updates all matching items in this room. Override per-item below.
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Column headers */}
                     {works.length>0&&(
@@ -3719,13 +3886,19 @@ Dimension rules:
                 </div>
               </div>
 
-              {/* Auto-calculate from materials button */}
-              {form.roomMaterials && Object.keys(form.roomMaterials).length > 0 && (() => {
-                const matCost = Object.values(form.roomMaterials).reduce((t,mats)=>
-                  t+Object.entries(mats).reduce((rt,[matType,sel])=>{
-                    const item = getCatalog(matType).find(m=>m.name===sel.name);
-                    return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
-                  },0),0);
+              {/* Auto-calculate from roomWork */}
+              {form.roomWork && Object.keys(form.roomWork).length > 0 && (() => {
+                const matCost = Object.values(form.roomWork).reduce((t, works) =>
+                  t + (works||[]).reduce((rt, w) => {
+                    if (w.price) return rt + parseFloat(w.price);
+                    const catalog = getCatalog(w.matType||"plywood");
+                    const item    = catalog.find(m=>m.name===w.brand);
+                    if (!item) return rt;
+                    const sqft = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : 0;
+                    const qty  = QTY_TYPES.has(w.type) ? parseFloat(w.qty)||1 : sqft;
+                    return rt + (qty * item.price);
+                  }, 0)
+                , 0);
                 const labourMult = 1 + (form.labourPct != null ? form.labourPct : 50)/100;
                 const withLabour = Math.round(matCost * labourMult);
                 return matCost > 0 ? (
@@ -3994,9 +4167,9 @@ Dimension rules:
           {activeTab==="inventory" && (
             <div>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Project Material Inventory</div>
-              {!form.roomMaterials || Object.keys(form.roomMaterials).length===0 ? (
+              {!form.roomWork || Object.keys(form.roomWork).length===0 ? (
                 <div style={{ textAlign:"center", padding:40, background:"rgba(255,255,255,0.07)", borderRadius:3, color:"rgba(255,255,255,0.5)", fontSize:13, border:"1px solid rgba(255,255,255,0.12)" }}>
-                  ☝️ Add materials in the <strong>Materials</strong> tab first, then track them here
+                  ☝️ Add products in the <strong>Rooms & Materials</strong> tab first, then track them here
                 </div>
               ) : (
                 <>
@@ -4009,11 +4182,11 @@ Dimension rules:
                   </div>
 
                   {/* Per-room material inventory */}
-                  {Object.entries(form.roomMaterials).map(([room, mats]) => {
-                    const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
+                  {Object.entries(form.roomWork).map(([room, works]) => {
+                    const matEntries = (works||[]).filter(w=>w.brand&&w.product);
                     if (!matEntries.length) return null;
-                    const installedCount = matEntries.filter(([,sel])=>{
-                      const k=`${room}__${sel.name}`;
+                    const installedCount = matEntries.filter(w=>{
+                      const k=`${room}__${w.id}`;
                       return form.inventory?.[k]?.status==="Installed";
                     }).length;
                     return (
@@ -4022,7 +4195,7 @@ Dimension rules:
                         <div style={{ background:"rgba(255,255,255,0.08)", padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", borderRadius:"14px 14px 0 0", borderBottom:"1px solid rgba(255,255,255,0.1)" }}>
                           <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
                           <span style={{ color:installedCount===matEntries.length?C.teal:"#aaa", fontSize:10, letterSpacing:1 }}>
-                            {installedCount}/{matEntries.length} installed
+                            {installedCount}/{matEntries.length} items installed
                           </span>
                         </div>
                         {/* Column headers */}
@@ -4034,8 +4207,15 @@ Dimension rules:
                           {["Category","Brand","Qty","Status","Dates","Notes"].map(h=><span key={h}>{h}</span>)}
                         </div>
                         {/* Material rows */}
-                        {matEntries.map(([matType, sel], i) => {
-                          const invKey = `${room}__${sel.name}`;
+                        {matEntries.map((w, i) => {
+                          const invKey = `${room}__${w.id}`;
+                          const matType = w.matType||"plywood";
+                          const sel = { name: w.brand, qty: w.qty };
+                          const catalog = getCatalog(matType);
+                          const item = catalog.find(m=>m.name===w.brand);
+                          const sqft = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : 0;
+                          const displayQty = QTY_TYPES.has(w.type) ? (parseFloat(w.qty)||1)+" units" : sqft.toFixed(1)+" sqft";
+                          const lineTotal = w.price ? parseFloat(w.price) : (item&&sqft ? sqft*item.price : 0);
                           const inv = form.inventory?.[invKey] || { status:"Pending" };
                           const SINV = ["Pending","Ordered","Delivered","Installed"];
                           const SC = {
@@ -4086,16 +4266,15 @@ Dimension rules:
                               return { ...f, inventory: newInv };
                             });
                           };
-                          const item = getCatalog(matType).find(m=>m.name===sel.name);
                           return (
                             <div key={invKey} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
                               padding:"10px 14px",
                               background:i%2===0?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.02)",
                               borderTop:"1px solid rgba(255,255,255,0.08)",
                               alignItems:"center", gap:8 }}>
-                              <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", fontWeight:600, textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
-                              <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{sel.name}</div>
-                              <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>{sel.qty} {item?.unit||""}</div>
+                              <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", fontWeight:600, textTransform:"uppercase", letterSpacing:1 }}>{w.product}</div>
+                              <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{w.brand||"—"} <span style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>{w.type}</span></div>
+                              <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>{displayQty}</div>
                               {/* Clickable status */}
                               <div onClick={cycleStatus} title="Click to update status"
                                 style={{ ...sc, padding:"5px 8px", borderRadius:2, fontSize:10,
@@ -4124,8 +4303,8 @@ Dimension rules:
 
                   {/* Overall progress summary */}
                   {(() => {
-                    const allKeys = Object.entries(form.roomMaterials).flatMap(([room,mats])=>
-                      Object.entries(mats).filter(([,v])=>v?.name).map(([,sel])=>`${room}__${sel.name}`)
+                    const allKeys = Object.entries(form.roomWork||{}).flatMap(([room,works])=>
+                      (works||[]).filter(w=>w.brand&&w.product).map(w=>`${room}__${w.id}`)
                     );
                     const counts = {Pending:0,Ordered:0,Delivered:0,Installed:0};
                     allKeys.forEach(k=>{ const s=form.inventory?.[k]?.status||"Pending"; counts[s]=(counts[s]||0)+1; });
