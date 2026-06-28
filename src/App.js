@@ -22,37 +22,82 @@ const TIMELINES = ["30 Days","45 Days","60 Days","75 Days","90 Days","120 Days",
 // PROJECT_PHASES — stored as % of total duration so they scale to 30/45/60/90 days
 // startPct: when phase begins (0–100%), durPct: how long it runs as % of total
 // payBefore: true = payment due BEFORE this phase starts
+// PROJECT_PHASES — from High Rise Interiors official project plan (Excel)
+// Base: 120 days. startPct/durPct scale to any project duration automatically.
+// Sub-activities shown in desc for designer/client visibility.
 const PROJECT_PHASES = [
-  { id:"design",    name:"Design & Procurement",    icon:"📐", color:"#0A84FF",
-    startPct:0,  durPct:17,
-    desc:"Design freeze, material selection, orders placed for plywood/laminates/hardware" },
-  { id:"civil",     name:"Civil & Prep Work",        icon:"🏗", color:"#FF9F0A",
-    startPct:13, durPct:13,
-    desc:"Electrical & plumbing rough-in, wall prep, tile hacking, waterproofing" },
-  { id:"framework", name:"Box & Frame Work",         icon:"📦", color:"#BF5AF2",
-    startPct:20, durPct:28,
-    desc:"All carpentry: entrance, TV unit, crockery units, wardrobes, kitchen cabinets, study tables" },
-  { id:"deco",      name:"Deco & Finishing",         icon:"✨", color:"#FF6B9D",
-    startPct:42, durPct:26,
-    desc:"Laminate pasting, profile doors, louvers, panels, acrylic/PVD work, dressing walls" },
-  { id:"ceiling",   name:"False Ceiling & Lighting", icon:"💡", color:"#30D158",
-    startPct:50, durPct:22,
-    desc:"Gypsum board fixing, cove lighting, spot lights, POP design, ceiling painting" },
-  { id:"tiles",     name:"Granite & Tiles",          icon:"🪨", color:"#FF9F0A",
-    startPct:58, durPct:18,
-    desc:"Kitchen granite, backslash tiles, pooja tiles, bathroom tiles, entrance tiles" },
-  { id:"hardware",  name:"Hardware & Fittings",      icon:"🔧", color:"#8E8E93",
-    startPct:66, durPct:18,
-    desc:"Hinges, hydraulics, channels, sliding tracks, handles, sink, bathroom accessories" },
-  { id:"painting",  name:"Painting",                 icon:"🎨", color:"#FF453A",
-    startPct:70, durPct:18,
-    desc:"Putty + primer, 2 coats paint all rooms, touch-ups on carpentry" },
-  { id:"finishing", name:"Final Fittings",            icon:"⚡", color:"#0A84FF",
-    startPct:83, durPct:13,
-    desc:"Lights/fans, switch plates, cushion fitting, mirrors, bathroom lighting & exhaust" },
-  { id:"handover",  name:"Snag & Handover",          icon:"🏠", color:"#30D158",
-    startPct:95, durPct:5,
-    desc:"Client walkthrough, punch list fixes, deep cleaning, handover" },
+  { id:"requirements", name:"Requirement Gathering",    icon:"📋", color:"#0A84FF",
+    startPct:0,  durPct:6,
+    payBefore:true,
+    customer:false,
+    subActivities:[],
+    desc:"Understanding client needs, site measurements, scope finalisation" },
+  { id:"design",       name:"Design",                   icon:"📐", color:"#5E5CE6",
+    startPct:6,  durPct:6,
+    payBefore:false,
+    customer:true,
+    subActivities:[],
+    desc:"2D/3D design preparation, mood boards, concept presentation" },
+  { id:"designFinal",  name:"Design Finalization",      icon:"✅", color:"#BF5AF2",
+    startPct:12, durPct:6,
+    payBefore:false,
+    customer:true,
+    subActivities:[],
+    desc:"Layout, wall design, ceiling, lights, laminates — type & colour finalised by client" },
+  { id:"ceiling",      name:"False Ceiling Work",       icon:"💡", color:"#FF9F0A",
+    startPct:18, durPct:8,
+    payBefore:false,
+    customer:false,
+    subActivities:["Channels (2 days)","Wiring (1 day)","Board Installation (3 days)","Putty (3 days)","Lights (1 day)"],
+    desc:"GI channels, electrical wiring, gypsum board, putty, ceiling lights" },
+  { id:"procurement",  name:"Material Procurement",     icon:"🚚", color:"#FF6B9D",
+    startPct:26, durPct:22,
+    payBefore:true,
+    customer:true,
+    subActivities:["Procurement (2 days)","Carcass (10 days)","Lamination & Door Framing (15 days)"],
+    desc:"Order plywood & laminates, carcass fabrication, lamination & door framing. Client to finalise granite, lights, kitchen stone, crockery stone, basins" },
+  { id:"graniteTiles", name:"Granite & Tiles",          icon:"🪨", color:"#FF9F0A",
+    startPct:48, durPct:6,
+    payBefore:true,
+    customer:true,
+    subActivities:["Kitchen Tiles","Crockery Tiles","Kitchen Backslash","Crockery Backslash","Utility Wall"],
+    desc:"Kitchen & crockery tiles, backslash, utility wall. Client to finalise glass door." },
+  { id:"woodFraming",  name:"Wood Framing",             icon:"🪚", color:"#30D158",
+    startPct:54, durPct:15,
+    payBefore:true,
+    customer:true,
+    subActivities:["Edge Binding Finishing","Profile Glass Installation","Door Installation","Wall Decoration"],
+    desc:"Edge binding, profile glass, door installation, wall decoration. Client to finalise paint selection." },
+  { id:"deco",         name:"Deco & Polish",            icon:"✨", color:"#FF453A",
+    startPct:69, durPct:7,
+    payBefore:true,
+    customer:false,
+    subActivities:[],
+    desc:"PVD polishing, acrylic work, profile touch-ups, panel deco" },
+  { id:"painting",     name:"Painting",                 icon:"🎨", color:"#FF453A",
+    startPct:76, durPct:7,
+    payBefore:false,
+    customer:false,
+    subActivities:[],
+    desc:"Putty, primer, 2 coats wall paint all rooms" },
+  { id:"cleaning",     name:"Deep Cleaning",            icon:"🧹", color:"#8E8E93",
+    startPct:83, durPct:3,
+    payBefore:false,
+    customer:false,
+    subActivities:[],
+    desc:"Full deep clean — all rooms, fixtures, glass, floors" },
+  { id:"handover",     name:"Handover",                 icon:"🏠", color:"#30D158",
+    startPct:86, durPct:1,
+    payBefore:false,
+    customer:true,
+    subActivities:[],
+    desc:"Client walkthrough, snag list fixes, key handover" },
+  { id:"cooling",      name:"Cooling Period",           icon:"❄️", color:"#0A84FF",
+    startPct:87, durPct:13,
+    payBefore:false,
+    customer:false,
+    subActivities:[],
+    desc:"Post-handover settling, warranty period, minor touch-up support" },
 ];
 
 // Compute actual days from % given total duration
@@ -61,17 +106,25 @@ const phaseDur = (durPct, total)   => Math.max(1, Math.round(durPct/100 * total)
 
 // Payment schedule — payment due BEFORE each phase starts
 // Tied to project phases so days scale automatically
+// Payment schedule — exact milestones from High Rise Interiors project plan
+// All payments due BEFORE the referenced phase begins
 const buildPaymentSchedule = (total, quotation) => {
   const q = parseFloat(quotation) || 0;
   return [
-    { pct:40, label:"Advance",    when:"Before project starts (Day 1)",
-      phaseRef:"design",   day:1 },
-    { pct:35, label:"Phase 2",    when:"After box framework complete — before deco",
-      phaseRef:"deco",     day:phaseDay(42, total) },
-    { pct:20, label:"Phase 3",    when:"After wardrobes & ceiling — before finishing",
-      phaseRef:"finishing", day:phaseDay(83, total) },
-    { pct:5,  label:"Handover",   when:"On the day of handover",
-      phaseRef:"handover",  day:phaseDay(95, total) },
+    { pct:30, label:"Advance",               when:"Before Design begins (Day 1)",
+      phaseRef:"requirements", day:1 },
+    { pct:20, label:"Before Procurement",    when:"Before Material Procurement starts",
+      phaseRef:"procurement",  day:phaseDay(26, total) },
+    { pct:20, label:"Before Granite & Tiles",when:"Before Granite & Tiles work begins",
+      phaseRef:"graniteTiles", day:phaseDay(48, total) },
+    { pct:10, label:"Before Wood Framing",   when:"Before Wood Framing begins",
+      phaseRef:"woodFraming",  day:phaseDay(54, total) },
+    { pct:10, label:"Before Deco & Polish",  when:"Before Deco & Polish begins",
+      phaseRef:"deco",         day:phaseDay(69, total) },
+    { pct:5,  label:"Before Painting",       when:"Before Painting begins",
+      phaseRef:"painting",     day:phaseDay(76, total) },
+    { pct:5,  label:"On Handover",           when:"On the day of handover",
+      phaseRef:"handover",     day:phaseDay(86, total) },
   ].map(p => ({ ...p, amount: Math.round(q * p.pct / 100) }));
 };
 
@@ -106,83 +159,83 @@ const PROPERTY_ROOMS_MAP = {
 // These are pre-filled when a client is created, based on property type
 const DEFAULT_ROOM_WORK = {
   "Entrance": [
-    {id:1, product:"Shoe Rack",     type:"Box",   height:"4",  width:"5",  qty:"1", matType:"plywood", brand:"", notes:"",  price:""},
-    {id:2, product:"Entrance Frame",type:"Frame", height:"8.5",width:"4",  qty:"1", matType:"plywood", brand:"", notes:"",  price:""},
+    {id:1, product:"Shoe Rack",     type:"Box",   height:"4",  width:"5",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"",  price:""},
+    {id:2, product:"Entrance Frame",type:"Frame", height:"8.5",width:"4",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"",  price:""},
   ],
   "Drawing Room": [
-    {id:1, product:"TV Unit Bottom Box",      type:"Box",         height:"2",  width:"8",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:2, product:"TV Unit Back Panel",      type:"Panel",       height:"8",  width:"8",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:3, product:"TV Unit Long Unit",       type:"Box",         height:"7",  width:"1.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:4, product:"TV Unit Long Unit Profile",type:"Profile Door",height:"7", width:"1.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:5, product:"TV Unit Side Louvers",    type:"Louvers",     height:"9",  width:"4",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:6, product:"TV Unit Partition",       type:"Frame",       height:"8",  width:"5",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:7, product:"False Ceiling",           type:"Ceiling",     height:"13", width:"12", qty:"1", matType:"ceiling", brand:"", notes:"Dining ceiling", price:""},
+    {id:1, product:"TV Unit Bottom Box",      type:"Box",         height:"2",  width:"8",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:2, product:"TV Unit Back Panel",      type:"Panel",       height:"8",  width:"8",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:3, product:"TV Unit Long Unit",       type:"Box",         height:"7",  width:"1.5",qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:4, product:"TV Unit Long Unit Profile",type:"Profile Door",height:"7", width:"1.5",qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:5, product:"TV Unit Side Louvers",    type:"Louvers",     height:"9",  width:"4",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:6, product:"TV Unit Partition",       type:"Frame",       height:"8",  width:"5",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:7, product:"Ceiling",           type:"Ceiling",     height:"13", width:"12", qty:"1", matType:"ceiling", brand:"Saint Gobin Gyproc", notes:"Dining ceiling", price:""},
   ],
   "Living Area": [
-    {id:1, product:"Crockery Top Box",        type:"Open Box",    height:"3.5",width:"7.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:2, product:"Crockery Profile Glass",  type:"Profile Door",height:"3.5",width:"7.5",qty:"1", matType:"glass",   brand:"", notes:"", price:""},
-    {id:3, product:"Crockery Long Glass Box", type:"Open Box",    height:"7",  width:"1.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:4, product:"Crockery Bottom Box",     type:"Box",         height:"3",  width:"8",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:5, product:"Crockery Top Loft",       type:"Frame",       height:"3",  width:"9.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:6, product:"Diamond Mirror",          type:"Diamond Mirror",height:"2",width:"8",  qty:"1", matType:"glass",   brand:"", notes:"", price:""},
-    {id:7, product:"False Ceiling",           type:"Ceiling",     height:"12", width:"9.8",qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+    {id:1, product:"Crockery Top Box",        type:"Open Box",    height:"3.5",width:"7.5",qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:2, product:"Crockery Profile Glass",  type:"Profile Door",height:"3.5",width:"7.5",qty:"1", matType:"glass",   brand:"Modi Guard Mirror", notes:"", price:""},
+    {id:3, product:"Crockery Long Glass Box", type:"Open Box",    height:"7",  width:"1.5",qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:4, product:"Crockery Bottom Box",     type:"Box",         height:"3",  width:"8",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:5, product:"Crockery Top Loft",       type:"Frame",       height:"3",  width:"9.5",qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:6, product:"Diamond Mirror",          type:"Diamond Mirror",height:"2",width:"8",  qty:"1", matType:"glass",   brand:"Modi Guard Mirror", notes:"", price:""},
+    {id:7, product:"Ceiling",           type:"Ceiling",     height:"12", width:"9.8",qty:"1", matType:"ceiling", brand:"Saint Gobin Gyproc", notes:"", price:""},
   ],
   "Dining": [
-    {id:1, product:"False Ceiling",           type:"Ceiling",     height:"13", width:"12", qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+    {id:1, product:"Ceiling",           type:"Ceiling",     height:"13", width:"12", qty:"1", matType:"ceiling", brand:"Saint Gobin Gyproc", notes:"", price:""},
   ],
   "Pooja": [
-    {id:1, product:"Pooja Box",               type:"Box",         height:"8",  width:"5",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:2, product:"Pooja Door",              type:"Pooja Profile Door",height:"8",width:"5",qty:"1",matType:"plywood",brand:"", notes:"", price:""},
+    {id:1, product:"Pooja Box",               type:"Box",         height:"8",  width:"5",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:2, product:"Pooja Door",              type:"Pooja Profile Door",height:"8",width:"5",qty:"1",matType:"plywood",brand:"Century Club Prime", notes:"", price:""},
     {id:3, product:"Pooja Tiles",             type:"Tiles",       height:"7",  width:"14", qty:"1", matType:"",        brand:"", notes:"", price:""},
-    {id:4, product:"Pooja Draws",             type:"Drawer",      height:"",   width:"",   qty:"3", matType:"hardware",brand:"", notes:"", price:""},
-    {id:5, product:"False Ceiling",           type:"Ceiling",     height:"5.5",width:"3.5",qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+    {id:4, product:"Pooja Draws",             type:"Drawer",      height:"",   width:"",   qty:"3", matType:"hardware",brand:"Hettich KA5632 250mm Black Coated Telescopic Channel", notes:"", price:""},
+    {id:5, product:"Ceiling",           type:"Ceiling",     height:"5.5",width:"3.5",qty:"1", matType:"ceiling", brand:"Saint Gobin Gyproc", notes:"", price:""},
   ],
   "Master Bedroom": [
-    {id:1, product:"Wardrobe",                type:"Box",         height:"7",  width:"7",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:2, product:"Wardrobe Loft",           type:"Frame",       height:"2.5",width:"11", qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:3, product:"Bed Back Panel",          type:"Panel",       height:"3",  width:"14", qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:4, product:"Study Table",             type:"Box",         height:"2.6",width:"4",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:1, product:"Wardrobe",                type:"Box",         height:"7",  width:"7",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:2, product:"Wardrobe Loft",           type:"Frame",       height:"2.5",width:"11", qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:3, product:"Bed Back Panel",          type:"Panel",       height:"3",  width:"14", qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:4, product:"Study Table",             type:"Box",         height:"2.6",width:"4",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
     {id:5, product:"Hydraulic Bed",           type:"Bed",         height:"6",  width:"6.5",qty:"1", matType:"",        brand:"", notes:"Queen size", price:""},
     {id:6, product:"Bed Cushion",             type:"Cushion",     height:"2",  width:"24", qty:"1", matType:"",        brand:"", notes:"", price:""},
-    {id:7, product:"Dressing Wardrobe",       type:"Box",         height:"7",  width:"7.8",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:8, product:"Dressing Wardrobe Loft",  type:"Box",         height:"2",  width:"7.8",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:9, product:"Dressing Mirror Wall",    type:"Box",         height:"8",  width:"5",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:10,product:"Dressing Mirror",         type:"Mirror",      height:"4",  width:"3",  qty:"1", matType:"glass",   brand:"", notes:"", price:""},
-    {id:11,product:"False Ceiling",           type:"Ceiling",     height:"15", width:"13", qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+    {id:7, product:"Dressing Wardrobe",       type:"Box",         height:"7",  width:"7.8",qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:8, product:"Dressing Wardrobe Loft",  type:"Box",         height:"2",  width:"7.8",qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:9, product:"Dressing Mirror Wall",    type:"Box",         height:"8",  width:"5",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:10,product:"Dressing Mirror",         type:"Mirror",      height:"4",  width:"3",  qty:"1", matType:"glass",   brand:"Modi Guard Mirror", notes:"", price:""},
+    {id:11,product:"Ceiling",           type:"Ceiling",     height:"15", width:"13", qty:"1", matType:"ceiling", brand:"Saint Gobin Gyproc", notes:"", price:""},
   ],
   "Children Bedroom": [
-    {id:1, product:"Wardrobe",                type:"Box",         height:"7",  width:"6",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:2, product:"Wardrobe Loft",           type:"Frame",       height:"2",  width:"6",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:3, product:"Window Below Box",        type:"Box",         height:"2.3",width:"4",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:1, product:"Wardrobe",                type:"Box",         height:"7",  width:"6",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:2, product:"Wardrobe Loft",           type:"Frame",       height:"2",  width:"6",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:3, product:"Window Below Box",        type:"Box",         height:"2.3",width:"4",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
     {id:4, product:"Hydraulic Bed",           type:"Bed",         height:"6",  width:"6.5",qty:"1", matType:"",        brand:"", notes:"", price:""},
     {id:5, product:"Bed Cushion",             type:"Cushion",     height:"2",  width:"24", qty:"1", matType:"",        brand:"", notes:"", price:""},
-    {id:6, product:"Dressing",               type:"Box",          height:"7",  width:"2.5",qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:7, product:"Dressing Mirror",         type:"Mirror",      height:"4",  width:"2.5",qty:"1", matType:"glass",   brand:"", notes:"", price:""},
-    {id:8, product:"False Ceiling",           type:"Ceiling",     height:"11.6",width:"12",qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+    {id:6, product:"Dressing",               type:"Box",          height:"7",  width:"2.5",qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:7, product:"Dressing Mirror",         type:"Mirror",      height:"4",  width:"2.5",qty:"1", matType:"glass",   brand:"Modi Guard Mirror", notes:"", price:""},
+    {id:8, product:"Ceiling",           type:"Ceiling",     height:"11.6",width:"12",qty:"1", matType:"ceiling", brand:"Saint Gobin Gyproc", notes:"", price:""},
   ],
   "Guest Bedroom": [
-    {id:1, product:"Wardrobe",                type:"Box",         height:"7",  width:"6",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:2, product:"Wardrobe Loft",           type:"Frame",       height:"2",  width:"7",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:3, product:"Used Clothes Pullout",    type:"Box",         height:"7",  width:"1",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
+    {id:1, product:"Wardrobe",                type:"Box",         height:"7",  width:"6",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:2, product:"Wardrobe Loft",           type:"Frame",       height:"2",  width:"7",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:3, product:"Used Clothes Pullout",    type:"Box",         height:"7",  width:"1",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
     {id:4, product:"Hydraulic Bed",           type:"Bed",         height:"6",  width:"6.5",qty:"1", matType:"",        brand:"", notes:"", price:""},
     {id:5, product:"Bed Cushion",             type:"Cushion",     height:"2",  width:"24", qty:"1", matType:"",        brand:"", notes:"", price:""},
-    {id:6, product:"False Ceiling",           type:"Ceiling",     height:"12", width:"12", qty:"1", matType:"ceiling", brand:"", notes:"", price:""},
+    {id:6, product:"Ceiling",           type:"Ceiling",     height:"12", width:"12", qty:"1", matType:"ceiling", brand:"Saint Gobin Gyproc", notes:"", price:""},
   ],
   "Kitchen": [
-    {id:1, product:"Kitchen Counter Below",   type:"Kitchen",     height:"3",  width:"16", qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:2, product:"Kitchen Long Unit",       type:"Kitchen",     height:"7.5",width:"3",  qty:"1", matType:"plywood", brand:"", notes:"", price:""},
-    {id:3, product:"Kitchen Loft",            type:"Kitchen",     height:"2",  width:"20", qty:"1", matType:"plywood", brand:"", notes:"Loft 2", price:""},
-    {id:4, product:"Kitchen Loft Acrylic",    type:"Acrylic Box Frame",height:"2.5",width:"8",qty:"1",matType:"plywood",brand:"",notes:"Loft 1", price:""},
-    {id:5, product:"Kitchen Loft Profile",    type:"Profile Door",height:"2.5",width:"8",  qty:"1", matType:"glass",   brand:"", notes:"", price:""},
+    {id:1, product:"Kitchen Counter Below",   type:"Kitchen",     height:"3",  width:"16", qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:2, product:"Kitchen Long Unit",       type:"Kitchen",     height:"7.5",width:"3",  qty:"1", matType:"plywood", brand:"Sainik 710", notes:"", price:""},
+    {id:3, product:"Kitchen Loft",            type:"Kitchen",     height:"2",  width:"20", qty:"1", matType:"plywood", brand:"Sainik 710", notes:"Loft 2", price:""},
+    {id:4, product:"Kitchen Loft Acrylic",    type:"Acrylic Box Frame",height:"2.5",width:"8",qty:"1",matType:"plywood",brand:"Century Club Prime",notes:"Loft 1", price:""},
+    {id:5, product:"Kitchen Loft Profile",    type:"Profile Door",height:"2.5",width:"8",  qty:"1", matType:"glass",   brand:"Modi Guard Mirror", notes:"", price:""},
     {id:6, product:"Kitchen Backslash Tiles", type:"Tiles",       height:"2",  width:"30", qty:"1", matType:"",        brand:"", notes:"", price:""},
     {id:7, product:"Granite Platform",        type:"Granite",     height:"3",  width:"4",  qty:"1", matType:"",        brand:"", notes:"Wash area", price:""},
     {id:8, product:"Sink",                    type:"Sink",        height:"",   width:"",   qty:"3", matType:"",        brand:"", notes:"", price:""},
-    {id:9, product:"False Ceiling",           type:"Ceiling",     height:"13.4",width:"8.6",qty:"1",matType:"ceiling", brand:"", notes:"", price:""},
+    {id:9, product:"Ceiling",           type:"Ceiling",     height:"13.4",width:"8.6",qty:"1",matType:"ceiling", brand:"Saint Gobin Gyproc", notes:"", price:""},
   ],
   "Bathroom": [
-    {id:1, product:"Bathroom Mirror",         type:"Mirror",      height:"",   width:"",   qty:"1", matType:"glass",   brand:"", notes:"", price:""},
+    {id:1, product:"Bathroom Mirror",         type:"Mirror",      height:"",   width:"",   qty:"1", matType:"glass",   brand:"Modi Guard Mirror", notes:"", price:""},
     {id:2, product:"Bathroom Accessories",    type:"Service",     height:"",   width:"",   qty:"1", matType:"",        brand:"", notes:"", price:""},
-    {id:3, product:"Bathroom Lighting",       type:"Service",     height:"",   width:"",   qty:"1", matType:"lights",  brand:"", notes:"", price:""},
+    {id:3, product:"Bathroom Lighting",       type:"Service",     height:"",   width:"",   qty:"1", matType:"lights",  brand:"Gola Profile", notes:"", price:""},
   ],
 };
 
@@ -1854,8 +1907,8 @@ We are excited about the possibilities for your space and will be preparing a de
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 NEXT STEPS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Our design consultant will reach out within 24 hours to schedule a site visit
-2. We will prepare a detailed quotation within 3 working days
+1. Our design consultant will reach out within 48 hours to schedule a site visit
+2. We will prepare a detailed quotation within 5 working days
 3. Once approved, we will share your personal project timeline
 
 Please feel free to reach out anytime at +91-6304980890. We are here for you every step of the way.
@@ -2025,11 +2078,25 @@ High Rise Interiors, Hyderabad`
       propertyType:      c.propertyType      || "3 BHK",
     });
     setActiveTab("personal");
-    setView("form");
+    setView("detail");
   };
 
-  const openNew    = () => { setForm({...EMPTY, startDate:new Date().toISOString().split("T")[0], roomWork:buildDefaultRoomWork("3 BHK")});
-    setActiveTab("personal"); setView("form"); };
+  const openNew    = () => {
+    setSelectedId(null);
+    setForm({
+      ...EMPTY,
+      startDate:    new Date().toISOString().split("T")[0],
+      propertyType: "3 BHK",
+      budget:       "₹30L–₹35L",
+      timeline:     "60 Days",
+      style:        "Luxury",
+      rooms:        PROPERTY_ROOMS_MAP["3 BHK"] || [],
+      roomWork:     buildDefaultRoomWork("3 BHK"),
+      projectPlan:  {},
+    });
+    setActiveTab("personal");
+    setView("detail");
+  };
   const openDetail = (c) => { setSelectedId(c.id); setView("detail"); };
   const setF       = (k, v) => setForm(f => ({...f, [k]: v}));
   const setDim     = (k, v) => setForm(f => ({...f, dimensions: {...f.dimensions, [k]: v}}));
@@ -2239,6 +2306,11 @@ High Rise Interiors, Hyderabad`
           `• Client visited / called to discuss interior work for their ${savedClient.propertyType||"property"}`,
           `• Initial brief shared. Quotation to be prepared.`,
           `• Next step: Site visit & design consultation`,
+          "",
+          "📋 Next Steps Committed:",
+          "  1. Design consultant to reach out within 48 hours to schedule site visit",
+          "  2. Detailed quotation to be prepared within 5 working days",
+          "  3. Project timeline shared once quotation is approved",
         ].filter(Boolean).join("\n");
 
         if (!savedClient.notes) {
@@ -4682,11 +4754,12 @@ Dimension rules:
                       const barLeft   = ((startDay-1)/totalDays)*100;
                       const barWidth  = Math.min((dur/totalDays)*100, 100-barLeft);
 
+                      const paymentForPhase = buildPaymentSchedule(totalDays, form.quotation).find(p=>p.phaseRef===phase.id);
                       return (
-                        <div key={phase.id} style={{marginBottom:10,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px 16px",border:"1px solid rgba(255,255,255,0.08)"}}>
+                        <div key={phase.id} style={{marginBottom:10,background:"rgba(255,255,255,0.04)",borderRadius:12,padding:"14px 16px",border:status==="In Progress"?`1px solid ${phase.color}44`:"1px solid rgba(255,255,255,0.08)"}}>
                           {/* Phase header */}
-                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                            <span style={{fontSize:18}}>{phase.icon}</span>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+                            <span style={{fontSize:20}}>{phase.icon}</span>
                             <div style={{flex:1}}>
                               <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                                 <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.92)"}}>{phase.name}</span>
@@ -4696,31 +4769,40 @@ Dimension rules:
                                     background:sc.bg,color:sc.c}}>
                                   {status}
                                 </button>
+                                {phase.customer && <span style={{fontSize:9,fontWeight:700,color:"#FF9F0A",background:"rgba(255,159,10,0.15)",padding:"2px 7px",borderRadius:100}}>👤 Client Involved</span>}
+                                {paymentForPhase && <span style={{fontSize:9,fontWeight:700,color:"#30D158",background:"rgba(48,209,88,0.15)",padding:"2px 7px",borderRadius:100}}>💰 {paymentForPhase.pct}% due before</span>}
                               </div>
                               <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2}}>{phase.desc}</div>
+                              {phase.subActivities&&phase.subActivities.length>0&&(
+                                <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:5}}>
+                                  {phase.subActivities.map((s,si)=>(
+                                    <span key={si} style={{fontSize:9,color:"rgba(255,255,255,0.45)",background:"rgba(255,255,255,0.06)",padding:"2px 7px",borderRadius:6}}>• {s}</span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             {startDate && (
                               <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",textAlign:"right",flexShrink:0}}>
-                                <div>Day {startDay}–{endDay}</div>
-                                <div style={{color:"rgba(255,255,255,0.25)"}}>{getPhaseDate(startDay)} → {getPhaseDate(endDay)}</div>
+                                <div style={{fontWeight:600}}>Day {startDay}–{endDay}</div>
+                                <div style={{color:"rgba(255,255,255,0.25)",fontSize:10}}>{getPhaseDate(startDay)} → {getPhaseDate(endDay)}</div>
                               </div>
                             )}
                           </div>
 
                           {/* Gantt bar */}
-                          <div style={{position:"relative",height:8,background:"rgba(255,255,255,0.06)",borderRadius:4,overflow:"hidden"}}>
+                          <div style={{position:"relative",height:6,background:"rgba(255,255,255,0.06)",borderRadius:3,overflow:"hidden",marginBottom:6}}>
                             <div style={{
                               position:"absolute",left:`${barLeft}%`,width:`${Math.min(barWidth, 100-barLeft)}%`,
-                              height:"100%",borderRadius:4,
-                              background:status==="Completed"?"#30D158":status==="In Progress"?phase.color:"rgba(255,255,255,0.15)",
+                              height:"100%",borderRadius:3,
+                              background:status==="Completed"?"#30D158":status==="In Progress"?phase.color:"rgba(255,255,255,0.12)",
                               transition:"all 0.3s"
                             }}/>
                           </div>
 
                           {/* Notes field */}
                           <input className="glass-input"
-                            style={{marginTop:8,fontSize:11,padding:"5px 10px",width:"100%",boxSizing:"border-box"}}
-                            placeholder={`Notes for ${phase.name}...`}
+                            style={{fontSize:11,padding:"5px 10px",width:"100%",boxSizing:"border-box"}}
+                            placeholder={`Notes for ${phase.name}…`}
                             value={phaseData.notes||""}
                             onChange={e=>setForm(f=>({...f,projectPlan:{...(f.projectPlan||{}),[phase.id]:{...(f.projectPlan?.[phase.id]||{}),notes:e.target.value}}}))}/>
                         </div>
