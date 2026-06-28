@@ -1324,24 +1324,7 @@ Hyderabad`);
                   </div>
                 );
               })}
-              {/* Room photos */}
-              {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
-                <div style={{ marginTop:8 }}>
-                  <div style={{ fontSize:11, letterSpacing:2, color:"#6b7280", textTransform:"uppercase", marginBottom:8 }}>Room Photos</div>
-                  {(selected.rooms||[]).map(r => {
-                    const photos = selected.roomDetails?.[r]?.photos||[];
-                    if (!photos.length) return null;
-                    return (
-                      <div key={r} style={{ marginBottom:10 }}>
-                        <div style={{ fontSize:12, fontWeight:700, color:C.red, marginBottom:6 }}>🏠 {r}</div>
-                        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                          {photos.map((p,i)=><img key={i} src={p} alt={r} style={{ width:100, height:100, objectFit:"cover", borderRadius:8, border:"1px solid #d1d5db" }}/>)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              
             </div>
           ) : (
             <div style={{ color:"#6b7280", fontSize:13 }}>No rooms selected</div>
@@ -1883,7 +1866,11 @@ Warmly,
 The High Rise Interiors Team
 Hyderabad · +91-6304980890`;
 
-    window.location.href = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // Use window.open to avoid navigating away from the CRM
+    const mailUrl = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const win = window.open(mailUrl, '_blank');
+    // Fallback: if popup blocked, use location
+    if (!win) window.location.href = mailUrl;
   };
 
   // ── Status Change Email Agent ─────────────────────────────────────────
@@ -2263,7 +2250,7 @@ High Rise Interiors, Hyderabad`
           showToast("📧 Composing welcome email…", "info");
           setTimeout(() => {
             welcomeEmail(savedClient);
-          }, 600);
+          }, 1200);
         }
       }
     } catch(e) { showToast("Save failed: " + e.message, "error"); }
