@@ -502,6 +502,55 @@ const ROOM_MATERIALS = {
   "Study Room":      ["plywood","laminate","hardware","ceiling","lights"],
 };
 
+// ── Material brand catalog (for dropdown options in rooms tab) ─────────
+const MATERIAL_CATALOG = {
+  plywood: [
+    { name:"Century Club Prime",        price:1850, unit:"sq ft" },
+    { name:"Century Architect Plywood", price:2200, unit:"sq ft" },
+    { name:"Century Classic Marine",    price:1650, unit:"sq ft" },
+    { name:"Century Bond Shield",       price:1550, unit:"sq ft" },
+    { name:"Century Sainik 710 BWP",    price:1400, unit:"sq ft" },
+    { name:"Local 100% Gurjan",         price:1250, unit:"sq ft" },
+  ],
+  laminate: [
+    { name:"Virgo",          price:35,  unit:"sq ft" },
+    { name:"Croma",          price:40,  unit:"sq ft" },
+    { name:"Acrylic Sheets", price:85,  unit:"sq ft" },
+  ],
+  hardware: {
+    channels: [
+      { name:"Hettich KA5632 250mm Black Coated", price:378, unit:"set" },
+      { name:"Hettich KA5632 300mm Black Coated", price:415, unit:"set" },
+      { name:"Nimmi Channels 250mm",              price:180, unit:"set" },
+      { name:"Nimmi Channels 300mm",              price:210, unit:"set" },
+    ],
+    hinges: [
+      { name:"Hettich Clip-on 170°",     price:85,  unit:"pcs" },
+      { name:"Hettich Soft Close 110°",  price:120, unit:"pcs" },
+      { name:"Nimmi Hinges",             price:45,  unit:"pcs" },
+    ],
+  },
+  glass: [
+    { name:"Modi Guard Mirror",          price:180, unit:"sq ft" },
+    { name:"Modi Guard 4mm Black Tinted",price:220, unit:"sq ft" },
+    { name:"Clear Glass 4mm",            price:120, unit:"sq ft" },
+  ],
+  ceiling: [
+    { name:"Saint Gobain Gyproc",  price:48,  unit:"sq ft" },
+    { name:"PVC Ceiling Panel",    price:60,  unit:"sq ft" },
+    { name:"Armstrong",            price:85,  unit:"sq ft" },
+  ],
+  lights: [
+    { name:"Phillips 3W",   price:280, unit:"unit" },
+    { name:"Phillips 12W",  price:480, unit:"unit" },
+    { name:"Gola Profile",  price:350, unit:"rft" },
+  ],
+  handles: [
+    { name:"Gola Profile",  price:280, unit:"rft" },
+    { name:"Standard",      price:80,  unit:"unit" },
+  ],
+};
+
 // Helper — always returns flat array for any material type including hardware
 const getCatalog = (matType) => matType==="hardware"
   ? [...(MATERIAL_CATALOG.hardware.channels||[]),...(MATERIAL_CATALOG.hardware.hinges||[])]
