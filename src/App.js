@@ -1444,44 +1444,46 @@ Hyderabad`);
         </div>
 
         {/* Room-wise Materials & Cost — show brand/qty, hide rates */}
-        {selected.roomMaterials && Object.keys(selected.roomMaterials).length > 0 && (
+                {/* Material Specifications — show brand/qty from roomWork */}
+        {selected.roomWork && Object.keys(selected.roomWork).length > 0 && (
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Material Specifications by Room</div>
-            {Object.entries(selected.roomMaterials).map(([room, mats], ri) => {
-              const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
-              if (!matEntries.length) return null;
-              const lp = selected.labourPct != null ? selected.labourPct : 50;
-              const roomCost = matEntries.reduce((t,[matType,sel])=>{
-                const item = getCatalog(matType).find(m=>m.name===sel.name);
-                return t+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
-              },0);
-              const roomTotal = Math.round(roomCost*(1+lp/100));
-                return (
+            {(selected.rooms||Object.keys(selected.roomWork)).map((room, ri) => {
+              const works = (selected.roomWork?.[room]||[]).filter(w=>w.product);
+              if (!works.length) return null;
+              const spec     = selected.roomDetails?.[room] || {};
+              const roomCost = works.reduce((t,w)=>t+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
+              return (
                 <div key={room} style={{ marginBottom:16, border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
-                  {/* Room header */}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
                     background:"#060812", padding:"10px 16px" }}>
                     <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
-                    {roomTotal>0 && <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{fmt(roomTotal)}</span>}
+                    {roomCost>0 && <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{fmt(roomCost)}</span>}
                   </div>
-                  {/* Column headers */}
-                  <div style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
+                  <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr",
                     padding:"6px 14px", background:"#2A3A4A",
                     fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
-                    <span>Category</span><span>Brand / Specification</span><span>Quantity</span>
+                    <span>Product</span><span>Type</span><span>H×W / Qty</span><span>Amount</span>
                   </div>
-                  {/* Material rows — brand + qty only, no rates */}
-                  {matEntries.map(([matType, sel], i) => {
-                    const item = getCatalog(matType).find(m=>m.name===sel.name);
-                      return (
-                      <div key={matType} style={{ display:"grid", gridTemplateColumns:"2fr 3fr 1fr",
+                  {works.map((w, i) => {
+                    const sqft = w.height&&w.width ? (parseFloat(w.height)*parseFloat(w.width)).toFixed(1) : null;
+                    const isQty = QTY_TYPES.has(w.type);
+                    const amt  = w.price ? parseFloat(w.price) : calcItemPrice(w, spec);
+                    return (
+                      <div key={w.id||i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr",
                         padding:"9px 14px", background:i%2===0?"#ffffff":"#f8f9fa",
                         borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
-                        <div style={{ fontSize:11, color:"#6b7280", fontWeight:700,
-                          textTransform:"uppercase", letterSpacing:1 }}>{MATERIAL_LABELS[matType]}</div>
-                        <div style={{ fontSize:12, fontWeight:600, color:"#0F1923" }}>{sel.name}</div>
-                        <div style={{ fontSize:12, color:"#6b7280" }}>
-                          {sel.qty} {item?.unit||""}
+                        <div>
+                          <div style={{ fontSize:12, fontWeight:600, color:"#0F1923" }}>{w.product}</div>
+                          {w.notes&&<div style={{fontSize:10,color:"#9ca3af"}}>{w.notes}</div>}
+                        </div>
+                        <div style={{ fontSize:11, color:"#6b7280" }}>{w.type}</div>
+                        <div style={{ fontSize:11, color:"#374151" }}>
+                          {isQty ? `${w.qty||1} units` : sqft ? `${sqft} sft` : "—"}
+                          {w.brand && <div style={{fontSize:10,color:"#9ca3af"}}>{w.brand}</div>}
+                        </div>
+                        <div style={{ fontSize:12, fontWeight:700, color:"#0F1923" }}>
+                          {amt>0?fmt(amt):"—"}
                         </div>
                       </div>
                     );
@@ -1489,27 +1491,25 @@ Hyderabad`);
                 </div>
               );
             })}
-            {/* Grand total */}
-            {(() => {
-              const lp = selected.labourPct != null ? selected.labourPct : 50;
-              const matCost = Object.values(selected.roomMaterials).reduce((t,mats)=>
-                t+Object.entries(mats).reduce((rt,[matType,sel])=>{
-                  const item = getCatalog(matType).find(m=>m.name===sel.name);
-                  return rt+(item&&sel.qty?parseFloat(sel.qty)*item.price:0);
-                },0),0);
-              const total = Math.round(matCost*(1+lp/100));
-              return total>0?(
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                  background:C.teal, padding:"14px 20px", borderRadius:3, marginTop:4 }}>
-                  <span style={{ color:"#fff", fontWeight:700, fontSize:14 }}>Total Estimated Project Cost</span>
-                  <strong style={{ color:"#fff", fontSize:20 }}>{fmt(total)}</strong>
+            {/* Grand total — sum of ALL rooms */}
+            {(()=>{
+              const grandTotal = (selected.rooms||Object.keys(selected.roomWork)).reduce((t,room)=>{
+                const works = selected.roomWork?.[room]||[];
+                const spec  = selected.roomDetails?.[room]||{};
+                return t + works.reduce((rt,w)=>rt+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
+              },0);
+              return grandTotal>0?(
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+                  background:"#0F1923",borderRadius:3,padding:"12px 18px",marginTop:8 }}>
+                  <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Total Material Cost — All Rooms</span>
+                  <strong style={{ fontSize:18,color:C.teal }}>{fmt(grandTotal)}</strong>
                 </div>
               ):null;
             })()}
           </div>
         )}
 
-                  {/* Out of Scope */}
+        {/* Out of Scope */}
         {outOfScope.length>0 && (
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Out of Scope</div>
@@ -1577,16 +1577,16 @@ Hyderabad`);
         {/* Payment Terms */}
         <div style={{ marginBottom:32 }}>
           <div style={RS.sTitle}>Payment Terms & Schedule</div>
-          {PAYMENT_PHASES.map((p,i)=>(
+          {buildPaymentSchedule(parseInt(selected.timeline)||120, selected.quotation).map((p,i)=>(
             <div key={i} style={RS.payRow}>
               <div style={{ display:"flex",alignItems:"center",gap:14 }}>
                 <div style={{ background:C.red,color:"#fff",borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,flexShrink:0 }}>{i+1}</div>
                 <div>
-                  <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.day} — {p.label}</div>
-                  <div style={{ fontSize:12,color:"#6b7280",marginTop:2 }}>{p.pct}% of total value</div>
+                  <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.label} — Day {p.day}</div>
+                  <div style={{ fontSize:12,color:"#6b7280",marginTop:2 }}>{p.pct}% — {p.when}</div>
                 </div>
               </div>
-              <strong style={{ fontSize:16,color:"#0F1923" }}>{selected.quotation ? fmt(Math.round(Number(selected.quotation)*p.pct/100)) : `${p.pct}%`}</strong>
+              <strong style={{ fontSize:16,color:"#0F1923" }}>{p.amount>0 ? fmt(p.amount) : `${p.pct}%`}</strong>
             </div>
           ))}
           <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:10,padding:"14px 18px",border:"1px solid #e5e7eb",fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
@@ -2572,16 +2572,33 @@ High Rise Interiors, Hyderabad`
                 {/* Payment schedule */}
                 <div style={{border:"1px solid #e5e7eb",borderRadius:3,overflow:"hidden"}}>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:0}}>
-                    {["Payment","When","Day","Amount"].map(h=>(<div key={h} style={IR.th}>{h}</div>))}
+                    {["Payment","When","Day","Due Amount","Status","Received"].map(h=>(<div key={h} style={IR.th}>{h}</div>))}
                   </div>
-                  {buildPaymentSchedule(total, selected.quotation).map((p,i)=>(
-                    <div key={i} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",background:i%2===0?"#fff":"#f9fafb",borderTop:"1px solid #f3f4f6"}}>
+                  {buildPaymentSchedule(total, selected.quotation).map((p,i)=>{
+                    const pk       = `payment_${i}`;
+                    const track    = (selected.paymentTracking||{})[pk]||{};
+                    const isPaid   = track.paid||false;
+                    const paidAmt  = track.amount ? `₹${Number(track.amount).toLocaleString("en-IN")}` : "";
+                    const paidDate = track.date||"";
+                    return (
+                    <div key={i} style={{display:"grid",gridTemplateColumns:"1.5fr 1.5fr 0.7fr 1fr 1fr 1fr",
+                      background:isPaid?"#f0fdf4":i%2===0?"#fff":"#f9fafb",
+                      borderTop:"1px solid #f3f4f6",
+                      borderLeft:isPaid?"3px solid #30D158":"3px solid transparent"}}>
                       <div style={IR.td(i)}><strong>{p.label} — {p.pct}%</strong></div>
                       <div style={{...IR.td(i),fontSize:10,color:C.grey}}>{p.when}</div>
                       <div style={IR.td(i)}>Day {p.day}</div>
                       <div style={{...IR.td(i),fontWeight:700}}>{p.amount>0?`₹${p.amount.toLocaleString("en-IN")}`:""}</div>
+                      <div style={{...IR.td(i),fontWeight:700,color:isPaid?"#16a34a":"#dc2626"}}>
+                        {isPaid?"✅ Paid":"⏳ Pending"}
+                      </div>
+                      <div style={{...IR.td(i),fontSize:10,color:C.grey}}>
+                        {isPaid && paidAmt && <div>{paidAmt}</div>}
+                        {isPaid && paidDate && <div>{paidDate}</div>}
+                      </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
