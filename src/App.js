@@ -263,157 +263,131 @@ const LIGHTS_OPTIONS = ["Phillips","Wipro","Panasonic"];
 const HANDLES_OPTIONS = ["Gola Profile","Standard"];
 
 // ── Material Catalog with Prices (₹ per sq ft unless noted) ────────
-const MATERIAL_CATALOG = {
-  plywood: [
-    { name:"Century Club Prime", price:120, unit:"sq ft" },
-    { name:"Green Ply HDHMR",    price:100, unit:"sq ft" },
-    { name:"Sainik 710",         price:75,  unit:"sq ft" },
-    { name:"Block Boards",       price:90,  unit:"sq ft" },
-    { name:"WPVC",               price:110, unit:"sq ft" },
-  ],
-  laminate: [
-    { name:"Virgo",           price:35,  unit:"sq ft" },
-    { name:"Croma",           price:40,  unit:"sq ft" },
-    { name:"Acrylic Sheets",  price:85,  unit:"sq ft" },
-  ],
-  hardware: {
-    channels: [
-      { name:"Hettich KA5632 250mm Black Coated Telescopic Channel", price:378,  unit:"set" },
-      { name:"Hettich KA5632 250mm Zinc Coated Telescopic Channel",  price:378,  unit:"set" },
-      { name:"Hettich KA5632 300mm Zinc Coated Telescopic Channel",  price:396,  unit:"set" },
-      { name:"Hettich KA5632 300mm Black Coated Telescopic Channel", price:415,  unit:"set" },
-      { name:"Hettich KA5632 350mm Zinc Coated Telescopic Channel",  price:416,  unit:"set" },
-      { name:"Hettich KA5632 400mm Zinc Coated Telescopic Channel",  price:435,  unit:"set" },
-      { name:"Hettich KA5632 350mm Black Coated Telescopic Channel", price:439,  unit:"set" },
-      { name:"Hettich KA5632 450mm Zinc Coated Telescopic Channel",  price:453,  unit:"set" },
-      { name:"Hettich KA5632 400mm Black Coated Telescopic Channel", price:459,  unit:"set" },
-      { name:"Hettich KA5632 500mm Zinc Coated Telescopic Channel",  price:473,  unit:"set" },
-      { name:"Hettich KA5632 450mm Black Coated Telescopic Channel", price:479,  unit:"set" },
-      { name:"Hettich KA5632 500mm Black Coated Telescopic Channel", price:499,  unit:"set" },
-      { name:"Hettich KA5632 550mm Zinc Coated Telescopic Channel",  price:568,  unit:"set" },
-      { name:"Hettich KA5632 550mm Black Coated Telescopic Channel", price:568,  unit:"set" },
-      { name:"Hettich KA5632 600mm Zinc Coated Telescopic Channel",  price:662,  unit:"set" },
-      { name:"Hettich KA5632 600mm Black Coated Telescopic Channel", price:699,  unit:"set" },
-      { name:"Hettich KA5632 650mm Zinc Coated Telescopic Channel",  price:757,  unit:"set" },
-      { name:"Hettich KA5632 650mm Black Coated Telescopic Channel", price:799,  unit:"set" },
-      { name:"Hettich 24 inch Steel Zinc Wardrobe Telescopic Channel",price:848, unit:"set" },
-      { name:"Hettich KA5632 700mm Zinc Coated Telescopic Channel",  price:852,  unit:"set" },
-      { name:"Hettich KA5632 700mm Black Coated Telescopic Channel", price:899,  unit:"set" },
-      { name:"Hettich KA5740 300mm Drawer Runner",                   price:1009, unit:"set" },
-      { name:"Hettich KA4532 300mm Zinc Push to Open Runner",        price:1022, unit:"set" },
-      { name:"Hettich KA4532 300mm Silent System Runner",            price:1022, unit:"set" },
-      { name:"Hettich KA4632 300mm Black Coated Silent System Runner",price:1022,unit:"set" },
-      { name:"Hettich KA4532 350mm Zinc Push to Open Runner",        price:1058, unit:"set" },
-      { name:"Hettich KA4532 350mm Silent System Runner",            price:1058, unit:"set" },
-      { name:"Hettich KA4632 350mm Black Coated Silent System Runner",price:1058,unit:"set" },
-      { name:"Hettich KA4632 400mm Black Coated Silent System Runner",price:1095,unit:"set" },
-      { name:"Hettich KA4532 400mm Zinc Push to Open Runner",        price:1095, unit:"set" },
-      { name:"Hettich KA4532 400mm Silent System Runner",            price:1095, unit:"set" },
-      { name:"Hettich KA4532 450mm Zinc Push to Open Runner",        price:1113, unit:"set" },
-      { name:"Hettich KA4532 450mm Silent System Runner",            price:1113, unit:"set" },
-      { name:"Hettich KA4632 450mm Black Coated Silent System Runner",price:1113,unit:"set" },
-      { name:"Hettich KA4632 500mm Black Coated Silent System Runner",price:1132,unit:"set" },
-      { name:"Hettich KA4532 500mm Zinc Push to Open Runner",        price:1132, unit:"set" },
-      { name:"Hettich KA4532 500mm Silent System Runner",            price:1132, unit:"set" },
-      { name:"Hettich KA5740 400mm Drawer Runner",                   price:1145, unit:"set" },
-      { name:"Hettich KA4532 550mm Zinc Push to Open Runner",        price:1189, unit:"set" },
-      { name:"Hettich KA4532 550mm Silent System Runner",            price:1189, unit:"set" },
-      { name:"Hettich KA4632 550mm Black Coated Silent System Runner",price:1189,unit:"set" },
-      { name:"Hettich KA5740 350mm Drawer Runner",                   price:1214, unit:"set" },
-      { name:"Hettich 20 inch Steel Chrome Ball Bearing Channel",    price:1252, unit:"set" },
-      { name:"Hettich 20 inch Wardrobe Channel",                     price:1253, unit:"set" },
-      { name:"Hettich KA4532 600mm Zinc Push to Open Runner",        price:1281, unit:"set" },
-      { name:"Hettich KA4532 600mm Silent System Runner",            price:1281, unit:"set" },
-      { name:"Hettich KA5740 450mm Drawer Runner",                   price:1335, unit:"set" },
-      { name:"Hettich KA4532 650mm Zinc Push to Open Runner",        price:1374, unit:"set" },
-      { name:"Hettich KA4532 650mm Silent System Runner",            price:1374, unit:"set" },
-      { name:"Hettich KA5740 500mm Drawer Runner",                   price:1400, unit:"set" },
-      { name:"Hettich KA5740 650mm Drawer Runner",                   price:1436, unit:"set" },
-      { name:"Hettich KA5740 550mm Drawer Runner",                   price:1455, unit:"set" },
-      { name:"Hettich KA4532 700mm Silent System Runner",            price:1467, unit:"set" },
-      { name:"Hettich KA4532 700mm Zinc Push to Open Runner",        price:1467, unit:"set" },
-      { name:"Hettich KA5740 600mm Drawer Runner",                   price:1520, unit:"set" },
-      { name:"Hettich KA4620 400mm Drawer Runner",                   price:1545, unit:"set" },
-      { name:"Hettich KA4620 450mm Drawer Runner",                   price:1545, unit:"set" },
-      { name:"Hettich KA5740 700mm Drawer Runner",                   price:1645, unit:"set" },
-      { name:"Hettich KA4620 500mm Drawer Runner",                   price:1718, unit:"set" },
-      { name:"Hettich KA4620 550mm Drawer Runner",                   price:1737, unit:"set" },
-      { name:"Hettich KA4620 600mm Drawer Runner",                   price:1888, unit:"set" },
-      { name:"Hettich KA4620 650mm Drawer Runner",                   price:2371, unit:"set" },
-      { name:"Hettich KA4620 700mm Drawer Runner",                   price:2567, unit:"set" },
-    ],
-    hinges: [
-      { name:"Hettich Cover Cap for Sensys Hinge Arm",               price:16,   unit:"piece" },
-      { name:"Hettich Cover Cap for Sensys Hinge Cup",               price:25,   unit:"piece" },
-      { name:"Hettich 200mm Aluminium Folding Door Hinge",           price:37,   unit:"piece" },
-      { name:"Hettich 14-25mm Auto Closing Concealed Hinge (Eco)",   price:89,   unit:"set" },
-      { name:"Hettich Black Cross Mounting Plate Eccentric Cam",      price:89,   unit:"piece" },
-      { name:"Hettich 14-25mm Auto Closing Concealed Hinge (Std)",   price:94,   unit:"set" },
-      { name:"Hettich 14-25mm Auto Closing Concealed Hinge",         price:98,   unit:"set" },
-      { name:"Hettich Linear Mounting Plate for Sensys Hinge",       price:121,  unit:"piece" },
-      { name:"Hettich D7-GP9 Black Magnetic Catch",                  price:155,  unit:"piece" },
-      { name:"Hettich 15-25mm Intermat 9943 Hinge Set",              price:286,  unit:"set" },
-      { name:"Hettich 14-32mm Intermat 9936 Hinge Set",              price:288,  unit:"set" },
-      { name:"Hettich 15-25mm Intermat 9943 Hinge Set (Mid)",        price:316,  unit:"set" },
-      { name:"Hettich 14-32mm Intermat 9936 Hinge Set (Mid)",        price:320,  unit:"set" },
-      { name:"Hettich 15-25mm Intermat 9943 Hinge Set (Premium)",    price:324,  unit:"set" },
-      { name:"Hettich 14-32mm Intermat 9936 Hinge Set (Eco)",        price:352,  unit:"set" },
-      { name:"Hettich 14-25mm Onsys 4447i Hinge Set (Eco)",          price:356,  unit:"set" },
-      { name:"Hettich 15-24mm Obsidian Black Sensys 8645i (Lite)",   price:364,  unit:"piece" },
-      { name:"Hettich 15-32mm Obsidian Black Sensys 8631i (Std)",    price:388,  unit:"piece" },
-      { name:"Hettich 14-25mm Onsys 4447i Hinge Set",                price:388,  unit:"set" },
-      { name:"Hettich 15-24mm Obsidian Black Sensys 8645i",          price:389,  unit:"piece" },
-      { name:"Hettich 14-25mm Onsys 4447i Hinge Set (Premium)",      price:393,  unit:"set" },
-      { name:"Hettich KA5740 Accessory Kit",                         price:394,  unit:"set" },
-      { name:"Hettich 15-32mm Obsidian Black Sensys 8631i",          price:407,  unit:"piece" },
-      { name:"Hettich 15-24mm Obsidian Black Sensys 8645i (Soft)",   price:413,  unit:"piece" },
-      { name:"Hettich P20 Universal Maxi Push to Open",              price:437,  unit:"piece" },
-      { name:"Hettich 15-32mm Obsidian Black Sensys 8631i (Heavy)",  price:441,  unit:"piece" },
-      { name:"Hettich 19mm Aluminium Profile Intermat 9936 Hinge",   price:484,  unit:"set" },
-      { name:"Hettich 10-16mm Obsidian Black Sensys 8646i",          price:534,  unit:"piece" },
-      { name:"Hettich 24mm Steel Silver Sensys 8645i Pair",          price:551,  unit:"set" },
-      { name:"Hettich 10-16mm Obsidian Black Sensys 8646i (Ultra)",  price:558,  unit:"piece" },
-      { name:"Hettich 10-16mm Obsidian Black Sensys 8646i (Heavy)",  price:582,  unit:"piece" },
-      { name:"Hettich Push to Open Pin Strong",                      price:598,  unit:"piece" },
-      { name:"Hettich 15-32mm Sensys 8654i Hinge Set (Std)",         price:630,  unit:"set" },
-      { name:"Hettich 15-32mm Sensys 8654i Hinge Set",               price:672,  unit:"set" },
-      { name:"Hettich 15-32mm Sensys 8654i Hinge Set (Premium)",     price:711,  unit:"set" },
-      { name:"Hettich 16-21mm Sensys Hinge Set",                     price:832,  unit:"set" },
-      { name:"Hettich 19mm Aluminium Sensys 8638i W90 Hinge",        price:873,  unit:"set" },
-      { name:"Hettich 16-43mm Intermat 9935 Hinge Set",              price:889,  unit:"set" },
-      { name:"Hettich 16-24mm Intermat 9956 Hinge Set",              price:889,  unit:"set" },
-      { name:"Hettich 16-43mm Intermat 9935 Hinge Set (Premium)",    price:938,  unit:"set" },
-      { name:"Hettich 15-32mm Obsidian Black Sensys 8657i",          price:955,  unit:"piece" },
-      { name:"Hettich 5x3x3 SS Ball Bearing Hinge Set",              price:969,  unit:"set" },
-      { name:"Hettich 16-43mm Intermat 9935 Hinge Set (Heavy)",      price:985,  unit:"set" },
-      { name:"Hettich 65mm SS Cylindrical Door Knob Set",            price:1019, unit:"set" },
-      { name:"Hettich 90 deg Sensys 8639i W90 Hinge Set",            price:1276, unit:"set" },
-      { name:"Hettich 15-32mm Sensys Wide Angle Hinge Set",          price:1313, unit:"set" },
-      { name:"Hettich 105 deg Glass Door Hinge Set",                 price:1370, unit:"set" },
-      { name:"Hettich HTS FS-463 Floor Spring",                      price:4779, unit:"piece" },
-    ],
-  },
-  glass: [
-    { name:"Modi Guard 4mm Black Tinted", price:95,  unit:"sq ft" },
-    { name:"Modi Guard Mirror",           price:80,  unit:"sq ft" },
-  ],
-  ceiling: [
-    { name:"Saint Gobin Gyproc", price:55, unit:"sq ft" },
-    { name:"PVC",                price:45, unit:"sq ft" },
-  ],
-  lights: [
-    { name:"Phillips 3W",   price:350,  unit:"piece" },
-    { name:"Phillips 12W",  price:650,  unit:"piece" },
-    { name:"Phillips 15W",  price:850,  unit:"piece" },
-    { name:"Wipro 3W",      price:320,  unit:"piece" },
-    { name:"Wipro 12W",     price:600,  unit:"piece" },
-    { name:"Panasonic 12W", price:580,  unit:"piece" },
-  ],
-  handles: [
-    { name:"Gola Profile", price:280, unit:"piece" },
-    { name:"Standard",     price:120, unit:"piece" },
-  ],
+// ── Price sheet from High Rise Interiors (Sheet1 + Sheet2) ──────────
+// Sheet1: base price per sq ft by work TYPE
+const WORK_TYPE_PRICES = {
+  "Frame":                   1250,
+  "Panel":                    850,
+  "Box":                     1450,
+  "Open Box":                1150,
+  "Acrylic Box":             1850,
+  "Acrylic Box Frame":       1850,
+  "Kitchen":                 2000,
+  "Wall Panel":               350,
+  "Glass":                    850,
+  "Cushion":                  850,
+  "Tiles":                    550,
+  "Granite":                  950,
+  "Stone":                    550,
+  "Track Light":             3000,
+  "Table":                   1250,
+  "Wall paper":               150,
+  "Partition glass":         1250,
+  "Partition PVD":           1350,
+  "Louvers":                  800,
+  "45 mm Pooja Profile Door":1050,
+  "20 mm Pooja Profile Door":1500,
+  "Pooja Profile Door":      1050,
+  "Profile Door":            1250,
+  "Veneer Louvers":          1500,
+  "Ceiling":                  300,
+  "Ceiling 2":                190,
+  "Drawer":                  2100,
+  "Quartz Installation":      450,
+  "Big Drawers":             2100,
+  "CNC":                      450,
+  "POP Design":               200,
+  "Lights":                   150,
+  "Diamond Mirror":           850,
+  "PVC Ceiling":              450,
+  "Murphy Bed":              2000,
+  "Glass Door":              1250,
+  "Bed":                     1500,
+  "Bunk bed":                3500,
+  "Aristo":                  1350,
+  "Aristo SBR":              1000,
+  "Mirror":                   850,
+  "Sink":                    5000,  // per unit estimate
+  "Service":                    0,
+  "Transport":                  0,
 };
+
+// Sheet2: Plywood grade → base plywood price per sqft (16mm)
+const PLYWOOD_GRADES = [
+  { name:"Local 100% Gurjan",       price:1250 },
+  { name:"Century Sainik 710 BWP",  price:1400 },
+  { name:"Century Bond Shield",     price:1550 },
+  { name:"Century Classic Marine",  price:1650 },
+  { name:"Century Club Prime",      price:1850 },
+  { name:"Century Architect",       price:2200 },
+];
+
+// Sheet2: Laminate type → % increase on work cost
+const LAMINATE_TYPES = [
+  { name:"Economy Laminate",   range:"₹1,000–1,500", pct:0    },
+  { name:"Premium Laminate",   range:"₹1,500–1,800", pct:0.15 },
+  { name:"Luxury Laminate",    range:"₹1,800–2,000", pct:0.33 },
+  { name:"Ultra Luxury",       range:"₹2,000–2,400", pct:0.50 },
+  { name:"Acrylic",            range:"₹2,800–3,500", pct:0.70 },
+];
+
+// Sheet2: Built type → % increase
+const BUILT_TYPES = [
+  { name:"Manual",           pct:0    },
+  { name:"Semi Modular",     pct:0.10 },
+  { name:"Complete Modular", pct:0.25 },
+];
+
+// Sheet2: Hardware → % increase
+const HARDWARE_TYPES = [
+  { name:"Nimmi",   pct:0    },
+  { name:"Hettich", pct:0.10 },
+];
+
+// Types that use PER UNIT pricing (not H×W sq ft)
+const QTY_UNIT_TYPES = new Set([
+  "Drawer","Big Drawers","Bed","Cushion","Sink","Lights","Track Light",
+  "Service","Transport","Murphy Bed","Bunk bed",
+]);
+
+// Compute final price for a single work item
+const calcItemPrice = (w, roomSpec) => {
+  const type       = w.type || "Box";
+  const baseSqft   = WORK_TYPE_PRICES[type] ?? 1000;
+  const h          = parseFloat(w.height) || 0;
+  const ht         = parseFloat(w.width)  || 0;
+  const isQtyUnit  = QTY_UNIT_TYPES.has(type);
+  const qty        = isQtyUnit ? (parseFloat(w.qty) || 1) : (h * ht);
+  if (qty <= 0) return 0;
+
+  // Plywood grade premium (only for carpentry types)
+  const carpentryTypes = new Set(["Frame","Panel","Box","Open Box","Acrylic Box","Acrylic Box Frame","Kitchen","Table","Murphy Bed","Bed","Bunk bed","Aristo","Aristo SBR"]);
+  let plywoodExtra = 0;
+  if (carpentryTypes.has(type) && roomSpec?.plywoodGrade) {
+    const grade = PLYWOOD_GRADES.find(g => g.name === roomSpec.plywoodGrade);
+    const base  = PLYWOOD_GRADES[0]; // Local Gurjan = baseline
+    if (grade && base) plywoodExtra = (grade.price - base.price) / base.price;
+  }
+
+  // Base cost = baseSqft × qty × (1 + plywood premium)
+  const baseCost = baseSqft * qty * (1 + plywoodExtra);
+
+  // Laminate % increase
+  const lam      = LAMINATE_TYPES.find(l => l.name === (roomSpec?.laminateType || "Economy Laminate"));
+  const lamPct   = lam ? lam.pct : 0;
+
+  // Built type % increase
+  const built    = BUILT_TYPES.find(b => b.name === (roomSpec?.builtType || "Manual"));
+  const builtPct = built ? built.pct : 0;
+
+  // Hardware % increase
+  const hw       = HARDWARE_TYPES.find(h => h.name === (roomSpec?.hardware || "Nimmi"));
+  const hwPct    = hw ? hw.pct : 0;
+
+  const total = baseCost * (1 + lamPct + builtPct + hwPct);
+  return Math.round(total);
+};
+
 
 // Room subsections from Excel quotation — Product & Type columns
 const ROOM_SUBSECTIONS = {
@@ -675,7 +649,7 @@ const ALL_PRODUCTS = [
 const getProductsForRoom = (room) => ROOM_PRODUCTS[room] || ALL_PRODUCTS;
 
 // Types that use qty (count) not W×H
-const QTY_TYPES = new Set(["Service","Transport","Sink","Drawer","Bed","Cushion","Channels"]);
+const QTY_TYPES = new Set(["Service","Transport","Sink","Drawer","Big Drawers","Bed","Cushion","Channels","Track Light","Lights","Murphy Bed","Bunk bed"]);
 
 // Types that use W×H for area calculation  
 const AREA_TYPES = new Set(["Box","Frame","Open Box","Panel","Profile Door","Louvers",
@@ -688,7 +662,7 @@ const AREA_TYPES = new Set(["Box","Frame","Open Box","Panel","Profile Door","Lou
 const EMPTY = {
   id:null, name:"", email:"", phone:"", address:"",
   status:"Lead", projectType:"Residential", propertyType:"3 BHK",
-  budget:"₹30L–₹35L", timeline:"60 Days", startDate:"",
+  budget:"₹30L–₹35L", timeline:"120 Days", startDate:"",
   rooms:["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom"],
   dimensions:{ length:"", width:"", height:"" },
   style:"Luxury", notes:"",
@@ -698,6 +672,7 @@ const EMPTY = {
   roomMaterials:{},
   roomWork: {},
   projectPlan: {},
+  paymentTracking: {},
   rebateType:"amount", rebateValue:"", labourPct:50,
   auditLog:[],              // [{ts, type, user, summary, snapshot, signatures}]
   inventory:{},             // per-material status: { key: {status, orderedDate, deliveredDate, notes} }
@@ -1185,6 +1160,10 @@ function Select({ value, onChange, options, placeholder }) {
 
 // ── Room Planner — Isometric 3D + Floor Plan ─────────────────────────
 function ClientReport({ selected, setView, customers }) {
+  // Inline makeEntry so it's available without App() scope
+  const makeEntry = (type, summary, snapshot={}, user="", signatures={}) => ({
+    ts: new Date().toISOString(), type, user, summary, snapshot, signatures,
+  });
   const [showSigPad, setShowSigPad] = React.useState(null);
   // Load saved signatures from last audit log entry that has them
   const [signatures, setSignatures] = React.useState({ client:null, hri:null });
@@ -1739,6 +1718,10 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const [customers,    setCustomers]    = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [saving,       setSaving]       = useState(false);
+  const [irPrintSections, setIRPrintSections] = useState({
+    summary:true, timeline:true, scope:true, workItems:true,
+    materials:true, photos:true, inventory:false, notes:true
+  });
   const [renderStyles,    setRenderStyles]    = useState({});
   const [renderPrompts,   setRenderPrompts]   = useState({});
   const [renderingRoom,   setRenderingRoom]   = useState(null);
@@ -2088,7 +2071,7 @@ High Rise Interiors, Hyderabad`
       startDate:    new Date().toISOString().split("T")[0],
       propertyType: "3 BHK",
       budget:       "₹30L–₹35L",
-      timeline:     "60 Days",
+      timeline:     "120 Days",
       style:        "Luxury",
       rooms:        PROPERTY_ROOMS_MAP["3 BHK"] || [],
       roomWork:     buildDefaultRoomWork("3 BHK"),
@@ -2426,13 +2409,41 @@ High Rise Interiors, Hyderabad`
 
     return (
       <div style={IR.page}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}}`}</style>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap'); @media print{.np{display:none!important}${
+          Object.entries(irPrintSections).filter(([,v])=>!v).map(([k])=>`#ir-${k}{display:none!important}`).join('')
+        }}`}</style>
 
         {/* Toolbar */}
         <div className="np" style={{ background:"#060812", padding:"12px 36px", display:"flex", gap:12, alignItems:"center", borderBottom:`3px solid ${C.teal}` }}>
           <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
           <button onClick={()=>window.print()} style={S.btn()}>🖨 Print</button>
           <span style={{ background:"rgba(255,159,10,0.15)", color:"#5C3A00", padding:"3px 10px", borderRadius:2, fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>🔒 INTERNAL — Do not share with client</span>
+        </div>
+
+        {/* ── Section visibility toggles (hidden when printing) ── */}
+        <div className="no-print" style={{background:"#f0f9ff",border:"1px solid #bae6fd",borderRadius:6,padding:"10px 16px",marginBottom:16,display:"flex",flexWrap:"wrap",gap:8,alignItems:"center"}}>
+          <span style={{fontSize:11,fontWeight:700,color:"#0369a1",marginRight:4}}>Print Sections:</span>
+          {[
+            ["summary",   "📋 Summary"],
+            ["timeline",  "📅 Timeline & Payments"],
+            ["scope",     "🏠 Scope of Work"],
+            ["workItems", "🔨 Work Items"],
+            ["materials", "📦 Materials"],
+            ["photos",    "📸 Photos"],
+            ["inventory", "📊 Inventory"],
+            ["notes",     "📝 Notes"],
+          ].map(([k,l])=>(
+            <label key={k} style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer",
+              background:irPrintSections[k]?"#0A84FF":"#e5e7eb",
+              color:irPrintSections[k]?"#fff":"#374151",
+              padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600,
+              userSelect:"none"}}>
+              <input type="checkbox" checked={irPrintSections[k]}
+                onChange={()=>setIRPrintSections(s=>({...s,[k]:!s[k]}))}
+                style={{accentColor:"#fff",marginRight:3}}/>
+              {l}
+            </label>
+          ))}
         </div>
 
         {/* Header */}
@@ -2452,7 +2463,7 @@ High Rise Interiors, Hyderabad`
         <div style={IR.body}>
 
           {/* Client Summary */}
-          <div style={IR.sec}>Client & Project Summary</div>
+                                        <div style={IR.sec}>Client & Project Summary</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 40px", border:"1px solid #e5e7eb", borderRadius:3, padding:"16px 20px", background:"#f8f9fa" }}>
             {[
               ["Client",       selected.name],
@@ -2474,7 +2485,8 @@ High Rise Interiors, Hyderabad`
           </div>
 
 
-          {/* Project Timeline */}
+          </div>
+          {/* Project Timeline */}          
           <div style={IR.sec}>Project Timeline</div>
           {(()=>{
             const total = parseInt(selected.timeline)||60;
@@ -2527,6 +2539,8 @@ High Rise Interiors, Hyderabad`
           })()}
 
           {/* Rooms — Products, Materials & Sq Ft (no pricing) */}
+
+          
           <div style={IR.sec}>Scope of Work — Products & Materials</div>
           {(selected.rooms||[]).map(r => {
             const works = (selected.roomWork?.[r]||[]).filter(w=>w.product);
@@ -2568,8 +2582,8 @@ High Rise Interiors, Hyderabad`
 
           {/* Work Items — Subsections */}
           {allSubsections.length > 0 && (
-            <>
-              <div style={IR.sec}>Work Items to Execute</div>
+            <>          
+          <div style={IR.sec}>Work Items to Execute</div>
               <div style={{ border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1.5fr 2fr 1fr 1fr 0.5fr", gap:0 }}>
                   {["Room","Work Item","Type","Qty (sq ft)","✓"].map(h=>(
@@ -2591,8 +2605,8 @@ High Rise Interiors, Hyderabad`
 
           {/* Materials Order List — with actual prices (internal only) */}
           {matList.length > 0 && (
-            <>
-              <div style={IR.sec}>Materials Order List & Specifications</div>
+            <>          
+          <div style={IR.sec}>Materials Order List & Specifications</div>
               <div style={{ border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
                 <div style={{ display:"grid", gridTemplateColumns:"0.5fr 2fr 3fr 1fr 2fr", gap:0 }}>
                   {["#","Category","Brand / Material","Qty","Rooms"].map(h=>(
@@ -2621,8 +2635,8 @@ High Rise Interiors, Hyderabad`
 
           {/* Room Photos in Internal Report */}
           {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
-            <>
-              <div style={IR.sec}>Room Reference Photos</div>
+            <>          
+          <div style={IR.sec}>Room Reference Photos</div>
               {(selected.rooms||[]).map(r => {
                 const photos = selected.roomDetails?.[r]?.photos||[];
                 if (!photos.length) return null;
@@ -2649,8 +2663,8 @@ High Rise Interiors, Hyderabad`
 
           {/* Inventory Status Table */}
           {selected.inventory && Object.keys(selected.inventory).length > 0 && (
-            <>
-              <div style={IR.sec}>Material Inventory Status</div>
+            <>          
+          <div style={IR.sec}>Material Inventory Status</div>
               {/* Progress summary */}
               {(() => {
                 const allKeys = Object.keys(selected.inventory);
@@ -2724,8 +2738,8 @@ High Rise Interiors, Hyderabad`
 
           {/* Notes */}
           {selected.notes && (
-            <>
-              <div style={IR.sec}>Project Notes & Client Requirements</div>
+            <>          
+          <div style={IR.sec}>Project Notes & Client Requirements</div>
               <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"16px 20px", border:"1px solid #e5e7eb", fontSize:13, lineHeight:2, whiteSpace:"pre-wrap" }}>
                 {selected.notes}
               </div>
@@ -2739,7 +2753,6 @@ High Rise Interiors, Hyderabad`
           </div>
 
         </div>
-      </div>
     );
   }
 
@@ -3460,7 +3473,11 @@ if (view==="vendor" && selected) {
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       <div style={S.hdr}>
         <div><div style={S.logo}>High Rise Interiors</div><span style={S.sub}>{form.id?"Edit Client":"New Client"}</span></div>
-        <div style={{ display:"flex",gap:10 }}>
+        <div style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
+          {form.id && <>
+            <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>{setSelectedId(form.id);setView("report")}}>📄 Report</button>
+            <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>{setSelectedId(form.id);setView("invoice")}}>🧾 Invoice</button>
+          </>}
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("list")}>Cancel</button>
           <button style={{ ...S.btn(),opacity:saving?0.7:1 }} onClick={saveCustomer} disabled={saving}>{saving?"Saving…":form.id?"Update Client":"Save Client"}</button>
         </div>
@@ -3819,15 +3836,10 @@ Dimension rules:
                 const delWork=(id)=>setWorks(w=>w.filter(x=>x.id!==id));
                 const updWork=(id,key,val,extra={})=>setWorks(w=>w.map(x=>x.id===id?{...x,[key]:val,...extra}:x));
 
-                const roomTotal = works.reduce((t,w)=>{
-                  const catalog = getCatalog(w.matType||"plywood");
-                  const item = catalog.find(m=>m.name===w.brand);
-                  const sqft = w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):0;
-                  const useQty = QTY_TYPES.has(w.type);
-                  const qty = useQty ? parseFloat(w.qty)||1 : sqft;
-                  if(w.price) return t+parseFloat(w.price);
-                  return t+(item&&qty?qty*item.price:0);
-                },0);
+                const roomSpec  = form.roomDetails?.[room] || {};
+                const roomTotal = works.reduce((t,w)=>
+                  t + (w.price ? parseFloat(w.price) : calcItemPrice(w, roomSpec))
+                , 0);
 
                 return (
                   <div key={room} className="glass" style={{padding:"20px",marginBottom:16}}>
@@ -3853,64 +3865,100 @@ Dimension rules:
 
                     <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",marginBottom:12}}/>
 
-                    {/* ── Room Material Defaults bar ── */}
+                    {/* ── Room Spec & Pricing Defaults ── */}
                     {(()=>{
-                      const MAT_TYPES = ["plywood","laminate","hardware","glass","ceiling"];
-                      const cheapest = (mt) => {
-                        const c = getCatalog(mt);
-                        if (!c.length) return "";
-                        return [...c].sort((a,b)=>(a.price||0)-(b.price||0))[0].name;
-                      };
-                      const getRoomDefault = (mt) => {
-                        // Find first work item in this room that has this matType set
-                        const hit = works.find(w=>w.matType===mt&&w.brand);
-                        return hit ? hit.brand : cheapest(mt);
-                      };
-                      const applyToRoom = (mt, brand) => {
-                        setWorks(ws => ws.map(w => {
-                          const prod = getProductsForRoom(room).find(p=>p.name===w.product)||{mats:[]};
-                          if (prod.mats.includes(mt) || w.matType===mt) {
-                            return {...w, matType:mt, brand, price:""};
-                          }
-                          return w;
-                        }));
-                      };
+                      const spec = form.roomDetails?.[room] || {};
+                      const setSpec = (key, val) => setForm(f=>({...f,
+                        roomDetails:{...(f.roomDetails||{}),
+                          [room]:{...(f.roomDetails?.[room]||{}), [key]:val}
+                        }
+                      }));
+                      const plywoodGrade  = spec.plywoodGrade  || "Century Sainik 710 BWP";
+                      const laminateType  = spec.laminateType  || "Economy Laminate";
+                      const builtType     = spec.builtType     || "Manual";
+                      const hardware      = spec.hardware      || "Nimmi";
+                      const roomSpec      = {plywoodGrade, laminateType, builtType, hardware};
                       return (
                         <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,
-                          padding:"10px 12px",marginBottom:12,
-                          border:"1px solid rgba(255,255,255,0.08)"}}>
+                          padding:"12px 14px",marginBottom:12,border:"1px solid rgba(255,255,255,0.08)"}}>
                           <div style={{fontSize:9,fontWeight:700,letterSpacing:2,
-                            color:"rgba(255,255,255,0.35)",textTransform:"uppercase",marginBottom:8}}>
-                            🎨 Room Material Defaults — applies to all items
+                            color:"rgba(255,255,255,0.4)",textTransform:"uppercase",marginBottom:10}}>
+                            🎨 Room Pricing Spec — applies to all items in this room
                           </div>
-                          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                            {MAT_TYPES.map(mt=>{
-                              const catalog = getCatalog(mt);
-                              if (!catalog.length) return null;
-                              const current = getRoomDefault(mt);
-                              return (
-                                <div key={mt} style={{display:"flex",flexDirection:"column",gap:3,minWidth:130,flex:1}}>
-                                  <label style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",
-                                    letterSpacing:1,textTransform:"uppercase"}}>
-                                    {MATERIAL_LABELS[mt]||mt}
-                                  </label>
-                                  <select className="glass-input"
-                                    style={{fontSize:11,padding:"5px 8px"}}
-                                    value={current}
-                                    onChange={e=>applyToRoom(mt,e.target.value)}>
-                                    {catalog.map(m=>(
-                                      <option key={m.name} value={m.name}>
-                                        {m.name} {m.price?`₹${m.price}`:""}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              );
-                            })}
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
+                            {/* Plywood Grade */}
+                            <div>
+                              <label style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",
+                                letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:3}}>
+                                Plywood Grade
+                              </label>
+                              <select className="glass-input" style={{fontSize:11,padding:"4px 7px",width:"100%"}}
+                                value={plywoodGrade} onChange={e=>setSpec("plywoodGrade",e.target.value)}>
+                                {PLYWOOD_GRADES.map(g=>(
+                                  <option key={g.name} value={g.name}>
+                                    {g.name} (₹{g.price}/sft)
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {/* Laminate Type */}
+                            <div>
+                              <label style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",
+                                letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:3}}>
+                                Laminate Type
+                              </label>
+                              <select className="glass-input" style={{fontSize:11,padding:"4px 7px",width:"100%"}}
+                                value={laminateType} onChange={e=>setSpec("laminateType",e.target.value)}>
+                                {LAMINATE_TYPES.map(l=>(
+                                  <option key={l.name} value={l.name}>
+                                    {l.name} (+{Math.round(l.pct*100)}%) {l.range}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {/* Built Type */}
+                            <div>
+                              <label style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",
+                                letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:3}}>
+                                Built Type
+                              </label>
+                              <select className="glass-input" style={{fontSize:11,padding:"4px 7px",width:"100%"}}
+                                value={builtType} onChange={e=>setSpec("builtType",e.target.value)}>
+                                {BUILT_TYPES.map(b=>(
+                                  <option key={b.name} value={b.name}>
+                                    {b.name} (+{Math.round(b.pct*100)}%)
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {/* Hardware */}
+                            <div>
+                              <label style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",
+                                letterSpacing:1,textTransform:"uppercase",display:"block",marginBottom:3}}>
+                                Hardware
+                              </label>
+                              <select className="glass-input" style={{fontSize:11,padding:"4px 7px",width:"100%"}}
+                                value={hardware} onChange={e=>setSpec("hardware",e.target.value)}>
+                                {HARDWARE_TYPES.map(h=>(
+                                  <option key={h.name} value={h.name}>
+                                    {h.name} (+{Math.round(h.pct*100)}%)
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
-                          <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginTop:6}}>
-                            Changing a material above updates all matching items in this room. Override per-item below.
-                          </div>
+                          {/* Live price preview */}
+                          {works.length>0 && (()=>{
+                            const roomTotal = works.reduce((t,w)=>t+calcItemPrice(w,roomSpec),0);
+                            return roomTotal>0 ? (
+                              <div style={{marginTop:8,fontSize:11,color:"#30D158",fontWeight:700}}>
+                                📊 Est. Room Total: ₹{roomTotal.toLocaleString("en-IN")}
+                                <span style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontWeight:400,marginLeft:6}}>
+                                  ({laminateType} · {builtType} · {hardware})
+                                </span>
+                              </div>
+                            ) : null;
+                          })()}
                         </div>
                       );
                     })()}
@@ -3932,7 +3980,7 @@ Dimension rules:
                       const catalog = getCatalog(w.matType||"plywood");
                       const item    = catalog.find(m=>m.name===w.brand);
                       const qty     = useQty?parseFloat(w.qty)||1:sqft||0;
-                      const autoPrice = item&&qty ? (qty*item.price) : 0;
+                      const autoPrice  = w.price ? 0 : calcItemPrice(w, roomSpec);
                       const finalPrice = w.price ? parseFloat(w.price) : autoPrice;
 
                       return (
@@ -3955,10 +4003,14 @@ Dimension rules:
                             </select>
 
                             {/* Type (auto-filled, editable) */}
-                            <input className="glass-input" style={{fontSize:11,padding:"5px 6px"}}
+                            <select className="glass-input" style={{fontSize:11,padding:"4px 5px"}}
                               value={w.type||""}
-                              onChange={e=>updWork(w.id,"type",e.target.value)}
-                              placeholder="Type"/>
+                              onChange={e=>updWork(w.id,"type",e.target.value)}>
+                              <option value="">-- Type</option>
+                              {Object.keys(WORK_TYPE_PRICES).map(t=>(
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                            </select>
 
                             {/* Height or Qty */}
                             {useQty?(
@@ -4212,17 +4264,12 @@ Dimension rules:
 
               {/* Auto-calculate from roomWork */}
               {form.roomWork && Object.keys(form.roomWork).length > 0 && (() => {
-                const matCost = Object.values(form.roomWork).reduce((t, works) =>
-                  t + (works||[]).reduce((rt, w) => {
-                    if (w.price) return rt + parseFloat(w.price);
-                    const catalog = getCatalog(w.matType||"plywood");
-                    const item    = catalog.find(m=>m.name===w.brand);
-                    if (!item) return rt;
-                    const sqft = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : 0;
-                    const qty  = QTY_TYPES.has(w.type) ? parseFloat(w.qty)||1 : sqft;
-                    return rt + (qty * item.price);
-                  }, 0)
-                , 0);
+                const matCost = Object.entries(form.roomWork).reduce((t, [room, works]) => {
+                  const spec = form.roomDetails?.[room] || {};
+                  return t + (works||[]).reduce((rt, w) =>
+                    rt + (w.price ? parseFloat(w.price) : calcItemPrice(w, spec))
+                  , 0);
+                }, 0);
                 const labourMult = 1 + (form.labourPct != null ? form.labourPct : 50)/100;
                 const withLabour = Math.round(matCost * labourMult);
                 return matCost > 0 ? (
@@ -4476,18 +4523,67 @@ Dimension rules:
               {form.quotation && (
                 <div>
                   <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>{getDocTerm(form.status)} Payment Schedule</div>
-                  {buildPaymentSchedule(parseInt(form.timeline)||60, form.quotation).map((p,i)=>(
-                    <div key={i} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,0.05)",borderRadius:12,padding:"14px 18px",marginBottom:10,border:"1px solid rgba(255,255,255,0.12)" }}>
-                      <div>
-                        <div style={{ fontWeight:700,fontSize:13,color:"#0A84FF" }}>{p.label} — {p.pct}%</div>
-                        <div style={{ fontSize:11,color:"rgba(255,255,255,0.45)",marginTop:3 }}>{p.when}</div>
+                  {buildPaymentSchedule(parseInt(form.timeline)||120, form.quotation).map((p,i)=>{
+                    const pk        = `payment_${i}`;
+                    const payTrack  = (form.paymentTracking||{})[pk] || {};
+                    const isPaid    = payTrack.paid || false;
+                    const paidAmt   = payTrack.amount || "";
+                    const paidDate  = payTrack.date   || "";
+                    const togglePay = () => setForm(f=>({...f,
+                      paymentTracking:{...(f.paymentTracking||{}),
+                        [pk]:{...(f.paymentTracking?.[pk]||{}), paid:!isPaid,
+                              amount:!isPaid?(p.amount||""):paidAmt, date:!isPaid?new Date().toISOString().split("T")[0]:paidDate }
+                      }
+                    }));
+                    return (
+                    <div key={i} style={{ borderRadius:12,marginBottom:10,
+                      border:`1px solid ${isPaid?"rgba(48,209,88,0.4)":"rgba(255,255,255,0.12)"}`,
+                      background:isPaid?"rgba(48,209,88,0.06)":"rgba(255,255,255,0.05)",
+                      overflow:"hidden" }}>
+                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 18px" }}>
+                        <div style={{flex:1}}>
+                          <div style={{ fontWeight:700,fontSize:13,color:isPaid?"#30D158":"#0A84FF" }}>
+                            {isPaid?"✅":"⏳"} {p.label} — {p.pct}%
+                          </div>
+                          <div style={{ fontSize:11,color:"rgba(255,255,255,0.45)",marginTop:2 }}>{p.when}</div>
+                        </div>
+                        <div style={{ textAlign:"right",marginLeft:12 }}>
+                          {p.amount>0 && <div style={{ fontSize:16,fontWeight:700,color:isPaid?"#30D158":"#0A84FF" }}>₹{p.amount.toLocaleString("en-IN")}</div>}
+                          <div style={{ fontSize:10,color:"rgba(255,255,255,0.35)" }}>Day {p.day}</div>
+                        </div>
+                        <button onClick={togglePay}
+                          style={{marginLeft:14,padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",
+                            fontFamily:"inherit",fontSize:11,fontWeight:700,
+                            background:isPaid?"rgba(255,69,58,0.15)":"rgba(48,209,88,0.15)",
+                            color:isPaid?"#FF453A":"#30D158"}}>
+                          {isPaid?"Mark Unpaid":"Mark Paid"}
+                        </button>
                       </div>
-                      <div style={{ textAlign:"right" }}>
-                        {p.amount>0 && <div style={{ fontSize:18,fontWeight:700,color:"#0A84FF" }}>₹{p.amount.toLocaleString("en-IN")}</div>}
-                        <div style={{ fontSize:11,color:"rgba(255,255,255,0.4)" }}>Day {p.day}</div>
-                      </div>
+                      {isPaid && (
+                        <div style={{display:"flex",gap:10,padding:"8px 18px 12px",borderTop:"1px solid rgba(48,209,88,0.15)"}}>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Amount Received</div>
+                            <input className="glass-input" type="number" placeholder="₹ amount"
+                              style={{fontSize:12,padding:"4px 8px"}}
+                              value={paidAmt}
+                              onChange={e=>setForm(f=>({...f,
+                                paymentTracking:{...(f.paymentTracking||{}),[pk]:{...(f.paymentTracking?.[pk]||{}),amount:e.target.value}}
+                              }))}/>
+                          </div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Date Received</div>
+                            <input className="glass-input" type="date"
+                              style={{fontSize:12,padding:"4px 8px"}}
+                              value={paidDate}
+                              onChange={e=>setForm(f=>({...f,
+                                paymentTracking:{...(f.paymentTracking||{}),[pk]:{...(f.paymentTracking?.[pk]||{}),date:e.target.value}}
+                              }))}/>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
