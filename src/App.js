@@ -712,6 +712,13 @@ const ROOM_PRODUCTS = {
   ],
 };
 
+// Returns the product list for a given room (always an array, never undefined)
+const getProductsForRoom = (room) => ROOM_PRODUCTS[room] || [];
+
+// Flattened list of every product across all rooms — used as last-resort fallback
+const ALL_PRODUCTS = Object.values(ROOM_PRODUCTS).flat();
+
+
 const SUPABASE_URL = "https://utctflrqhjzxhzyuhsnn.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY";
 const fmt = (v) => v ? `₹${Number(v).toLocaleString("en-IN")}` : "";
@@ -1186,7 +1193,7 @@ function Select({ value, onChange, options, placeholder }) {
 
 
 // ── Room Planner — Isometric 3D + Floor Plan ─────────────────────────
-function ClientReport({ selected, setView, customers }) {
+function ClientReport({ selected, setView, customers, setCustomers, showToast }) {
   // Inline makeEntry so it's available without App() scope
   const makeEntry = (type, summary, snapshot={}, user="", signatures={}) => ({
     ts: new Date().toISOString(), type, user, summary, snapshot, signatures,
@@ -1785,7 +1792,7 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const [renderErrors,    setRenderErrors]    = useState({});
   const RENDER_STYLES = ["Modern Contemporary","Luxury","Scandinavian","Industrial","Classic Traditional","Bohemian","Art Deco"];
   const [isOnline,     setIsOnline]     = useState(navigator.onLine);
-  const [offlineQ,     setOfflineQ]     = useState(()=>{try{return JSON.parse(localStorage.getItem("hri_q")||"[]");}catch{return [];}});
+  const [offlineQ,     setOfflineQ]     = useState(()=>{try{return JSON.parse(localStorage.getItem("hri_offline_queue")||"[]");}catch{return [];}});
   const pendingSync = offlineQ.length;
   const [view,         setView]         = useState("list");
   const [form,         setForm]         = useState(EMPTY);
@@ -2143,6 +2150,15 @@ High Rise Interiors, Hyderabad`
   const toggleRoom = (r)    => setForm(f => ({...f, rooms: f.rooms.includes(r) ? f.rooms.filter(x=>x!==r) : [...f.rooms, r]}));
 
   // ── Sync offline queue when back online ─────────────────────────────
+  const upsertCustomer = async (data) => {
+    const row = toRow(data);
+    if (data.id) {
+      await safeCall(t => sb(`${TABLE}?id=eq.${data.id}`, "PATCH", row, t));
+    } else {
+      await safeCall(t => sb(TABLE, "POST", row, t));
+    }
+  };
+
   const syncOfflineQueue = async () => {
     const queue = JSON.parse(localStorage.getItem("hri_offline_queue")||"[]");
     if (!queue.length) return;
@@ -2158,7 +2174,7 @@ High Rise Interiors, Hyderabad`
     // Remove synced items (remove all if no failures)
     if (failed === 0) {
       localStorage.removeItem("hri_offline_queue");
-      setOfflineQueue([]);
+      setOfflineQ([]);
       showToast(`✅ Synced ${synced} offline change${synced>1?"s":""} to database`,"success",4000);
     } else {
       showToast(`⚠️ Synced ${synced}, failed ${failed} — will retry when online`,"warning",4000);
@@ -2174,7 +2190,7 @@ High Rise Interiors, Hyderabad`
     const idx = queue.findIndex(q => q.data.id === formData.id);
     if (idx >= 0) queue[idx] = entry; else queue.push(entry);
     localStorage.setItem("hri_offline_queue", JSON.stringify(queue));
-    setOfflineQueue([...queue]);
+    setOfflineQ([...queue]);
   };
 
   const doRenderRoom = async (room, photoBase64) => {
@@ -2410,7 +2426,7 @@ High Rise Interiors, Hyderabad`
 
   // ── REPORT ───────────────────────────────────────────────────────────
   if (view==="report" && selected) {
-    return <ClientReport selected={selected} setView={setView} customers={customers}/>;
+    return <ClientReport selected={selected} setView={setView} customers={customers} setCustomers={setCustomers} showToast={showToast}/>;
   }
   // ── INTERNAL REPORT ──────────────────────────────────────────────────
   if (view==="internal" && selected) {
