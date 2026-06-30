@@ -310,6 +310,12 @@ const WORK_TYPE_PRICES = {
   "Sink":                    5000,  // per unit estimate
   "Service":                    0,
   "Transport":                  0,
+  "45mm Profile Door":       1050,
+  "20mm Profile Door":       1500,
+  "Head Board":               850,
+  "Channels":                   0,
+  "Stone":                    550,
+  "Roller Shutter":             0,
 };
 
 // Sheet2: Plywood grade → base plywood price per sqft (16mm)
@@ -347,8 +353,10 @@ const HARDWARE_TYPES = [
 // Types that use PER UNIT pricing (not H×W sq ft)
 const QTY_UNIT_TYPES = new Set([
   "Drawer","Big Drawers","Bed","Cushion","Sink","Lights","Track Light",
-  "Service","Transport","Murphy Bed","Bunk bed",
+  "Service","Transport","Murphy Bed","Bunk bed","Roller Shutter","Channels",
 ]);
+// Alias used throughout the UI (rooms tab, inventory, reports)
+const QTY_TYPES = QTY_UNIT_TYPES;
 
 // Compute final price for a single work item
 const calcItemPrice = (w, roomSpec) => {
@@ -566,22 +574,28 @@ const MATERIAL_LABELS = {
 // ── Products per room — matches High Rise Interiors quotation format ─────
 const ROOM_PRODUCTS = {
   "Entrance": [
-    { name:"Shoe Rack",              type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Entrance Frame",         type:"Frame",         mats:["plywood","laminate"] },
-    { name:"Entrance Ceiling",       type:"Ceiling",       mats:["ceiling","lights"] },
-    { name:"Tiles",                  type:"Tiles",         mats:[] },
+    { name:"Shoe Rack",              type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Entrance Frame",         type:"Frame",             mats:["plywood","laminate"] },
+    { name:"Entrance Ceiling",       type:"Ceiling",           mats:["ceiling","lights"] },
+    { name:"Tiles",                  type:"Tiles",             mats:[] },
+    { name:"Main Door Frame",        type:"Frame",             mats:["plywood","laminate"] },
   ],
-  "Drawing Room": [
-    { name:"TV Unit Bottom Box",     type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"TV Unit Back Panel",     type:"Panel",         mats:["plywood","laminate"] },
-    { name:"TV Unit Long Unit",      type:"Box",           mats:["plywood","laminate"] },
-    { name:"TV Unit Long Unit Profile",type:"Profile Door",mats:["plywood","laminate","glass"] },
-    { name:"TV Unit Side Louvers",   type:"Louvers",       mats:["plywood","laminate"] },
-    { name:"TV Unit Partition",      type:"Frame",         mats:["plywood","laminate"] },
-    { name:"Diamond Mirror",         type:"Diamond Mirror",mats:["glass"] },
-    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
-    { name:"POP Design",             type:"POP Design",    mats:[] },
-    { name:"Tiles",                  type:"Tiles",         mats:[] },
+    "Drawing Room": [
+    { name:"TV Unit Bottom Box",         type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"TV Unit Back Panel",         type:"Frame",             mats:["plywood","laminate"] },
+    { name:"TV Unit Glass Profile",      type:"45mm Profile Door", mats:["glass"] },
+    { name:"TV Unit Long Unit",          type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Crockery Tall Unit",         type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Crockery Tall Unit Profile", type:"45mm Profile Door", mats:["glass"] },
+    { name:"Crockery Top Box",           type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Crockery Bottom Box",        type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Crockery Top Box Profile",   type:"45mm Profile Door", mats:["glass"] },
+    { name:"Diamond Mirror",             type:"Mirror",            mats:["glass"] },
+    { name:"Wooden Ceiling",             type:"Ceiling",           mats:["ceiling","lights"] },
+    { name:"Ceiling",                    type:"Ceiling",           mats:["ceiling","lights"] },
+    { name:"POP Design",                 type:"POP Design",        mats:[] },
+    { name:"TV Unit Louvers",            type:"Louvers",           mats:["plywood","laminate"] },
+    { name:"TV Unit Partition",          type:"Partition glass",   mats:["glass"] },
   ],
   "Living Area": [
     { name:"Crockery Top Box",       type:"Open Box",      mats:["plywood","laminate"] },
@@ -602,72 +616,44 @@ const ROOM_PRODUCTS = {
     { name:"Tiles",                  type:"Tiles",         mats:[] },
   ],
   "Master Bedroom": [
-    { name:"Wardrobe",               type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Wardrobe Loft",          type:"Frame",         mats:["plywood","laminate"] },
-    { name:"Dressing Wardrobe",      type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Dressing Wardrobe Loft", type:"Box",           mats:["plywood","laminate"] },
-    { name:"Dressing Mirror Wall",   type:"Box",           mats:["plywood","laminate"] },
-    { name:"Dressing Mirror",        type:"Mirror",        mats:["glass"] },
-    { name:"Bed Back Panel",         type:"Panel",         mats:["plywood","laminate"] },
-    { name:"Study Table",            type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Hydraulic Bed",          type:"Bed",           mats:[] },
-    { name:"Bed Cushion",            type:"Cushion",       mats:[] },
-    { name:"TV Unit",                type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
-    { name:"POP Design",             type:"POP Design",    mats:[] },
+    { name:"Wardrobe",                   type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Wardrobe Loft",              type:"Frame",             mats:["plywood","laminate"] },
+    { name:"Study Table",                type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Used Clothes Section",       type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Side Table",                 type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Dressing Mirror",            type:"Mirror",            mats:["glass"] },
+    { name:"Bed Back Panel",             type:"Panel",             mats:["plywood","laminate"] },
+    { name:"Hydraulic Bed",              type:"Bed",               mats:[] },
+    { name:"Bed Cushion",                type:"Cushion",           mats:[] },
+    { name:"Head Board",                 type:"Head Board",        mats:["plywood","laminate"] },
+    { name:"Wardrobe Sensor Lighting",   type:"Lights",            mats:["lights"] },
+    { name:"TV Unit",                    type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Ceiling",                    type:"Ceiling",           mats:["ceiling","lights"] },
   ],
   "Children Bedroom": [
-    { name:"Wardrobe",               type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Wardrobe Loft",          type:"Frame",         mats:["plywood","laminate"] },
-    { name:"Window Below Box",       type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Hydraulic Bed",          type:"Bed",           mats:[] },
-    { name:"Bed Cushion",            type:"Cushion",       mats:[] },
-    { name:"Dressing",               type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Dressing Mirror",        type:"Mirror",        mats:["glass"] },
-    { name:"Study Table",            type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
+    { name:"Wardrobe",                   type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Wardrobe Loft",              type:"Frame",             mats:["plywood","laminate"] },
+    { name:"Side Table",                 type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Dressing",                   type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Dressing Mirror",            type:"Mirror",            mats:["glass"] },
+    { name:"Hydraulic Bed",              type:"Bed",               mats:[] },
+    { name:"Bed Cushion",                type:"Cushion",           mats:[] },
+    { name:"Study Table",                type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Window Below Box",           type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Wardrobe Sensor Lighting",   type:"Lights",            mats:["lights"] },
+    { name:"Ceiling",                    type:"Ceiling",           mats:["ceiling","lights"] },
   ],
   "Guest Bedroom": [
-    { name:"Wardrobe",               type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Wardrobe Loft",          type:"Frame",         mats:["plywood","laminate"] },
-    { name:"Used Clothes Pullout",   type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Hydraulic Bed",          type:"Bed",           mats:[] },
-    { name:"Bed Cushion",            type:"Cushion",       mats:[] },
-    { name:"Dressing",               type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Dressing Mirror",        type:"Mirror",        mats:["glass"] },
-    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
-  ],
-  "Kitchen": [
-    { name:"Kitchen Counter Below",  type:"Kitchen",       mats:["plywood","laminate","hardware","handles"] },
-    { name:"Kitchen Long Unit",      type:"Kitchen",       mats:["plywood","laminate","hardware","handles"] },
-    { name:"Kitchen Loft",           type:"Kitchen",       mats:["plywood","laminate"] },
-    { name:"Kitchen Loft Acrylic",   type:"Acrylic Box Frame",mats:["plywood","laminate"] },
-    { name:"Kitchen Loft Profile",   type:"Profile Door",  mats:["plywood","laminate","glass"] },
-    { name:"Backslash Tiles",        type:"Tiles",         mats:[] },
-    { name:"Granite Platform",       type:"Granite",       mats:[] },
-    { name:"Sink",                   type:"Sink",          mats:[] },
-    { name:"Wash Area",              type:"Box",           mats:["plywood","laminate"] },
-    { name:"Wash Area Granite",      type:"Granite",       mats:[] },
-    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
-  ],
-  "Pooja": [
-    { name:"Pooja Box",              type:"Box",           mats:["plywood","laminate","hardware"] },
-    { name:"Pooja Door",             type:"Pooja Profile Door",mats:["plywood","laminate","glass"] },
-    { name:"Pooja Tiles",            type:"Tiles",         mats:[] },
-    { name:"Pooja Draws",            type:"Drawer",        mats:["hardware"] },
-    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
-    { name:"Diamond Mirror",         type:"Diamond Mirror",mats:["glass"] },
-  ],
-  "Balcony": [
-    { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
-    { name:"Tiles",                  type:"Tiles",         mats:[] },
-    { name:"Partition",              type:"Frame",         mats:["plywood","laminate"] },
-  ],
-  "Bathroom": [
-    { name:"Bathroom Mirror",        type:"Mirror",        mats:["glass"] },
-    { name:"Bathroom Accessories",   type:"Service",       mats:[] },
-    { name:"Bathroom Lighting",      type:"Service",       mats:["lights"] },
-    { name:"Tiles",                  type:"Tiles",         mats:[] },
+    { name:"Wardrobe",                   type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Wardrobe Loft",              type:"Frame",             mats:["plywood","laminate"] },
+    { name:"Study",                      type:"Frame",             mats:["plywood","laminate"] },
+    { name:"Dressing",                   type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Dressing Mirror",            type:"Mirror",            mats:["glass"] },
+    { name:"Hydraulic Bed",              type:"Bed",               mats:[] },
+    { name:"Bed Cushion",                type:"Cushion",           mats:[] },
+    { name:"Head Board",                 type:"Head Board",        mats:["plywood","laminate"] },
+    { name:"Used Clothes Pullout",       type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Ceiling",                    type:"Ceiling",           mats:["ceiling","lights"] },
   ],
   "Study Room": [
     { name:"Study Table",            type:"Box",           mats:["plywood","laminate","hardware"] },
@@ -675,63 +661,55 @@ const ROOM_PRODUCTS = {
     { name:"Wardrobe",               type:"Box",           mats:["plywood","laminate","hardware"] },
     { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
   ],
-};
 
-// Fallback for custom rooms — show everything
-const ALL_PRODUCTS = [
-  { name:"Box Work",               type:"Box",           mats:["plywood","laminate","hardware"] },
-  { name:"Frame Work",             type:"Frame",         mats:["plywood","laminate"] },
-  { name:"Open Box",               type:"Open Box",      mats:["plywood","laminate"] },
-  { name:"Profile Door",           type:"Profile Door",  mats:["plywood","laminate","glass"] },
-  { name:"Ceiling",                type:"Ceiling",       mats:["ceiling","lights"] },
-  { name:"Tiles",                  type:"Tiles",         mats:[] },
-  { name:"Granite",                type:"Granite",       mats:[] },
-  { name:"Mirror",                 type:"Mirror",        mats:["glass"] },
-  { name:"Hydraulic Bed",          type:"Bed",           mats:[] },
-  { name:"Bed Cushion",            type:"Cushion",       mats:[] },
-  { name:"Drawer",                 type:"Drawer",        mats:["hardware"] },
-  { name:"Service",                type:"Service",       mats:[] },
-  { name:"Custom Item",            type:"Box",           mats:["plywood","laminate","hardware"] },
-];
-
-// Helper: get products for a room
-const getProductsForRoom = (room) => ROOM_PRODUCTS[room] || ALL_PRODUCTS;
-
-// Types that use qty (count) not W×H
-const QTY_TYPES = new Set(["Service","Transport","Sink","Drawer","Big Drawers","Bed","Cushion","Channels","Track Light","Lights","Murphy Bed","Bunk bed"]);
-
-// Types that use W×H for area calculation  
-const AREA_TYPES = new Set(["Box","Frame","Open Box","Panel","Profile Door","Louvers",
-  "Kitchen","Acrylic Box Frame","Pooja Profile Door","Diamond Mirror","Ceiling",
-  "Tiles","Granite","Mirror","POP Design"]);
-
-
-// PAYMENT_PHASES replaced by buildPaymentSchedule(totalDays, quotationAmount) — see above
-
-const EMPTY = {
-  id:null, name:"", email:"", phone:"", address:"",
-  status:"Lead", projectType:"Residential", propertyType:"3 BHK",
-  budget:"₹30L–₹35L", timeline:"120 Days", startDate:"",
-  rooms:["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom"],
-  dimensions:{ length:"", width:"", height:"" },
-  style:"Luxury", notes:"",
-  quotation:"", previousQuotation:"", revisedQuotation:"",
-  plywood:"", laminate:"", hardware:"", glass:"", ceiling:"", lights:"", handles:"",
-  roomDetails:{},
-  roomMaterials:{},
-  roomWork: {},
-  projectPlan: {},
-  paymentTracking: {},
-  rebateType:"amount", rebateValue:"", labourPct:50,
-  auditLog:[],              // [{ts, type, user, summary, snapshot, signatures}]
-  inventory:{},             // per-material status: { key: {status, orderedDate, deliveredDate, notes} }
-  customRooms:[],          // room names extracted from floor plan
-  floorPlanUrl:"",         // uploaded floor plan image URL
-  floorPlanData:null,       // analysed room data from AI
-  floorPlanPending:null,    // detected rooms awaiting user mapping
-  referralCode:"",         // this client's own permanent referral code
-  appliedReferralCode:"",  // referral code from another customer applied to this project
-  referralDiscount:false,  // whether the applied code gives 5% discount
+  "Kitchen": [
+    { name:"Kitchen Counter Below",      type:"Kitchen",           mats:["plywood","laminate","hardware"] },
+    { name:"Kitchen Stone Installation", type:"Stone",             mats:[] },
+    { name:"Kitchen Backslash Tiles",    type:"Tiles",             mats:[] },
+    { name:"Kitchen Loft 1",             type:"Kitchen",           mats:["plywood","laminate","hardware"] },
+    { name:"Kitchen Loft 1 Profile",     type:"45mm Profile Door", mats:["glass"] },
+    { name:"Kitchen Loft 2",             type:"Kitchen",           mats:["plywood","laminate","hardware"] },
+    { name:"Roller Shutter",             type:"Roller Shutter",    mats:[] },
+    { name:"Wash Area",                  type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Utility Granite Platform",   type:"Granite",           mats:[] },
+    { name:"Kitchen Ceiling",            type:"Ceiling",           mats:["ceiling","lights"] },
+    { name:"Sink",                       type:"Sink",              mats:[] },
+  ],
+  "Pooja": [
+    { name:"Pooja Box",                  type:"Box",               mats:["plywood","laminate","hardware"] },
+    { name:"Pooja Door",                 type:"20mm Profile Door", mats:["glass"] },
+    { name:"Pooja Back Glass",           type:"Glass",             mats:["glass"] },
+    { name:"Pooja Drawer",               type:"Drawer",            mats:["hardware"] },
+    { name:"Pooja Tiles",                type:"Tiles",             mats:[] },
+    { name:"Pooja Ceiling",              type:"Ceiling",           mats:["ceiling","lights"] },
+  ],
+  "Bathroom": [
+    { name:"Bathroom Mirror",            type:"Mirror",            mats:["glass"] },
+    { name:"Bathroom Accessories",       type:"Service",           mats:[] },
+    { name:"Bathroom Lighting & Exhaust",type:"Lights",            mats:["lights"] },
+    { name:"Bathroom Tiles",             type:"Tiles",             mats:[] },
+    { name:"Bathroom Granite",           type:"Granite",           mats:[] },
+  ],
+  "Balcony": [
+    { name:"Balcony Wooden PVC Ceiling", type:"PVC Ceiling",       mats:["ceiling"] },
+    { name:"Invisible Grill",            type:"Service",           mats:[] },
+    { name:"Granite on Utility Wall",    type:"Granite",           mats:[] },
+    { name:"Cloth Dry Hanger",           type:"Service",           mats:[] },
+    { name:"Balcony Ceiling",            type:"Ceiling",           mats:["ceiling","lights"] },
+  ],
+  "Others": [
+    { name:"Electrical",                 type:"Service",           mats:[] },
+    { name:"Channels & Accessories",     type:"Channels",          mats:["hardware"] },
+    { name:"Small Drawers",              type:"Drawer",            mats:["hardware"] },
+    { name:"Medium Drawers",             type:"Drawer",            mats:["hardware"] },
+    { name:"Transport & Cleaning",       type:"Transport",         mats:[] },
+    { name:"Bed",                        type:"Bed",               mats:[] },
+    { name:"Head Board",                 type:"Head Board",        mats:["plywood","laminate"] },
+    { name:"Bed Cushion",                type:"Cushion",           mats:[] },
+    { name:"Paints",                     type:"Service",           mats:[] },
+    { name:"Mesh Doors",                 type:"Service",           mats:[] },
+    { name:"Mosquito Net",               type:"Service",           mats:[] },
+  ],
 };
 
 const SUPABASE_URL = "https://utctflrqhjzxhzyuhsnn.supabase.co";
@@ -1762,6 +1740,36 @@ const Shine = () => (
     background:"linear-gradient(180deg,rgba(255,255,255,0.13) 0%,rgba(255,255,255,0) 100%)",
     borderRadius:"20px 20px 0 0",zIndex:0}}/>
 );
+
+// ── Default empty client form ──────────────────────────────────────
+const EMPTY = {
+  id:null, name:"", email:"", phone:"", address:"",
+  status:"Lead", projectType:"Residential", propertyType:"3 BHK",
+  budget:"₹30L–₹35L", timeline:"120 Days", startDate:"",
+  rooms:["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom"],
+  dimensions:{ length:"", width:"", height:"" },
+  style:"Luxury", notes:"",
+  quotation:"", previousQuotation:"", revisedQuotation:"",
+  plywood:"", laminate:"", hardware:"", glass:"", ceiling:"", lights:"", handles:"",
+  roomDetails:{},
+  roomMaterials:{},
+  roomWork: {},
+  projectPlan: {},
+  paymentTracking: {},
+  rebateType:"amount", rebateValue:"", labourPct:50,
+  auditLog:[],
+  inventory:{},
+  customRooms:[],
+  floorPlanUrl:"",
+  floorPlanData:null,
+  floorPlanPending:false,
+  referralCode:"",
+  appliedReferralCode:"",
+  referralDiscount:0,
+  couponCode:"",
+  couponApplied:false,
+  clientAccessCode:"",
+};
 
 export default function App({ token, user, onLogout, onSessionExpired }) {
   const [customers,    setCustomers]    = useState([]);
@@ -4285,15 +4293,11 @@ Dimension rules:
               {/* Grand total */}
               {(()=>{
                 const grand = form.rooms.reduce((t,room)=>{
-                  const works=form.roomWork?.[room]||[];
-                  return t+works.reduce((rt,w)=>{
-                    if(w.price) return rt+parseFloat(w.price);
-                    const catalog=getCatalog(w.matType||"plywood");
-                    const item=catalog.find(m=>m.name===w.brand);
-                    const sqft=w.height&&w.width?parseFloat(w.height)*parseFloat(w.width):0;
-                    const qty=QTY_TYPES.has(w.type)?parseFloat(w.qty)||1:sqft;
-                    return rt+(item&&qty?qty*item.price:0);
-                  },0);
+                  const works   = form.roomWork?.[room]||[];
+                  const rSpec   = form.roomDetails?.[room]||{};
+                  return t+works.reduce((rt,w)=>
+                    rt+(w.price?parseFloat(w.price):calcItemPrice(w,rSpec))
+                  ,0);
                 },0);
                 return grand>0?(
                   <div className="glass" style={{padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,69,58,0.1)",borderColor:"rgba(255,69,58,0.3)"}}>
