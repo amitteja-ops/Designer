@@ -144,15 +144,15 @@ const PROPERTY_BUDGET_MAP = {
 };
 
 const PROPERTY_ROOMS_MAP = {
-  "Studio":            ["Entrance","Living Area","Kitchen","Bathroom"],
-  "1 BHK":             ["Entrance","Living Area","Kitchen","Master Bedroom","Bathroom"],
-  "2 BHK":             ["Entrance","Drawing Room","Living Area","Kitchen","Master Bedroom","Children Bedroom","Bathroom"],
-  "3 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom"],
-  "4 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony"],
-  "Villa":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony"],
-  "Independent House": ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony"],
-  "Commercial":        ["Entrance","Living Area","Bathroom"],
-  "Office":            ["Entrance","Living Area","Bathroom"],
+  "Studio":            ["Entrance","Living Area","Kitchen","Bathroom","Others","Additional Accessories"],
+  "1 BHK":             ["Entrance","Living Area","Kitchen","Master Bedroom","Bathroom","Others","Additional Accessories"],
+  "2 BHK":             ["Entrance","Drawing Room","Living Area","Kitchen","Master Bedroom","Children Bedroom","Bathroom","Others","Additional Accessories"],
+  "3 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom","Others","Additional Accessories"],
+  "4 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony","Others","Additional Accessories"],
+  "Villa":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony","Others","Additional Accessories"],
+  "Independent House": ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony","Others","Additional Accessories"],
+  "Commercial":        ["Entrance","Living Area","Bathroom","Others"],
+  "Office":            ["Entrance","Living Area","Bathroom","Others"],
 };
 
 // ── Default room work items from Ajay quotation ───────────────────────
@@ -237,6 +237,21 @@ const DEFAULT_ROOM_WORK = {
     {id:2, product:"Bathroom Accessories",    type:"Service",     height:"",   width:"",   qty:"1", matType:"",        brand:"", notes:"", price:""},
     {id:3, product:"Bathroom Lighting",       type:"Service",     height:"",   width:"",   qty:"1", matType:"lights",  brand:"Gola Profile", notes:"", price:""},
   ],
+  "Additional Accessories": [
+    {id:1,  product:"Balcony Wooden PVC Ceiling",        type:"PVC Ceiling",  height:"",   width:"",  qty:"1",  matType:"ceiling", brand:"Saint Gobain Gyproc", notes:"", price:""},
+    {id:2,  product:"Mesh Doors",                         type:"Service",      height:"",   width:"",  qty:"1",  matType:"",        brand:"",                   notes:"", price:""},
+    {id:3,  product:"Invisible Grill",                    type:"Grill",        height:"",   width:"",  qty:"152",matType:"",        brand:"",                   notes:"", price:""},
+    {id:4,  product:"Pleated Mosquito Net Entrance Door", type:"Service",      height:"",   width:"",  qty:"1",  matType:"",        brand:"",                   notes:"", price:""},
+    {id:5,  product:"Bathroom Mirror without Light",      type:"Mirror",       height:"",   width:"",  qty:"3",  matType:"glass",   brand:"Modi Guard Mirror",   notes:"", price:""},
+    {id:6,  product:"Bathroom Accessories",               type:"Accessories",  height:"",   width:"",  qty:"1",  matType:"",        brand:"",                   notes:"", price:""},
+    {id:7,  product:"Bathroom Lighting & Exhaust Fan",    type:"Lights",       height:"",   width:"",  qty:"3",  matType:"lights",  brand:"Phillips 3W",         notes:"", price:""},
+    {id:8,  product:"Cloth Dry Hanger",                   type:"Service",      height:"",   width:"",  qty:"1",  matType:"",        brand:"",                   notes:"", price:""},
+    {id:9,  product:"Granite on Utility & Balcony Wall",  type:"Granite",      height:"",   width:"",  qty:"2",  matType:"",        brand:"",                   notes:"", price:""},
+    {id:10, product:"Bed",                                type:"Bed",          height:"6",  width:"6.5",qty:"1", matType:"",        brand:"",                   notes:"", price:""},
+    {id:11, product:"Bed Side Cushion",                   type:"Cushion",      height:"2",  width:"20",qty:"1",  matType:"",        brand:"",                   notes:"", price:""},
+    {id:12, product:"Bed Head Board",                     type:"Head Board",   height:"4",  width:"6", qty:"1",  matType:"plywood", brand:"Sainik 710",          notes:"", price:""},
+    {id:13, product:"Paints",                             type:"Service",      height:"",   width:"",  qty:"1",  matType:"",        brand:"",                   notes:"", price:""},
+  ],
 };
 
 // Build default roomWork for a given property type
@@ -316,6 +331,8 @@ const WORK_TYPE_PRICES = {
   "Channels":                   0,
   "Stone":                    550,
   "Roller Shutter":             0,
+  "Accessories":                0,  // fixed price item (per unit/set)
+  "Grill":                      0,  // fixed price per item
 };
 
 // Sheet2: Plywood grade → base plywood price per sqft (16mm)
@@ -354,6 +371,7 @@ const HARDWARE_TYPES = [
 const QTY_UNIT_TYPES = new Set([
   "Drawer","Big Drawers","Bed","Cushion","Sink","Lights","Track Light",
   "Service","Transport","Murphy Bed","Bunk bed","Roller Shutter","Channels",
+  "Accessories","Grill","Mirror",
 ]);
 // Alias used throughout the UI (rooms tab, inventory, reports)
 const QTY_TYPES = QTY_UNIT_TYPES;
@@ -365,7 +383,12 @@ const calcItemPrice = (w, roomSpec) => {
   const h          = parseFloat(w.height) || 0;
   const ht         = parseFloat(w.width)  || 0;
   const isQtyUnit  = QTY_UNIT_TYPES.has(type);
-  const qty        = isQtyUnit ? (parseFloat(w.qty) || 1) : (h * ht);
+  // Base measure: qty-unit types use qty directly; H×W types use sq ft.
+  const measure    = isQtyUnit ? 1 : (h * ht);
+  // Quantity multiplier — applies on TOP of the base measure for every type,
+  // e.g. 2 identical wardrobes, 3 identical drawer units. Defaults to 1.
+  const quantity   = parseFloat(w.qty) || 1;
+  const qty        = measure * quantity;
   if (qty <= 0) return 0;
 
   // Plywood grade premium (only for carpentry types)
@@ -709,6 +732,21 @@ const ROOM_PRODUCTS = {
     { name:"Paints",                     type:"Service",           mats:[] },
     { name:"Mesh Doors",                 type:"Service",           mats:[] },
     { name:"Mosquito Net",               type:"Service",           mats:[] },
+  ],
+  "Additional Accessories": [
+    { name:"Balcony Wooden PVC Ceiling",       type:"PVC Ceiling",  mats:["ceiling"] },
+    { name:"Mesh Doors",                        type:"Service",      mats:[] },
+    { name:"Invisible Grill",                   type:"Grill",        mats:[] },
+    { name:"Pleated Mosquito Net Entrance Door",type:"Service",      mats:[] },
+    { name:"Bathroom Mirror without Light",     type:"Mirror",       mats:["glass"] },
+    { name:"Bathroom Accessories",              type:"Accessories",  mats:[] },
+    { name:"Bathroom Lighting & Exhaust Fan",   type:"Lights",       mats:["lights"] },
+    { name:"Cloth Dry Hanger",                  type:"Service",      mats:[] },
+    { name:"Granite on Utility & Balcony Wall", type:"Granite",      mats:[] },
+    { name:"Bed",                               type:"Bed",          mats:[] },
+    { name:"Bed Side Cushion",                  type:"Cushion",      mats:[] },
+    { name:"Bed Head Board",                    type:"Head Board",   mats:["plywood","laminate"] },
+    { name:"Paints",                            type:"Service",      mats:[] },
   ],
 };
 
@@ -1225,8 +1263,11 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
   const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
   const noteLines   = (selected.notes||"").split("\n").filter(l=>l.trim());
   const scopeLines  = noteLines.filter(l=>/drawing|living|bedroom|kitchen|ceiling|pooja|wardrobe|unit|partition|entrance|balcony|bathroom/i.test(l));
-  const outOfScope  = noteLines.filter(l=>/out of scope|not included|excluded|accessories|appliances|curtain|mesh|invisible|ac copper|bathroom tile/i.test(l));
-  const discussions = noteLines.filter(l=>!scopeLines.includes(l)&&!outOfScope.includes(l));
+  // "Out of scope" = only lines that explicitly say "out of scope" or "not included"
+  // "Included" items (lines starting with "Included :") are shown separately
+  const outOfScope  = noteLines.filter(l=>/^out of scope|not included|excluded/i.test(l.trim()));
+  const includedItems = noteLines.filter(l=>/^(✗\s*)?included\s*:/i.test(l.trim()));
+  const discussions = noteLines.filter(l=>!scopeLines.includes(l)&&!outOfScope.includes(l)&&!includedItems.includes(l));
   const RS = {
     sTitle:{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
              color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14,
@@ -1429,8 +1470,8 @@ Hyderabad`);
         </div>
 
         {/* Room-wise Materials & Cost — show brand/qty, hide rates */}
-                {/* Material Specifications — show brand/qty from roomWork */}
-        {selected.roomWork && Object.keys(selected.roomWork).length > 0 && (
+                {/* Material Specifications — hidden per user preference */}
+        {false && selected.roomWork && Object.keys(selected.roomWork).length > 0 && (
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Material Specifications by Room</div>
             {(selected.rooms||Object.keys(selected.roomWork)).map((room, ri) => {
@@ -1448,14 +1489,15 @@ Hyderabad`);
                   <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr",
                     padding:"6px 14px", background:"#2A3A4A",
                     fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
-                    <span>Product</span><span>Type</span><span>H×W / Qty</span><span>Amount</span>
+                    <span>Product</span><span>Type</span><span>H×W / Sqft</span><span>Qty</span><span>Amount</span>
                   </div>
                   {works.map((w, i) => {
                     const sqft = w.height&&w.width ? (parseFloat(w.height)*parseFloat(w.width)).toFixed(1) : null;
                     const isQty = QTY_TYPES.has(w.type);
+                    const qty  = parseFloat(w.qty)||1;
                     const amt  = w.price ? parseFloat(w.price) : calcItemPrice(w, spec);
                     return (
-                      <div key={w.id||i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr",
+                      <div key={w.id||i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 0.6fr 1fr",
                         padding:"9px 14px", background:i%2===0?"#ffffff":"#f8f9fa",
                         borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
                         <div>
@@ -1464,8 +1506,11 @@ Hyderabad`);
                         </div>
                         <div style={{ fontSize:11, color:"#6b7280" }}>{w.type}</div>
                         <div style={{ fontSize:11, color:"#374151" }}>
-                          {isQty ? `${w.qty||1} units` : sqft ? `${sqft} sft` : "—"}
+                          {isQty ? `${qty} units` : sqft ? `${sqft} sft` : "—"}
                           {w.brand && <div style={{fontSize:10,color:"#9ca3af"}}>{w.brand}</div>}
+                        </div>
+                        <div style={{ fontSize:12, fontWeight:700, color:qty>1?"#FF9F0A":"#374151", textAlign:"center" }}>
+                          ×{qty}
                         </div>
                         <div style={{ fontSize:12, fontWeight:700, color:"#0F1923" }}>
                           {amt>0?fmt(amt):"—"}
@@ -1494,12 +1539,28 @@ Hyderabad`);
           </div>
         )}
 
+        {/* Included Items */}
+        {includedItems.length>0 && (
+          <div style={{ marginBottom:32 }}>
+            <div style={RS.sTitle}>Included in Scope</div>
+            <div style={{ background:"rgba(48,209,88,0.06)",borderRadius:3,padding:"16px 20px",border:"1px solid #bbf7d0" }}>
+              {includedItems.map((l,i)=>{
+                const text = l.replace(/^(✗\s*)?included\s*:\s*/i,"");
+                return <div key={i} style={{ ...RS.bullet,color:"#166534" }}>✓ {text}</div>;
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Out of Scope */}
         {outOfScope.length>0 && (
           <div style={{ marginBottom:32 }}>
             <div style={RS.sTitle}>Out of Scope</div>
             <div style={{ background:"rgba(255,69,58,0.08)",borderRadius:3,padding:"16px 20px",border:"1px solid #FECACA" }}>
-              {outOfScope.map((l,i)=><div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {l}</div>)}
+              {outOfScope.map((l,i)=>{
+                const text = l.replace(/^(out of scope|not included|excluded)\s*:?\s*/i,"");
+                return <div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {text||l}</div>;
+              })}
             </div>
           </div>
         )}
@@ -2638,9 +2699,9 @@ High Rise Interiors, Hyderabad`
             return (
               <div key={r} style={{ marginBottom:14, border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
                 {/* Room header */}
-                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr", background:"#1e293b", padding:"8px 12px" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 0.6fr 1fr", background:"#1e293b", padding:"8px 12px" }}>
                   <div style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {r}</div>
-                  {["Type","H × W","Sq Ft / Qty","Material"].map(h=>(
+                  {["Type","H × W","Sq Ft","Qty","Material"].map(h=>(
                     <div key={h} style={{ color:"rgba(255,255,255,0.6)", fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", textAlign:"center" }}>{h}</div>
                   ))}
                 </div>
@@ -2648,9 +2709,9 @@ High Rise Interiors, Hyderabad`
                 {works.map((w,wi)=>{
                   const sqft  = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : null;
                   const isQty = QTY_TYPES.has(w.type);
-                  const qtyDisplay = isQty ? `${w.qty||1} units` : sqft ? `${sqft.toFixed(1)} sq ft` : "—";
+                  const qty   = parseFloat(w.qty)||1;
                   return (
-                    <div key={wi} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1.2fr 1fr",
+                    <div key={wi} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 0.6fr 1fr",
                       padding:"8px 12px", borderTop:"1px solid #f3f4f6",
                       background:wi%2===0?"#fff":"#f9fafb", alignItems:"center" }}>
                       <div>
@@ -2659,9 +2720,12 @@ High Rise Interiors, Hyderabad`
                       </div>
                       <div style={{ fontSize:11, color:"#6b7280", textAlign:"center" }}>{w.type}</div>
                       <div style={{ fontSize:11, color:"#374151", textAlign:"center" }}>
-                        {w.height&&w.width ? `${w.height}×${w.width}` : (isQty?`qty: ${w.qty||1}`:"—")}
+                        {w.height&&w.width ? `${w.height}×${w.width}` : "—"}
                       </div>
-                      <div style={{ fontSize:12, fontWeight:700, color:"#0A84FF", textAlign:"center" }}>{qtyDisplay}</div>
+                      <div style={{ fontSize:11, color:"#374151", textAlign:"center" }}>
+                        {!isQty && sqft ? `${sqft.toFixed(1)} sft` : "—"}
+                      </div>
+                      <div style={{ fontSize:12, fontWeight:700, color:qty>1?"#FF9F0A":"#0A84FF", textAlign:"center" }}>×{qty}</div>
                       <div style={{ fontSize:11, color:"#374151", textAlign:"center" }}>{w.brand||"—"}</div>
                     </div>
                   );
@@ -2856,17 +2920,15 @@ High Rise Interiors, Hyderabad`
     // Build line items from roomWork
     const lineItems = [];
     Object.entries(selected.roomWork||{}).forEach(([room, works]) => {
+      const spec = selected.roomDetails?.[room] || {};
       (works||[]).forEach(w => {
         if (!w.product) return;
-        const catalog = getCatalog(w.matType||"plywood");
-        const item    = catalog.find(m=>m.name===w.brand);
-        const sqft    = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : 0;
-        const qty     = QTY_TYPES.has(w.type) ? parseFloat(w.qty)||1 : sqft;
-        const rate    = item?.price || 0;
-        const total   = w.price ? parseFloat(w.price) : qty * rate;
+        const sqft     = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : 0;
+        const quantity = parseFloat(w.qty)||1;
+        const total    = w.price ? parseFloat(w.price) : calcItemPrice(w, spec);
         lineItems.push({ room, product:w.product, type:w.type, height:w.height, width:w.width,
-          brand:w.brand, qty:qty.toFixed(1), unit:QTY_TYPES.has(w.type)?"units":"sq ft",
-          rate, total, notes:w.notes });
+          brand:w.brand, sqft:sqft.toFixed(1), qty:quantity, unit:QTY_TYPES.has(w.type)?"units":"sq ft",
+          total, notes:w.notes });
       });
     });
 
@@ -2936,7 +2998,7 @@ High Rise Interiors, Hyderabad`
             <table style={{ width:"100%", borderCollapse:"collapse" }}>
               <thead>
                 <tr>
-                  {["Room","Product","Type","H × W","Sq Ft / Qty","Brand","Amount"].map((h,i)=>(
+                  {["Room","Product","Type","H × W","Sq Ft","Qty","Brand","Amount"].map((h,i)=>(
                     <th key={h} style={RS.th(i)}>{h}</th>
                   ))}
                 </tr>
@@ -2948,7 +3010,8 @@ High Rise Interiors, Hyderabad`
                     <td style={RS.td(i)}><strong>{l.product}</strong>{l.notes&&<div style={{fontSize:10,color:"#9ca3af"}}>{l.notes}</div>}</td>
                     <td style={RS.td(i)}>{l.type}</td>
                     <td style={RS.td(i)}>{l.height&&l.width?`${l.height} × ${l.width}`:"—"}</td>
-                    <td style={{ ...RS.td(i), textAlign:"center" }}>{l.qty} {l.unit}</td>
+                    <td style={{ ...RS.td(i), textAlign:"center" }}>{l.unit==="sq ft"?l.sqft:"—"}</td>
+                    <td style={{ ...RS.td(i), textAlign:"center", fontWeight:700, color:l.qty>1?"#FF9F0A":"#374151" }}>×{l.qty}</td>
                     <td style={RS.td(i)}>{l.brand||"—"}</td>
                     <td style={{ ...RS.td(i), textAlign:"right", fontWeight:600 }}>{l.total>0?fmt(l.total):"—"}</td>
                   </tr>
@@ -4055,8 +4118,8 @@ Dimension rules:
 
                     {/* Column headers */}
                     {works.length>0&&(
-                      <div style={{display:"grid",gridTemplateColumns:"2fr 1.2fr 72px 16px 72px 72px 1.6fr 1.4fr 90px 36px",gap:6,marginBottom:6,paddingLeft:2}}>
-                        {["Product","Type","Height","×","Width","Sq Ft","Material / Brand","Notes","Price",""].map((h,i)=>(
+                      <div style={{display:"grid",gridTemplateColumns:"2fr 1.2fr 72px 16px 72px 72px 56px 1.6fr 1.4fr 90px 36px",gap:6,marginBottom:6,paddingLeft:2}}>
+                        {["Product","Type","Height","×","Width","Sq Ft","Qty","Material / Brand","Notes","Price",""].map((h,i)=>(
                           <div key={i} style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",letterSpacing:1,textTransform:"uppercase"}}>{h}</div>
                         ))}
                       </div>
@@ -4075,7 +4138,7 @@ Dimension rules:
 
                       return (
                         <div key={w.id} style={{marginBottom:8}}>
-                          <div style={{display:"grid",gridTemplateColumns:"2fr 1.2fr 72px 16px 72px 72px 1.6fr 1.4fr 90px 36px",gap:6,alignItems:"center",background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 10px"}}>
+                          <div style={{display:"grid",gridTemplateColumns:"2fr 1.2fr 72px 16px 72px 72px 56px 1.6fr 1.4fr 90px 36px",gap:6,alignItems:"center",background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 10px"}}>
                             {/* Product dropdown */}
                             <select className="glass-input" style={{fontSize:12,padding:"5px 6px"}}
                               value={w.product||""}
@@ -4102,13 +4165,16 @@ Dimension rules:
                               ))}
                             </select>
 
-                            {/* Height or Qty */}
+                            {/* Height or Qty (qty-unit types use this wide field for their qty) */}
                             {useQty?(
                               <>
                                 <input className="glass-input" type="number" min="0"
                                   style={{fontSize:12,padding:"5px 6px",textAlign:"center",gridColumn:"3/7"}}
                                   placeholder="Qty" value={w.qty||""}
                                   onChange={e=>updWork(w.id,"qty",e.target.value)}/>
+                                {/* Spacer for the dedicated Qty column below, since this type's
+                                    qty already feeds the wide field above */}
+                                <div/>
                               </>
                             ):(
                               <>
@@ -4126,6 +4192,12 @@ Dimension rules:
                                   <div style={{fontSize:12,fontWeight:800,color:sqft?"#0A84FF":"rgba(255,255,255,0.2)"}}>{sqft?sqft.toFixed(1):"—"}</div>
                                   <div style={{fontSize:8,color:"rgba(10,132,255,0.5)",fontWeight:600}}>sqft</div>
                                 </div>
+                                {/* Qty multiplier — applies on top of sq ft, defaults to 1 */}
+                                <input className="glass-input" type="number" min="1" step="1"
+                                  style={{fontSize:12,padding:"5px 4px",textAlign:"center",
+                                    color:(parseFloat(w.qty)||1)>1?"#FF9F0A":"rgba(255,255,255,0.7)"}}
+                                  placeholder="1" value={w.qty||""}
+                                  onChange={e=>updWork(w.id,"qty",e.target.value)}/>
                               </>
                             )}
 
