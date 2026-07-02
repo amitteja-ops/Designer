@@ -1560,45 +1560,59 @@ Hyderabad`);
         )}
         {/* Budget */}
         <div style={{ marginBottom:32 }}>
-          {/* Material Cost Breakdown */}
+          {/* Cost Breakdown — from final quotation with labour */}
+        {selected.quotation && (
         <div style={{ marginBottom:24 }}>
           <div style={RS.sTitle}>Cost Breakdown</div>
             {(()=>{
+              const finalQuote  = parseFloat(selected.quotation) || 0;
+              const lp          = selected.labourPct != null ? selected.labourPct : 50;
+              const labourMult  = 1 + lp/100;
               const ADD_ON_ROOMS = new Set(["Add On","Others"]);
+              // Calculate raw material proportions to split the final quotation
               const calcRoom = (room) => {
                 const works = selected.roomWork?.[room]||[];
                 const spec  = selected.roomDetails?.[room]||{};
                 return works.reduce((rt,w)=>rt+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
               };
               const rooms = selected.rooms||Object.keys(selected.roomWork||{});
-              const interiorTotal = rooms.filter(r=>!ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
-              const addOnTotal    = rooms.filter(r=> ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
-              const grandTotal    = interiorTotal + addOnTotal;
-              return grandTotal>0?(
+              const rawInterior = rooms.filter(r=>!ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
+              const rawAddOn    = rooms.filter(r=> ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
+              const rawTotal    = rawInterior + rawAddOn;
+              // Apply proportion of final quotation
+              const interiorAmt = rawTotal>0 ? Math.round(finalQuote * (rawInterior/rawTotal)) : finalQuote;
+              const addOnAmt    = rawTotal>0 ? Math.round(finalQuote * (rawAddOn/rawTotal))    : 0;
+              const grandTotal  = finalQuote;
+              return (
                 <div style={{ marginTop:8 }}>
-                  {interiorTotal>0 && (
+                  {rawInterior>0 && (
                     <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
                       background:"#1e293b",borderRadius:3,padding:"10px 18px",marginBottom:4 }}>
-                      <span style={{ fontWeight:600,color:"#94a3b8",fontSize:13 }}>Interior Works</span>
-                      <strong style={{ fontSize:15,color:C.teal }}>{fmt(interiorTotal)}</strong>
+                      <span style={{ fontWeight:600,color:"#94a3b8",fontSize:13 }}>
+                        Interior Works (incl. {lp}% labour)
+                      </span>
+                      <strong style={{ fontSize:15,color:C.teal }}>{fmt(interiorAmt)}</strong>
                     </div>
                   )}
-                  {addOnTotal>0 && (
+                  {rawAddOn>0 && (
                     <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
                       background:"#1e293b",borderRadius:3,padding:"10px 18px",marginBottom:4 }}>
-                      <span style={{ fontWeight:600,color:"#94a3b8",fontSize:13 }}>Add On</span>
-                      <strong style={{ fontSize:15,color:"#FF9F0A" }}>{fmt(addOnTotal)}</strong>
+                      <span style={{ fontWeight:600,color:"#94a3b8",fontSize:13 }}>
+                        Add On (incl. {lp}% labour)
+                      </span>
+                      <strong style={{ fontSize:15,color:"#FF9F0A" }}>{fmt(addOnAmt)}</strong>
                     </div>
                   )}
                   <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
                     background:"#0F1923",borderRadius:3,padding:"12px 18px" }}>
-                    <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Total Material Cost — All Rooms</span>
+                    <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Final Quotation</span>
                     <strong style={{ fontSize:18,color:C.teal }}>{fmt(grandTotal)}</strong>
                   </div>
                 </div>
-              ):null;
+              );
             })()}
         </div>
+        )}
 
         <div style={RS.sTitle}>Budget Summary</div>
           {selected.previousQuotation && (
@@ -4016,8 +4030,9 @@ Dimension rules:
               )}
 
               {form.rooms.map(room=>{
-                const works = form.roomWork?.[room] || [];
-                const rd    = form.roomDetails?.[room] || {};
+                const works   = form.roomWork?.[room] || [];
+                const rd      = form.roomDetails?.[room] || {};
+                const roomSpec = rd;  // alias — used by calcItemPrice and roomDefaults
                 const setRD = (key,val)=>setForm(f=>({...f,roomDetails:{...(f.roomDetails||{}),[room]:{...(f.roomDetails?.[room]||{}),[key]:val}}}));
                 const setWorks = (updater)=>setForm(f=>({...f,roomWork:{...(f.roomWork||{}),[room]:typeof updater==="function"?updater(f.roomWork?.[room]||[]):updater}}));
                 const roomArea = rd.length&&rd.width?(parseFloat(rd.length)*parseFloat(rd.width)).toFixed(0):null;
@@ -4025,10 +4040,11 @@ Dimension rules:
                 // Collect previous material defaults for this room (most recently selected brand per mat type)
                 const roomDefaults = {};
                 // First: seed from room spec (plywood grade, etc.)
+                // Use roomSpec which is already defined above
                 const specBrands = {
-                  plywood:  spec.plywoodGrade  || null,
-                  laminate: spec.laminateType  || null,
-                  hardware: spec.hardware       || null,
+                  plywood:  roomSpec.plywoodGrade  || null,
+                  laminate: roomSpec.laminateType  || null,
+                  hardware: roomSpec.hardware       || null,
                 };
                 Object.entries(specBrands).forEach(([mt,brand])=>{ if(brand) roomDefaults[mt]=brand; });
                 // Then: override with actual item brands (per-item beats room spec)
@@ -4059,7 +4075,6 @@ Dimension rules:
                 const delWork=(id)=>setWorks(w=>w.filter(x=>x.id!==id));
                 const updWork=(id,key,val,extra={})=>setWorks(w=>w.map(x=>x.id===id?{...x,[key]:val,...extra}:x));
 
-                const roomSpec  = form.roomDetails?.[room] || {};
                 const roomTotal = works.reduce((t,w)=>
                   t + (w.price ? parseFloat(w.price) : calcItemPrice(w, roomSpec))
                 , 0);
