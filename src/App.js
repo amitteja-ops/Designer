@@ -1894,8 +1894,16 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
     try {
       const tok = getToken();
       if (!tok) throw new Error("No session token — please log in again");
-      const rows = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc`, "GET", null, t));
-      setCustomers((rows||[]).map(fromRow));
+      let rows;
+      try {
+        // Try full select first
+        rows = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc`, "GET", null, t));
+      } catch(schemaErr) {
+        // If schema cache error (e.g. new column not yet recognised), retry without payment_tracking
+        console.warn("Full select failed, retrying without new columns:", schemaErr.message);
+        rows = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc`, "GET", null, t));
+      }
+      setCustomers((rows||[]).map(r => { try { return fromRow(r); } catch(e) { console.error("fromRow error:", e, r); return null; } }).filter(Boolean));
       setConnected(true);
     } catch(e) {
       setConnected(false);
