@@ -1510,7 +1510,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                 {roomSqftLines.length>0 && (
                   <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12,marginTop:8 }}>
                     <thead>
-                      <tr className="section-hdr-dark" style={{ background:"#1e3a5f" }}>
+                      <tr className="section-hdr-dark" style={{ background:"#dbeafe" }}>
                         {["Room","No. of Items","Work Area (sq ft)","Plywood Grade"].map(h=>(
                           <th key={h} style={{ padding:"7px 12px",color:"#fff",fontWeight:700,
                             fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
@@ -1652,9 +1652,9 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
             return (
               <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
                 <thead>
-                  <tr style={{ background:"#1e3a5f" }}>
+                  <tr style={{ background:"#dbeafe",borderBottom:"2px solid #1e3a5f" }}>
                     {["#","Category","Brand / Specification","Used In"].map(h=>(
-                      <th key={h} style={{ padding:"8px 12px",color:"#fff",fontWeight:700,
+                      <th key={h} style={{ padding:"8px 12px",color:"#1e3a5f",fontWeight:700,
                         fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
                     ))}
                   </tr>
@@ -1722,12 +1722,11 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                 <div>
                   {interiorRooms.length>0 && (
                     <>
-                      <div className="section-hdr-dark"
-                        style={{ display:"flex",justifyContent:"space-between",
-                        background:"#1e3a5f",padding:"9px 16px",
-                        borderRadius:"6px 6px 0 0",marginBottom:1 }}>
-                        <span style={{ fontWeight:700,color:"#fff",fontSize:13 }}>Interior Works</span>
-                        <strong style={{ color:"#93c5fd",fontSize:13 }}>{fmt(interiorAmt)}</strong>
+                      <div style={{ display:"flex",justifyContent:"space-between",
+                        background:"#dbeafe",borderBottom:"2px solid #1e3a5f",
+                        padding:"9px 16px",marginBottom:1 }}>
+                        <span style={{ fontWeight:700,color:"#1e3a5f",fontSize:13 }}>Interior Works</span>
+                        <strong style={{ color:"#1e3a5f",fontSize:13 }}>{fmt(interiorAmt)}</strong>
                       </div>
                       {interiorRooms.map((r,i)=>(
                         <div key={r} className="page-row" style={{ display:"flex",justifyContent:"space-between",
@@ -1742,12 +1741,11 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                   )}
                   {addOnRooms.length>0 && (
                     <>
-                      <div className="room-hdr-addon"
-                        style={{ display:"flex",justifyContent:"space-between",
-                        background:"#78350f",padding:"9px 16px",
-                        borderRadius:"6px 6px 0 0",marginTop:8,marginBottom:1 }}>
-                        <span style={{ fontWeight:700,color:"#fff",fontSize:13 }}>Add On</span>
-                        <strong style={{ color:"#fcd34d",fontSize:13 }}>{fmt(addOnAmt)}</strong>
+                      <div className="room-hdr-addon" style={{ display:"flex",justifyContent:"space-between",
+                        background:"#fef3c7",borderBottom:"2px solid #92400e",
+                        padding:"9px 16px",marginTop:8,marginBottom:1 }}>
+                        <span style={{ fontWeight:700,color:"#92400e",fontSize:13 }}>Add On</span>
+                        <strong style={{ color:"#92400e",fontSize:13 }}>{fmt(addOnAmt)}</strong>
                       </div>
                       {/* Only show sub-rows if there are multiple add-on rooms */}
                       {addOnRooms.length>1 && addOnRooms.map((r,i)=>(
@@ -1762,7 +1760,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                     </>
                   )}
                   <div style={{ display:"flex",justifyContent:"space-between",
-                    background:"#1e3a5f",padding:"12px 16px",borderRadius:6,marginTop:8 }}>
+                    background:"#dbeafe",padding:"12px 16px",borderRadius:6,marginTop:8 }}>
                     <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Final Quotation</span>
                     <strong style={{ color:C.teal,fontSize:16 }}>{fmt(finalQuote)}</strong>
                   </div>
@@ -1839,17 +1837,18 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
         {/* ── 9. FINAL QUOTATION ────────────────────────────────────── */}
         {finalQuote>0 && (
           <div style={{ marginBottom:32 }} className="page-section">
-            <div className="final-quote-bar" style={{ background:`linear-gradient(135deg,${C.teal},#0066cc)`,
-              borderRadius:8,padding:"18px 24px",
+            <div className="final-quote-bar" style={{ background:"#dbeafe",
+              border:"2px solid #1e3a5f",
+              padding:"18px 24px",
               display:"flex",justifyContent:"space-between",alignItems:"center" }}>
               <div>
-                <div style={{ fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.7)",
+                <div style={{ fontSize:11,fontWeight:700,color:"#1e3a5f",
                   letterSpacing:2,textTransform:"uppercase",marginBottom:4 }}>9. Final Quotation</div>
-                <div style={{ fontSize:12,color:"rgba(255,255,255,0.6)" }}>
+                <div style={{ fontSize:12,color:"#374151" }}>
                   Inclusive of materials &amp; labour
                 </div>
               </div>
-              <div style={{ fontSize:28,fontWeight:800,color:"#fff",letterSpacing:-1 }}>
+              <div style={{ fontSize:28,fontWeight:800,color:"#1e3a5f",letterSpacing:-1 }}>
                 {fmt(effectiveQuote)}
               </div>
               {!includeAddOn && addOnQuote>0 && (
@@ -1887,9 +1886,9 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
             return (
               <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
                 <thead>
-                  <tr style={{ background:"#1e3a5f" }}>
+                  <tr style={{ background:"#dbeafe",borderBottom:"2px solid #1e3a5f" }}>
                     {["Phase","Day Start","Duration","Status"].map(h=>(
-                      <th key={h} style={{ padding:"8px 12px",color:"#fff",fontWeight:700,
+                      <th key={h} style={{ padding:"8px 12px",color:"#1e3a5f",fontWeight:700,
                         fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
                     ))}
                   </tr>
@@ -2116,12 +2115,11 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
               return (
                 <div key={r} className="page-row" style={{ marginBottom:12,
                   border:"1px solid #fde68a",borderRadius:6,overflow:"hidden" }}>
-                  <div className="room-hdr-addon"
-                    style={{ padding:"9px 14px",display:"flex",
+                  <div className="room-hdr-addon" style={{ padding:"9px 14px",display:"flex",
                     justifyContent:"space-between",alignItems:"center",
-                    background:"#78350f" }}>
-                    <span style={{ fontWeight:700,fontSize:13,color:"#fff" }}>🏠 {r}</span>
-                    <span style={{ fontWeight:700,fontSize:13,color:"#fcd34d" }}>
+                    background:"#fef3c7",borderBottom:"2px solid #92400e" }}>
+                    <span style={{ fontWeight:700,fontSize:13,color:"#92400e" }}>🏠 {r}</span>
+                    <span style={{ fontWeight:700,fontSize:13,color:"#92400e" }}>
                       {fmt(rawTotal>0?Math.round(addOnQuote*(calcRoom(r)/rawAddOn)):0)}
                     </span>
                   </div>
