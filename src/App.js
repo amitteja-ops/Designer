@@ -1568,7 +1568,7 @@ Hyderabad`);
               const finalQuote  = parseFloat(selected.quotation) || 0;
               const lp          = selected.labourPct != null ? selected.labourPct : 50;
               const labourMult  = 1 + lp/100;
-              const ADD_ON_ROOMS = new Set(["Add On","Others"]);
+              const ADD_ON_ROOMS = new Set(["Add On"]);
               // Calculate raw material proportions to split the final quotation
               const calcRoom = (room) => {
                 const works = selected.roomWork?.[room]||[];
