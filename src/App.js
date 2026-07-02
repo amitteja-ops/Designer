@@ -1298,26 +1298,39 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;600;700;800&display=swap');
     @media print {
       .no-print { display:none!important; }
-      * { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
       body { background:#fff!important; margin:0; }
-      @page { margin:12mm 10mm; size:A4 portrait; }
-      table { page-break-inside:auto!important; width:100%!important; }
-      tr    { page-break-inside:avoid!important; page-break-after:auto!important; }
-      .page-row     { page-break-inside:avoid!important; }
+      @page { margin:15mm 12mm; size:A4 portrait; }
+      table { page-break-inside:auto!important; width:100%!important; border-collapse:collapse!important; }
+      tr    { page-break-inside:avoid!important; }
+      .page-row { page-break-inside:avoid!important; }
       .page-section { page-break-inside:avoid!important; }
-      /* Dark headers → light for print */
-      .room-hdr-interior { background:#dbeafe!important; }
-      .room-hdr-interior span { color:#1e3a5f!important; }
-      .room-hdr-interior strong { color:#1e3a5f!important; }
-      .room-hdr-addon { background:#fef3c7!important; }
-      .room-hdr-addon span { color:#92400e!important; }
-      .room-hdr-addon strong { color:#92400e!important; }
-      .section-hdr-dark { background:#dbeafe!important; }
-      .section-hdr-dark th { color:#1e3a5f!important; }
-      .section-hdr-dark span { color:#1e3a5f!important; }
-      .section-hdr-dark strong { color:#1e3a5f!important; }
-      .final-quote-bar { background:#dbeafe!important; }
-      .final-quote-bar div { color:#1e3a5f!important; }
+
+      /* CRITICAL: Strip ALL backgrounds and border-radius on print
+         This prevents WebKit from generating clipping mask triangles */
+      * {
+        background:transparent!important;
+        background-color:transparent!important;
+        background-image:none!important;
+        border-radius:0!important;
+        box-shadow:none!important;
+      }
+      body, html { background:#fff!important; }
+
+      /* Restore readable styling using only borders and text color */
+      .room-hdr-interior span,
+      .room-hdr-interior strong { color:#1e3a5f!important; font-weight:700!important; }
+      .room-hdr-interior { border-bottom:2px solid #1e3a5f!important; padding:6px 12px!important; }
+
+      .room-hdr-addon span,
+      .room-hdr-addon strong { color:#92400e!important; font-weight:700!important; }
+      .room-hdr-addon { border-bottom:2px solid #92400e!important; padding:6px 12px!important; }
+
+      .section-hdr-dark th { color:#1e3a5f!important; font-weight:700!important; }
+      .section-hdr-dark { border-bottom:2px solid #1e3a5f!important; }
+
+      /* Table borders for readability */
+      th, td { border-bottom:1px solid #e5e7eb!important; }
+      th { font-weight:700!important; color:#1e3a5f!important; }
     }
   `;
 
