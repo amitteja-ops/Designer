@@ -1529,6 +1529,40 @@ Hyderabad`);
               );
             })}
             {/* Grand total — Interior + Add On shown separately */}
+
+          </div>
+        )}
+
+        {/* Included Items */}
+        {includedItems.length>0 && (
+          <div style={{ marginBottom:32 }}>
+            <div style={RS.sTitle}>Included in Scope</div>
+            <div style={{ background:"rgba(48,209,88,0.06)",borderRadius:3,padding:"16px 20px",border:"1px solid #bbf7d0" }}>
+              {includedItems.map((l,i)=>{
+                const text = l.replace(/^(✗\s*)?included\s*:\s*/i,"");
+                return <div key={i} style={{ ...RS.bullet,color:"#166534" }}>✓ {text}</div>;
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Out of Scope */}
+        {outOfScope.length>0 && (
+          <div style={{ marginBottom:32 }}>
+            <div style={RS.sTitle}>Out of Scope</div>
+            <div style={{ background:"rgba(255,69,58,0.08)",borderRadius:3,padding:"16px 20px",border:"1px solid #FECACA" }}>
+              {outOfScope.map((l,i)=>{
+                const text = l.replace(/^(out of scope|not included|excluded)\s*:?\s*/i,"");
+                return <div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {text||l}</div>;
+              })}
+            </div>
+          </div>
+        )}
+        {/* Budget */}
+        <div style={{ marginBottom:32 }}>
+          {/* Material Cost Breakdown */}
+        <div style={{ marginBottom:24 }}>
+          <div style={RS.sTitle}>Cost Breakdown</div>
             {(()=>{
               const ADD_ON_ROOMS = new Set(["Add On","Others"]);
               const calcRoom = (room) => {
@@ -1564,37 +1598,9 @@ Hyderabad`);
                 </div>
               ):null;
             })()}
-          </div>
-        )}
+        </div>
 
-        {/* Included Items */}
-        {includedItems.length>0 && (
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Included in Scope</div>
-            <div style={{ background:"rgba(48,209,88,0.06)",borderRadius:3,padding:"16px 20px",border:"1px solid #bbf7d0" }}>
-              {includedItems.map((l,i)=>{
-                const text = l.replace(/^(✗\s*)?included\s*:\s*/i,"");
-                return <div key={i} style={{ ...RS.bullet,color:"#166534" }}>✓ {text}</div>;
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Out of Scope */}
-        {outOfScope.length>0 && (
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Out of Scope</div>
-            <div style={{ background:"rgba(255,69,58,0.08)",borderRadius:3,padding:"16px 20px",border:"1px solid #FECACA" }}>
-              {outOfScope.map((l,i)=>{
-                const text = l.replace(/^(out of scope|not included|excluded)\s*:?\s*/i,"");
-                return <div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {text||l}</div>;
-              })}
-            </div>
-          </div>
-        )}
-        {/* Budget */}
-        <div style={{ marginBottom:32 }}>
-          <div style={RS.sTitle}>Budget Summary</div>
+        <div style={RS.sTitle}>Budget Summary</div>
           {selected.previousQuotation && (
             <div style={RS.row}>
               <span style={{ color:"#6b7280" }}>Previous Quotation</span>
@@ -1932,10 +1938,20 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
         rows = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc`, "GET", null, t));
       }
       const mergeRooms = (c) => {
-        const saved = c.rooms || [];
+        // Migrate legacy room names from DB → current names
+        const RENAMES = { "Additional Accessories": "Add On" };
+        const migrateRoom = (r) => RENAMES[r] || r;
+        const savedRaw = c.rooms || [];
+        const saved = savedRaw.map(migrateRoom);
+        // Migrate roomWork keys
+        const roomWork = {};
+        Object.entries(c.roomWork || {}).forEach(([k, v]) => {
+          roomWork[migrateRoom(k)] = v;
+        });
+        // Add any new rooms from current property type map
         const allForType = PROPERTY_ROOMS_MAP[c.propertyType||"3 BHK"] || saved;
         const newRooms = allForType.filter(r => !saved.includes(r));
-        return newRooms.length ? { ...c, rooms: [...saved, ...newRooms] } : c;
+        return { ...c, rooms: [...saved, ...newRooms], roomWork };
       };
       setCustomers((rows||[]).map(r => { try { return mergeRooms(fromRow(r)); } catch(e) { console.error("fromRow error:", e, r); return null; } }).filter(Boolean));
       setConnected(true);
@@ -4008,6 +4024,14 @@ Dimension rules:
 
                 // Collect previous material defaults for this room (most recently selected brand per mat type)
                 const roomDefaults = {};
+                // First: seed from room spec (plywood grade, etc.)
+                const specBrands = {
+                  plywood:  spec.plywoodGrade  || null,
+                  laminate: spec.laminateType  || null,
+                  hardware: spec.hardware       || null,
+                };
+                Object.entries(specBrands).forEach(([mt,brand])=>{ if(brand) roomDefaults[mt]=brand; });
+                // Then: override with actual item brands (per-item beats room spec)
                 works.forEach(w=>{
                   if(w.matType && w.brand) roomDefaults[w.matType] = w.brand;
                 });
@@ -4067,11 +4091,37 @@ Dimension rules:
                     {/* ── Room Spec & Pricing Defaults ── */}
                     {(()=>{
                       const spec = form.roomDetails?.[room] || {};
-                      const setSpec = (key, val) => setForm(f=>({...f,
-                        roomDetails:{...(f.roomDetails||{}),
-                          [room]:{...(f.roomDetails?.[room]||{}), [key]:val}
+                      const SPEC_TO_MAT = {
+                        plywoodGrade:{ matType:"plywood",  getBrand:(v)=>v },
+                        laminateType:{ matType:"laminate", getBrand:(v)=>v },
+                        hardware:    { matType:"hardware", getBrand:(v)=>v },
+                      };
+                      const setSpec = (key, val) => setForm(f => {
+                        // 1. Update the room spec
+                        const newRoomDetails = {
+                          ...(f.roomDetails||{}),
+                          [room]: { ...(f.roomDetails?.[room]||{}), [key]: val }
+                        };
+                        // 2. If this spec key maps to a matType, propagate brand
+                        //    to all items in this room with that matType,
+                        //    UNLESS the item has a manual price override (w.price set)
+                        const matMapping = SPEC_TO_MAT[key];
+                        let newRoomWork = f.roomWork;
+                        if (matMapping) {
+                          const newBrand = matMapping.getBrand(val);
+                          const updatedWorks = (f.roomWork?.[room] || []).map(w => {
+                            // Skip if user has manually set a price (their explicit override)
+                            if (w.price) return w;
+                            // Only update items whose matType matches
+                            if (w.matType === matMapping.matType) {
+                              return { ...w, brand: newBrand };
+                            }
+                            return w;
+                          });
+                          newRoomWork = { ...(f.roomWork||{}), [room]: updatedWorks };
                         }
-                      }));
+                        return { ...f, roomDetails: newRoomDetails, roomWork: newRoomWork };
+                      });
                       const plywoodGrade  = spec.plywoodGrade  || "Century Sainik 710 BWP";
                       const laminateType  = spec.laminateType  || "Economy Laminate";
                       const builtType     = spec.builtType     || "Manual";
