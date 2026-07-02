@@ -1294,85 +1294,377 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
   };
 
   // ── Print styles ─────────────────────────────────────────────────────
-  const printStyle = `
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;600;700;800&display=swap');
-    @media print {
-      .no-print { display:none!important; }
-      body, html { background:#fff!important; margin:0; color:#0F1923!important; }
-      @page { margin:15mm 12mm; size:A4 portrait; }
-      table { page-break-inside:auto!important; width:100%!important; border-collapse:collapse!important; }
-      tr    { page-break-inside:avoid!important; }
-      .page-row { page-break-inside:avoid!important; }
-      .page-section { page-break-inside:avoid!important; }
 
-      /* Strip only backgrounds and border-radius — keep all text colors */
-      div, span, p, td, th, strong, section, article, header, footer {
-        background-color:transparent!important;
-        background-image:none!important;
-        border-radius:0!important;
-        box-shadow:none!important;
-      }
+  // ── Generate plain HTML for print (no React, no CSS class issues) ───
+  const generatePrintHTML = () => {
+    const fmtN = (n) => '₹' + Number(n).toLocaleString('en-IN');
+    const ADD_ON_ROOMS_P = new Set(["Add On"]);
+    const allRoomsP = selected.rooms || [];
+    const roomsP = includeAddOn ? allRoomsP : allRoomsP.filter(r => !ADD_ON_ROOMS_P.has(r));
+    const calcRoomP = (room) => {
+      const works = selected.roomWork?.[room] || [];
+      const spec  = selected.roomDetails?.[room] || {};
+      return works.reduce((t, w) => t + (w.price ? parseFloat(w.price) : calcItemPrice(w, spec)), 0);
+    };
+    const rawInteriorP = allRoomsP.filter(r => !ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
+    const rawAddOnP    = allRoomsP.filter(r =>  ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
+    const rawTotalP    = rawInteriorP + rawAddOnP;
+    const finalQuoteP  = parseFloat(selected.quotation) || 0;
+    const interiorQuoteP = rawTotalP > 0 ? Math.round(finalQuoteP * (rawInteriorP / rawTotalP)) : finalQuoteP;
+    const effectiveQuoteP = includeAddOn ? finalQuoteP : interiorQuoteP;
+    const roomAmtP = (room) => {
+      const denom = includeAddOn ? rawTotalP : rawInteriorP;
+      return denom > 0 ? Math.round(effectiveQuoteP * (calcRoomP(room) / denom)) : 0;
+    };
 
-      /* Room headers — border-only styling */
-      .room-hdr-interior { border-top:2px solid #1e3a5f!important; border-bottom:1px solid #1e3a5f!important; padding:6px 12px!important; }
-      .room-hdr-interior span  { color:#1e3a5f!important; font-weight:700!important; }
-      .room-hdr-interior strong{ color:#1e3a5f!important; font-weight:700!important; }
+    const td = (val, bold, right, color) =>
+      `<td style="padding:6px 10px;border-bottom:1px solid #ddd;font-size:11px;${bold?'font-weight:700;':''}${right?'text-align:right;':''}${color?'color:'+color+';':''}">${val||'—'}</td>`;
+    const th = (val, right) =>
+      `<th style="padding:6px 10px;border-bottom:2px solid #1e3a5f;font-size:9px;text-align:${right?'right':'left'};text-transform:uppercase;letter-spacing:1px;color:#1e3a5f;font-weight:700;">${val}</th>`;
 
-      .room-hdr-addon { border-top:2px solid #92400e!important; border-bottom:1px solid #92400e!important; padding:6px 12px!important; }
-      .room-hdr-addon span  { color:#92400e!important; font-weight:700!important; }
-      .room-hdr-addon strong{ color:#92400e!important; font-weight:700!important; }
+    // Scope rows
+    let scopeHTML = '';
+    roomsP.forEach(r => {
+      const works = (selected.roomWork?.[r] || []).filter(w => w.product);
+      if (!works.length) return;
+      const isAddon = ADD_ON_ROOMS_P.has(r);
+      const rAmt = roomAmtP(r);
+      const borderColor = isAddon ? '#92400e' : '#1e3a5f';
+      scopeHTML += `
+        <div style="margin-bottom:16px;border:1px solid #ddd;">
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;border-bottom:2px solid ${borderColor};">
+            <span style="font-weight:700;font-size:13px;color:${borderColor};">&#127  ${r}</span>
+            ${finalQuoteP > 0 ? `<span style="font-weight:700;font-size:13px;color:${borderColor};">${fmtN(rAmt)}</span>` : ''}
+          </div>
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="background:#f5f5f5;">
+              ${th('Product')}${th('Type')}${th('H × W')}${th('Qty',true)}${th('Brand')}
+            </tr></thead>
+            <tbody>
+              ${works.map((w,i) => {
+                const sqft = w.height && w.width
+                  ? w.height + '×' + w.width + ' (' + (parseFloat(w.height)*parseFloat(w.width)).toFixed(1) + ' sft)'
+                  : '—';
+                const qty = parseFloat(w.qty) || 1;
+                return `<tr style="background:${i%2===0?'#fff':'#fafafa'};">
+                  ${td('<b>'+w.product+'</b>'+(w.notes?'<br><small style=color:#999>'+w.notes+'</small>':''),false)}
+                  ${td(w.type)}
+                  ${td((QTY_TYPES&&QTY_TYPES.has(w.type))?'—':sqft)}
+                  ${td('×'+qty,true,true)}
+                  ${td(w.brand||'—')}
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    });
 
-      /* Table headers */
-      .section-hdr-dark th { color:#1e3a5f!important; font-weight:700!important; border-bottom:2px solid #1e3a5f!important; }
-      th { border-bottom:1px solid #374151!important; }
-      td { border-bottom:1px solid #e5e7eb!important; }
+    // Materials list
+    const matList = [];
+    allRoomsP.forEach(room => {
+      (selected.roomWork?.[room]||[]).forEach(w => {
+        if (!w.brand || !w.matType) return;
+        const ex = matList.find(m => m.matType === w.matType && m.brand === w.brand);
+        if (!ex) matList.push({ matType: w.matType, brand: w.brand, rooms: [room] });
+        else if (!ex.rooms.includes(room)) ex.rooms.push(room);
+      });
+    });
 
-      /* Ensure all text is visible */
-      * { color:#0F1923!important; }
-      strong { color:#0F1923!important; font-weight:700!important; }
-      a { color:#1e3a5f!important; }
-    }
-  `;
+    // Cost breakdown
+    const interiorRoomsP = roomsP.filter(r => !ADD_ON_ROOMS_P.has(r) && calcRoomP(r) > 0);
+    const addOnRoomsP    = roomsP.filter(r =>  ADD_ON_ROOMS_P.has(r) && calcRoomP(r) > 0);
+    const interiorAmtP = includeAddOn
+      ? (rawTotalP > 0 ? Math.round(finalQuoteP*(rawInteriorP/rawTotalP)) : finalQuoteP)
+      : effectiveQuoteP;
+    const addOnAmtP = includeAddOn
+      ? (rawTotalP > 0 ? Math.round(finalQuoteP*(rawAddOnP/rawTotalP)) : 0)
+      : 0;
 
-  // ── Helpers ───────────────────────────────────────────────────────────
-  const lp          = selected.labourPct != null ? selected.labourPct : 50;
-  const labourMult  = 1 + lp/100;
-  const ADD_ON_ROOMS = new Set(["Add On"]);
-  const calcRoom = (room) => {
-    const works = selected.roomWork?.[room]||[];
-    const spec  = selected.roomDetails?.[room]||{};
-    return works.reduce((rt,w)=>rt+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
+    const addOnQuoteP = rawTotalP > 0 ? Math.round(finalQuoteP*(rawAddOnP/rawTotalP)) : 0;
+    const lp = selected.labourPct != null ? selected.labourPct : 50;
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Client Report — ${selected.name}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, sans-serif; font-size:12px; color:#222; background:#fff; padding:20px; }
+  h1 { font-size:20px; font-weight:900; color:#111; }
+  h2 { font-size:9px; font-weight:700; letter-spacing:3px; text-transform:uppercase;
+       color:#1e3a5f; border-bottom:2px solid #1e3a5f; padding-bottom:5px;
+       margin:24px 0 12px; }
+  table { width:100%; border-collapse:collapse; font-size:11px; }
+  th { padding:6px 10px; text-align:left; border-bottom:2px solid #1e3a5f;
+       font-size:9px; text-transform:uppercase; letter-spacing:1px; color:#1e3a5f; }
+  td { padding:6px 10px; border-bottom:1px solid #eee; vertical-align:top; }
+  .row { display:flex; justify-content:space-between; padding:8px 0;
+         border-bottom:1px solid #eee; }
+  .hdr { display:flex; justify-content:space-between; margin-bottom:24px;
+         padding-bottom:12px; border-bottom:2px solid #1e3a5f; }
+  .final-bar { display:flex; justify-content:space-between; padding:12px 16px;
+               border:2px solid #1e3a5f; margin-top:8px; }
+  @media print {
+    body { padding:0; }
+    @page { margin:12mm 10mm; size:A4; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <h1>HIGH RISE INTERIORS</h1>
+    <div style="font-size:10px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Interior Design Proposal</div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:11px;color:#666;">${d}</div>
+    ${finalQuoteP > 0 ? `<div style="font-size:20px;font-weight:900;color:#1e3a5f;margin-top:4px;">${fmtN(effectiveQuoteP)}</div>` : ''}
+    ${!includeAddOn && addOnQuoteP > 0 ? `<div style="font-size:10px;color:#92400e;">(Add On ${fmtN(addOnQuoteP)} in Annexure)</div>` : ''}
+  </div>
+</div>
+
+<!-- 1. CLIENT INFORMATION -->
+<h2>1. Client Information</h2>
+<table>
+  <tbody>
+    ${[['Client Name',selected.name],['Phone',selected.phone],['Email',selected.email],
+       ['Address',selected.address],['Property Type',selected.propertyType],
+       ['Style',selected.style],['Timeline',selected.timeline],['Start Date',selected.startDate]]
+      .filter(([,v])=>v).map(([l,v])=>`<tr><td style="color:#666;width:30%">${l}</td><td><b>${v}</b></td></tr>`).join('')}
+  </tbody>
+</table>
+
+<!-- 2. PROJECT SUMMARY -->
+<h2>2. Project Summary</h2>
+${(()=>{
+  const irms = allRoomsP.filter(r => !ADD_ON_ROOMS_P.has(r) && calcRoomP(r)>0);
+  const adrms = allRoomsP.filter(r => ADD_ON_ROOMS_P.has(r) && calcRoomP(r)>0);
+  const totalSqft = irms.reduce((t,r)=>{
+    return t+(selected.roomWork?.[r]||[]).reduce((s,w)=>
+      s+(w.height&&w.width?parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1):0),0);
+  },0);
+  const matSet={};
+  allRoomsP.forEach(r=>(selected.roomWork?.[r]||[]).forEach(w=>{if(w.brand&&w.matType&&!matSet[w.matType])matSet[w.matType]=w.brand;}));
+  const matLine=[matSet.plywood&&'Plywood: '+matSet.plywood,matSet.ceiling&&'Ceiling: '+matSet.ceiling,matSet.glass&&'Glass: '+matSet.glass,matSet.hardware&&'Hardware: '+matSet.hardware].filter(Boolean).join(' · ');
+  return `<p style="font-size:12px;line-height:1.9;margin-bottom:12px;">
+    High Rise Interiors is pleased to present this interior design proposal for <b>${selected.name}</b>'s
+    ${selected.propertyType||'residence'}${selected.address?' at '+selected.address:''}.
+    Designed in a <b>${selected.style||'contemporary'}</b> aesthetic, scheduled for completion in
+    <b>${selected.timeline||'120 days'}</b>${selected.startDate?', commencing '+new Date(selected.startDate).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):''},
+    covering <b>${irms.length} interior room${irms.length!==1?'s':''}</b>${adrms.length?' plus '+adrms.length+' add-on area':''}
+    ${totalSqft>0?'with approximately <b>'+Math.round(totalSqft)+' sq ft</b> of carpentry work':''}.
+    ${matLine?'<br><b>Primary Materials:</b> '+matLine:''}
+  </p>
+  <table>
+    <thead><tr><th>Room</th><th>Items</th><th>Work Area (sq ft)</th><th>Plywood Grade</th></tr></thead>
+    <tbody>
+      ${irms.map((r,i)=>{
+        const works=(selected.roomWork?.[r]||[]).filter(w=>w.product);
+        const sqft=works.reduce((s,w)=>s+(w.height&&w.width?parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1):0),0);
+        const spec=selected.roomDetails?.[r]||{};
+        return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
+          <td>&#127 ${r}</td>
+          <td style="text-align:center">${works.length}</td>
+          <td style="text-align:center">${sqft>0?sqft.toFixed(0)+' sq ft':'—'}</td>
+          <td>${spec.plywoodGrade||matSet.plywood||'—'}</td>
+        </tr>`;
+      }).join('')}
+      ${totalSqft>0?`<tr style="background:#f0f0f0;font-weight:700;"><td>Total</td><td style="text-align:center">${irms.reduce((t,r)=>t+(selected.roomWork?.[r]||[]).filter(w=>w.product).length,0)}</td><td style="text-align:center">${Math.round(totalSqft)} sq ft</td><td></td></tr>`:''}
+    </tbody>
+  </table>`;
+})()}
+
+<!-- 3. SCOPE OF WORK -->
+<h2>3. Scope of Work</h2>
+${scopeHTML}
+
+<!-- 4. MATERIALS ORDER LIST -->
+<h2>4. Materials Order List &amp; Specifications</h2>
+<table>
+  <thead><tr><th>#</th><th>Category</th><th>Brand / Specification</th><th>Used In</th></tr></thead>
+  <tbody>
+    ${matList.map((m,i)=>`<tr style="background:${i%2===0?'#fff':'#fafafa'}">
+      <td>${i+1}</td><td style="text-transform:capitalize">${m.matType}</td>
+      <td><b>${m.brand}</b></td><td style="color:#666;font-size:10px">${m.rooms.join(', ')}</td>
+    </tr>`).join('')}
+  </tbody>
+</table>
+
+${includedItems.length>0?`<h2>5. Included in Scope</h2>
+<div style="padding:10px 14px;border-left:3px solid #16a34a;margin-bottom:16px;">
+  ${includedItems.map(l=>`<div style="color:#166534;margin-bottom:4px;">✓ ${l.replace(/^(✗\s*)?included\s*:\s*/i,'')}</div>`).join('')}
+</div>`:''}
+
+${outOfScope.length>0?`<h2>${includedItems.length>0?'6.':'5.'} Out of Scope</h2>
+<div style="padding:10px 14px;border-left:3px solid #dc2626;margin-bottom:16px;">
+  ${outOfScope.map(l=>`<div style="color:#7A0000;margin-bottom:4px;">✗ ${l.replace(/^(out of scope|not included|excluded)\s*:?\s*/i,'')}</div>`).join('')}
+</div>`:''}
+
+<!-- 7. COST BREAKDOWN -->
+${finalQuoteP>0?`<h2>7. Cost Breakdown</h2>
+<p style="font-size:10px;color:#666;margin-bottom:8px;">All amounts include materials &amp; labour</p>
+${interiorRoomsP.length>0?`
+<table style="margin-bottom:8px;">
+  <thead><tr><th colspan="2" style="color:#1e3a5f;">Interior Works</th><th style="text-align:right;color:#1e3a5f;">${fmtN(interiorAmtP)}</th></tr></thead>
+  <tbody>
+    ${interiorRoomsP.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#fafafa'}">
+      <td style="padding-left:20px;width:10px;color:#666">&#127</td>
+      <td>${r}</td>
+      <td style="text-align:right;font-weight:600;">${fmtN(roomAmtP(r))}</td>
+    </tr>`).join('')}
+  </tbody>
+</table>`:''}
+${addOnRoomsP.length>0?`
+<table style="margin-bottom:8px;">
+  <thead><tr><th colspan="2" style="color:#92400e;">Add On</th><th style="text-align:right;color:#92400e;">${fmtN(addOnAmtP)}</th></tr></thead>
+  <tbody>
+    ${addOnRoomsP.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#fffbf0'}">
+      <td style="padding-left:20px;width:10px;color:#666">&#127</td>
+      <td>${r}</td>
+      <td style="text-align:right;font-weight:600;">${fmtN(roomAmtP(r))}</td>
+    </tr>`).join('')}
+  </tbody>
+</table>`:''}
+<div class="final-bar">
+  <span style="font-weight:700;font-size:14px;">Final Quotation</span>
+  <span style="font-weight:900;font-size:16px;color:#1e3a5f;">${fmtN(effectiveQuoteP)}</span>
+</div>`:''}
+
+<!-- 8. BUDGET SUMMARY -->
+<h2>8. Budget Summary</h2>
+${selected.previousQuotation?`<div class="row"><span style="color:#666">Previous Quotation</span><span style="text-decoration:line-through;color:#999">${fmtN(selected.previousQuotation)}</span></div>`:''}
+${selected.rebateValue&&Number(selected.rebateValue)>0?`<div class="row"><span style="color:#166534;font-weight:600">Rebate / Discount</span><span style="color:#166534;font-weight:700">- ${fmtN(selected.rebateValue)}</span></div>`:''}
+<div class="row"><span style="font-weight:600">Final Quotation</span><span style="font-weight:900;font-size:15px;color:#1e3a5f;">${fmtN(effectiveQuoteP)}</span></div>
+${!includeAddOn&&addOnQuoteP>0?`<div style="padding:8px 12px;border:1px solid #fde68a;margin-top:8px;color:#92400e;font-size:11px;">ℹ Add On (${fmtN(addOnQuoteP)}) not included — see Annexure below</div>`:''}
+
+<!-- 9. FINAL QUOTATION -->
+${finalQuoteP>0?`<h2>9. Final Quotation</h2>
+<div style="display:flex;justify-content:space-between;align-items:center;border:2px solid #1e3a5f;padding:16px 20px;margin-bottom:16px;">
+  <div><div style="font-size:11px;color:#666;">Inclusive of materials &amp; labour</div></div>
+  <div style="font-size:26px;font-weight:900;color:#1e3a5f;">${fmtN(effectiveQuoteP)}</div>
+</div>`:''}
+
+<!-- 10. PROJECT TIMELINE -->
+<h2>10. Project Timeline</h2>
+${(()=>{
+  const totalD=parseInt(selected.timeline)||120;
+  const start=selected.startDate?new Date(selected.startDate):null;
+  const plan=selected.projectPlan||{};
+  const PHASES=[
+    {key:'requirements',label:'Requirements & Planning',from:0,to:6},
+    {key:'design',label:'Design Finalisation',from:6,to:12},
+    {key:'designFinal',label:'Design Approval',from:12,to:18},
+    {key:'ceiling',label:'Ceiling & Civil Work',from:18,to:26},
+    {key:'procurement',label:'Material Procurement',from:26,to:48},
+    {key:'graniteTiles',label:'Granite & Tiles',from:48,to:54},
+    {key:'woodFraming',label:'Wood Framing & Carpentry',from:54,to:69},
+    {key:'deco',label:'Decoration & Finishing',from:69,to:76},
+    {key:'painting',label:'Painting',from:76,to:83},
+    {key:'cleaning',label:'Site Cleaning',from:83,to:86},
+    {key:'handover',label:'Handover',from:86,to:87},
+    {key:'cooling',label:'Settling & Cooling',from:87,to:100},
+  ];
+  return `<table>
+    <thead><tr><th>Phase</th><th>Day Start</th><th>Duration</th><th>Status</th></tr></thead>
+    <tbody>
+      ${PHASES.map((ph,i)=>{
+        const startDay=Math.max(1,Math.round(ph.from/100*totalD)+1);
+        const dur=Math.max(1,Math.round((ph.to-ph.from)/100*totalD));
+        const sd=start?new Date(start.getTime()+(startDay-1)*86400000).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'Day '+startDay;
+        const status=plan[ph.key]?.status||'Not Started';
+        return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
+          <td><b>${ph.label}</b></td><td>${sd}</td><td>${dur} days</td>
+          <td style="color:${status==='Completed'?'#16a34a':status==='In Progress'?'#1e3a5f':'#666'}">${status}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+})()}
+
+<!-- 11. DISCLAIMERS -->
+<h2>11. Disclaimers &amp; Terms</h2>
+<div style="font-size:12px;line-height:2;">
+  <div><b>1. No Refund Policy:</b> All payments are strictly non-refundable once work has commenced.</div>
+  <div><b>2. Draft Quotation:</b> This is a draft and may vary based on final quantity and material selection.</div>
+  <div><b>3. Material Prices:</b> Subject to market fluctuations. Valid for 30 days from date of issue.</div>
+  <div><b>4. Scope Changes:</b> Any additions will be quoted and billed separately with written approval.</div>
+  <div><b>5. Timeline:</b> ${selected.timeline||'Agreed duration'} is indicative. Delays due to civil work or approvals not included.</div>
+  <div><b>6. Warranty:</b> 1-year workmanship warranty. Material warranty per manufacturer.</div>
+  <div><b>7. Cancellation:</b> Amounts paid till date are forfeited upon cancellation after commencement.</div>
+  <div><b>8. Dispute Resolution:</b> Subject to jurisdiction of Hyderabad courts only.</div>
+</div>
+
+<!-- SIGNATURES -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;border-top:2px solid #eee;padding-top:20px;">
+  <div>
+    <div style="font-size:9px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Client Signature</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:40px;">${selected.name}</div>
+    <div style="border-top:1px solid #333;padding-top:6px;font-size:10px;color:#666;">Signature &amp; Date</div>
+  </div>
+  <div>
+    <div style="font-size:9px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Authorised By</div>
+    <div style="font-weight:700;font-size:14px;color:#1e3a5f;margin-bottom:40px;">High Rise Interiors</div>
+    <div style="border-top:1px solid #333;padding-top:6px;font-size:10px;color:#666;">Signature &amp; Date</div>
+  </div>
+</div>
+
+${!includeAddOn&&rawAddOnP>0?`
+<div style="margin-top:40px;border-top:2px solid #eee;padding-top:24px;">
+  <h2 style="margin-top:0;">ANNEXURE — Additional Works (Add On)</h2>
+  <p style="font-size:11px;color:#666;margin-bottom:12px;">These items are not included in the Final Quotation above. If selected, the estimated total increases as shown.</p>
+  ${allRoomsP.filter(r=>ADD_ON_ROOMS_P.has(r)).map(r=>{
+    const works=(selected.roomWork?.[r]||[]).filter(w=>w.product);
+    if(!works.length)return '';
+    return `<div style="margin-bottom:12px;border:1px solid #fde68a;">
+      <div style="padding:8px 12px;border-bottom:2px solid #92400e;display:flex;justify-content:space-between;">
+        <span style="font-weight:700;color:#92400e;">&#127 ${r}</span>
+        <span style="font-weight:700;color:#92400e;">${fmtN(rawTotalP>0?Math.round(addOnQuoteP*(calcRoomP(r)/rawAddOnP)):0)}</span>
+      </div>
+      <table>
+        <thead><tr style="background:#fef3c7;"><th>Product</th><th>Type</th><th>H×W</th><th>Qty</th><th>Brand</th></tr></thead>
+        <tbody>
+          ${works.map((w,i)=>{
+            const sq=w.height&&w.width?w.height+'×'+w.width:'—';
+            return `<tr style="background:${i%2===0?'#fff':'#fffbf0'}">
+              <td><b>${w.product}</b></td><td>${w.type}</td><td>${sq}</td>
+              <td style="text-align:right">×${parseFloat(w.qty)||1}</td><td>${w.brand||'—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }).join('')}
+  <div style="border:2px solid #92400e;padding:14px 16px;margin-top:12px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Interior Works</span><span style="font-weight:700">${fmtN(effectiveQuoteP)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid #fde68a;"><span>Add On (estimated)</span><span style="font-weight:700;color:#92400e;">+ ${fmtN(addOnQuoteP)}</span></div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;"><span style="font-weight:700;font-size:14px;">Estimated Total</span><span style="font-weight:900;font-size:18px;color:#92400e;">${fmtN(effectiveQuoteP+addOnQuoteP)}</span></div>
+  </div>
+</div>`:''}
+
+<div style="margin-top:30px;border-top:1px solid #eee;padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:#999;">
+  <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
+  <span>${d}</span>
+</div>
+
+</body>
+</html>`;
   };
-  const allRooms      = selected.rooms||[];
-  // If Add On excluded from quotation, filter them out of rendered rooms
-  const rooms         = includeAddOn ? allRooms : allRooms.filter(r=>!ADD_ON_ROOMS.has(r));
-  const addOnRoomsAll = allRooms.filter(r=>ADD_ON_ROOMS.has(r));
-  const rawInterior   = allRooms.filter(r=>!ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
-  const rawAddOn      = allRooms.filter(r=> ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
-  const rawTotal      = rawInterior + rawAddOn;
-  const finalQuote    = parseFloat(selected.quotation)||0;
-  // Effective quote: full when Add On included; interior-proportional when excluded
-  const interiorQuote  = rawTotal>0 ? Math.round(finalQuote*(rawInterior/rawTotal)) : finalQuote;
-  const addOnQuote     = rawTotal>0 ? Math.round(finalQuote*(rawAddOn/rawTotal))    : 0;
-  const effectiveQuote = includeAddOn ? finalQuote : interiorQuote;
-  // Scale room cost from effective quote proportionally
-  const roomQuoteAmt = (room) => {
-    const denom = includeAddOn ? rawTotal : rawInterior;
-    return denom>0 ? Math.round(effectiveQuote*(calcRoom(room)/denom)) : 0;
-  };
 
+  // Simple on-screen view (no colored backgrounds to cause issues)
   return (
     <div style={{ background:"#fff", minHeight:"100vh",
       fontFamily:"'DM Sans',system-ui,sans-serif", color:"#0F1923" }}>
-      <style>{printStyle}</style>
 
-      {/* Print / Close buttons */}
+      {/* Toolbar */}
       <div className="no-print" style={{ position:"sticky",top:0,zIndex:100,
-        background:"rgba(255,255,255,0.96)",backdropFilter:"blur(8px)",
+        background:"rgba(255,255,255,0.97)",backdropFilter:"blur(8px)",
         borderBottom:"1px solid #e5e7eb",padding:"10px 24px",
         display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8 }}>
         <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-          <button className="no-print" onClick={()=>setView("list")}
+          <button onClick={()=>setView("list")}
             style={{ fontSize:12,padding:"6px 14px",fontWeight:600,cursor:"pointer",
               background:"#f3f4f6",color:"#374151",border:"1px solid #d1d5db",
               borderRadius:8,fontFamily:"inherit" }}>← Back</button>
@@ -1381,7 +1673,6 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
           </div>
         </div>
         <div style={{ display:"flex",alignItems:"center",gap:12 }}>
-          {/* Add On toggle */}
           <label style={{ display:"flex",alignItems:"center",gap:6,cursor:"pointer",
             fontSize:12,fontWeight:600,color:"#374151",
             background:includeAddOn?"rgba(255,159,10,0.1)":"#f3f4f6",
@@ -1392,20 +1683,30 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
               style={{ accentColor:"#FF9F0A",width:14,height:14 }}/>
             Include Add On in Quotation
           </label>
-          <button className="no-print" style={{ ...S.btn(),fontSize:11,padding:"7px 16px" }}
-            onClick={()=>window.print()}>🖨 Print / Save PDF</button>
+          <button
+            style={{ fontSize:11,padding:"7px 16px",fontWeight:600,cursor:"pointer",
+              background:"#1e3a5f",color:"#fff",border:"none",
+              borderRadius:8,fontFamily:"inherit" }}
+            onClick={()=>{
+              const html = generatePrintHTML();
+              const w = window.open('','_blank','width=900,height=700');
+              w.document.write(html);
+              w.document.close();
+              w.focus();
+              setTimeout(()=>w.print(), 800);
+            }}>🖨 Print / Save PDF</button>
         </div>
       </div>
 
+      {/* On-screen preview — simple clean version */}
       <div style={{ maxWidth:820, margin:"0 auto", padding:"32px 40px" }}>
 
-        {/* ── HEADER ────────────────────────────────────────────────── */}
+        {/* Header */}
         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",
           marginBottom:32,paddingBottom:20,borderBottom:`3px solid ${C.teal}` }}>
           <div>
             <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-              <img src={LOGO_SRC} alt="High Rise Interiors"
-                style={{ height:40,objectFit:"contain" }}/>
+              <img src={LOGO_SRC} alt="High Rise Interiors" style={{ height:40,objectFit:"contain" }}/>
             </div>
             <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,textTransform:"uppercase",marginTop:4 }}>
               Interior Design Proposal
@@ -1418,7 +1719,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                 {fmt(effectiveQuote)}
                 {!includeAddOn && addOnQuote>0 && (
                   <div style={{ fontSize:11,color:"#9ca3af",fontWeight:400,marginTop:2 }}>
-                    (Add On ₹{addOnQuote.toLocaleString("en-IN")} shown in Annexure)
+                    (Add On {fmt(addOnQuote)} shown in Annexure)
                   </div>
                 )}
               </div>
@@ -1426,815 +1727,23 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
           </div>
         </div>
 
-        {/* ── 1. CLIENT INFORMATION ─────────────────────────────────── */}
-        <div style={{ marginBottom:32 }} className="page-section">
-          <div style={RS.sTitle}>1. Client Information</div>
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 24px" }}>
-            {[
-              ["Client Name",      selected.name],
-              ["Phone",            selected.phone],
-              ["Email",            selected.email],
-              ["Address",          selected.address],
-              ["Property Type",    selected.propertyType],
-              ["Project Style",    selected.style],
-              ["Project Timeline", selected.timeline||"120 Days"],
-              ["Start Date",       selected.startDate],
-            ].filter(([,v])=>v).map(([label,val])=>(
-              <div key={label} style={RS.row}>
-                <span style={{ color:"#6b7280",fontSize:12 }}>{label}</span>
-                <span style={{ fontWeight:600,fontSize:12,textAlign:"right",maxWidth:"55%" }}>{val}</span>
-              </div>
-            ))}
+        <div style={{ textAlign:"center",padding:"60px 0",color:"#6b7280" }}>
+          <div style={{ fontSize:32,marginBottom:16 }}>📄</div>
+          <div style={{ fontSize:16,fontWeight:700,color:"#374151",marginBottom:8 }}>
+            Report ready for {selected.name}
           </div>
-        </div>
-
-        {/* ── 2. PROJECT SUMMARY ────────────────────────────────────── */}
-        <div style={{ marginBottom:32 }} className="page-section">
-          <div style={RS.sTitle}>2. Project Summary</div>
-          {(()=>{
-            // Build rich per-room summary with sq ft and primary materials
-            const ADD_ON_ROOMS_PS = new Set(["Add On"]);
-            const interiorRooms = allRooms.filter(r=>!ADD_ON_ROOMS_PS.has(r)&&calcRoom(r)>0);
-            const addonRooms    = allRooms.filter(r=> ADD_ON_ROOMS_PS.has(r)&&calcRoom(r)>0);
-            const totalSqft = interiorRooms.reduce((t,r)=>{
-              const works = selected.roomWork?.[r]||[];
-              return t + works.reduce((s,w)=>{
-                if(w.height&&w.width) return s+(parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1));
-                return s;
-              },0);
-            },0);
-            // Collect primary materials used across all rooms
-            const matSet = {};
-            allRooms.forEach(r=>{
-              (selected.roomWork?.[r]||[]).forEach(w=>{
-                if(w.brand && w.matType) {
-                  if(!matSet[w.matType]) matSet[w.matType] = w.brand;
-                }
-              });
-            });
-            const plywood  = matSet["plywood"]  || selected.plywood  || null;
-            const laminate = matSet["laminate"] || selected.laminate || null;
-            const hardware = matSet["hardware"] || selected.hardware || null;
-            const ceiling  = matSet["ceiling"]  || null;
-            const glass    = matSet["glass"]    || null;
-
-            // Per-room sq ft details
-            const roomSqftLines = interiorRooms.map(r=>{
-              const works = selected.roomWork?.[r]||[];
-              const sqft  = works.reduce((s,w)=>{
-                if(w.height&&w.width) return s+(parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1));
-                return s;
-              },0);
-              const items = works.filter(w=>w.product).length;
-              const spec  = selected.roomDetails?.[r]||{};
-              return { room:r, sqft:Math.round(sqft*10)/10, items, spec };
-            }).filter(r=>r.items>0);
-
-            return (
-              <div>
-                {/* Intro paragraph */}
-                <div style={{ fontSize:13,lineHeight:2,color:"#374151",marginBottom:20 }}>
-                  High Rise Interiors is pleased to present this interior design proposal for
-                  {" "}<strong>{selected.name}</strong>'s {selected.propertyType||"residence"}
-                  {selected.address ? ` at ${selected.address}` : ""}.
-                  This project is designed in a <strong>{selected.style||"contemporary"}</strong> aesthetic
-                  and is scheduled for completion within <strong>{selected.timeline||"120 days"}</strong>
-                  {selected.startDate ? `, commencing ${new Date(selected.startDate).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}` : ""}.
-                  {" "}The scope covers <strong>{interiorRooms.length} interior rooms</strong>
-                  {addonRooms.length>0 ? ` plus ${addonRooms.length} add-on area${addonRooms.length>1?"s":""}` : ""}
-                  {totalSqft>0 ? `, with a combined carpentry & work area of approximately ${totalSqft.toFixed(0)} sq ft` : ""}.
-                </div>
-
-                {/* Materials paragraph */}
-                {(plywood||laminate||hardware||ceiling||glass) && (
-                  <div style={{ fontSize:13,lineHeight:2,color:"#374151",marginBottom:20 }}>
-                    <strong>Primary Materials:</strong>{" "}
-                    {[
-                      plywood  && `Plywood — ${plywood}`,
-                      laminate && `Laminate — ${laminate}`,
-                      hardware && `Hardware — ${hardware}`,
-                      ceiling  && `Ceiling — ${ceiling}`,
-                      glass    && `Glass — ${glass}`,
-                    ].filter(Boolean).join(" · ")}
-                  </div>
-                )}
-
-                {/* Per-room breakdown table */}
-                {roomSqftLines.length>0 && (
-                  <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12,marginTop:8 }}>
-                    <thead>
-                      <tr className="section-hdr-dark" style={{ background:"#dbeafe" }}>
-                        {["Room","No. of Items","Work Area (sq ft)","Plywood Grade"].map(h=>(
-                          <th key={h} style={{ padding:"7px 12px",color:"#fff",fontWeight:700,
-                            fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {roomSqftLines.map((r,i)=>(
-                        <tr key={r.room} className="page-row"
-                          style={{ background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #f3f4f6" }}>
-                          <td style={{ padding:"7px 12px",fontWeight:600,color:"#0F1923" }}>🏠 {r.room}</td>
-                          <td style={{ padding:"7px 12px",color:"#374151",textAlign:"center" }}>{r.items} items</td>
-                          <td style={{ padding:"7px 12px",color:"#374151",textAlign:"center" }}>
-                            {r.sqft>0 ? `${r.sqft} sq ft` : "—"}
-                          </td>
-                          <td style={{ padding:"7px 12px",color:"#374151",fontSize:11 }}>
-                            {r.spec.plywoodGrade||plywood||"—"}
-                          </td>
-                        </tr>
-                      ))}
-                      {totalSqft>0 && (
-                        <tr style={{ background:"#e8f0fe",borderTop:"2px solid #1e3a5f" }}>
-                          <td style={{ padding:"8px 12px",fontWeight:700,color:"#1e3a5f" }}>Total</td>
-                          <td style={{ padding:"8px 12px",fontWeight:700,color:"#1e3a5f",textAlign:"center" }}>
-                            {roomSqftLines.reduce((t,r)=>t+r.items,0)} items
-                          </td>
-                          <td style={{ padding:"8px 12px",fontWeight:700,color:"#1e3a5f",textAlign:"center" }}>
-                            {totalSqft.toFixed(0)} sq ft
-                          </td>
-                          <td style={{ padding:"8px 12px" }}></td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                )}
-
-                {/* Notes paragraph if any discussion notes */}
-                {discussions.length>0 && (
-                  <div style={{ marginTop:16,fontSize:12,lineHeight:1.8,color:"#6b7280",
-                    padding:"10px 14px",background:"#f8fafc",
-                    borderLeft:"3px solid #93c5fd" }}>
-                    <strong style={{ color:"#374151" }}>Designer's Notes:</strong>{" "}
-                    {discussions.slice(0,5).join(" ")}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* ── 3. SCOPE OF WORK ──────────────────────────────────────── */}
-        <div style={{ marginBottom:32 }} className="page-section">
-          <div style={RS.sTitle}>3. Scope of Work</div>
-          {rooms.length>0 ? (
-            <div>
-              {rooms.map((r)=>{
-                const works = (selected.roomWork?.[r]||[]).filter(w=>w.product);
-                if (!works.length) return null;
-                const rAmt   = roomQuoteAmt(r);
-                const isAddon = ADD_ON_ROOMS.has(r);
-                return (
-                  <div key={r} className="page-row" style={{ marginBottom:12,
-                    border:"1px solid #e5e7eb" }}>
-                    {/* Room header with cost */}
-                    <div style={{ padding:"9px 14px", display:"flex",
-                      justifyContent:"space-between", alignItems:"center",
-                      background: isAddon ? "#fef3c7" : "#dbeafe",
-                      borderBottom: isAddon?"2px solid #92400e":"2px solid #1e3a5f" }}>
-                      <span style={{ fontWeight:700,fontSize:13,color:isAddon?"#92400e":"#1e3a5f" }}>🏠 {r}</span>
-                      {finalQuote>0 && (
-                        <span style={{ fontWeight:700,fontSize:13,
-                          color:isAddon?"#92400e":"#1e3a5f" }}>
-                          {fmt(rAmt)}
-                        </span>
-                      )}
-                    </div>
-                    {/* Column headers */}
-                    <div style={{ display:"grid",
-                      gridTemplateColumns:"2.5fr 1.2fr 0.8fr 0.7fr 1fr", gap:0,
-                      background:"#f3f4f6", padding:"6px 14px" }}>
-                      {["Product","Type","H × W","Qty","Brand"].map(h=>(
-                        <div key={h} style={{ fontSize:9,fontWeight:700,
-                          color:"#6b7280",letterSpacing:1,textTransform:"uppercase" }}>{h}</div>
-                      ))}
-                    </div>
-                    {/* Line items */}
-                    {works.map((w,wi)=>{
-                      const sqft = w.height&&w.width
-                        ? `${w.height}×${w.width} (${(parseFloat(w.height)*parseFloat(w.width)).toFixed(1)} sft)`
-                        : "—";
-                      const isQtyType = QTY_TYPES && QTY_TYPES.has(w.type);
-                      const qty = parseFloat(w.qty)||1;
-                      return (
-                        <div key={wi} className="page-row" style={{
-                          display:"grid",
-                          gridTemplateColumns:"2.5fr 1.2fr 0.8fr 0.7fr 1fr",
-                          padding:"7px 14px",
-                          borderTop:"1px solid #f3f4f6",
-                          background:wi%2===0?"#fff":"#f9fafb" }}>
-                          <div>
-                            <div style={{ fontWeight:600,fontSize:12,color:"#0F1923" }}>{w.product}</div>
-                            {w.notes&&<div style={{ fontSize:10,color:"#9ca3af" }}>{w.notes}</div>}
-                          </div>
-                          <div style={{ fontSize:11,color:"#6b7280" }}>{w.type}</div>
-                          <div style={{ fontSize:11,color:"#374151" }}>
-                            {isQtyType?"—":sqft}
-                          </div>
-                          <div style={{ fontSize:11,fontWeight:700,
-                            color:qty>1?"#FF9F0A":"#374151" }}>×{qty}</div>
-                          <div style={{ fontSize:11,color:"#374151" }}>{w.brand||"—"}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ color:"#6b7280",fontSize:13 }}>No rooms selected.</div>
-          )}
-        </div>
-
-        {/* ── 4. MATERIALS ORDER LIST & SPECIFICATIONS ──────────────── */}
-        <div style={{ marginBottom:32 }} className="page-section">
-          <div style={RS.sTitle}>4. Materials Order List & Specifications</div>
-          {(()=>{
-            const matList = [];
-            rooms.forEach(room=>{
-              const works = selected.roomWork?.[room]||[];
-              const spec  = selected.roomDetails?.[room]||{};
-              works.forEach(w=>{
-                if (!w.product || !w.brand) return;
-                const exists = matList.find(m=>m.matType===w.matType&&m.brand===w.brand);
-                if (!exists) matList.push({ matType:w.matType, brand:w.brand, rooms:[room] });
-                else if (!exists.rooms.includes(room)) exists.rooms.push(room);
-              });
-            });
-            if (!matList.length) return <div style={{ color:"#6b7280",fontSize:13 }}>No material specifications set.</div>;
-            return (
-              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                <thead>
-                  <tr style={{ background:"#dbeafe",borderBottom:"2px solid #1e3a5f" }}>
-                    {["#","Category","Brand / Specification","Used In"].map(h=>(
-                      <th key={h} style={{ padding:"8px 12px",color:"#1e3a5f",fontWeight:700,
-                        fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {matList.map((m,i)=>(
-                    <tr key={i} className="page-row"
-                      style={{ background:i%2===0?"#fff":"#f9fafb",borderBottom:"1px solid #f3f4f6" }}>
-                      <td style={{ padding:"7px 12px",color:"#6b7280",width:28 }}>{i+1}</td>
-                      <td style={{ padding:"7px 12px",fontWeight:700,color:"#374151",
-                        textTransform:"capitalize" }}>{m.matType}</td>
-                      <td style={{ padding:"7px 12px",fontWeight:600,color:"#0F1923" }}>{m.brand}</td>
-                      <td style={{ padding:"7px 12px",color:"#6b7280",fontSize:11 }}>
-                        {m.rooms.join(", ")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            );
-          })()}
-        </div>
-
-        {/* ── 5. INCLUDED IN SCOPE ──────────────────────────────────── */}
-        {includedItems.length>0 && (
-          <div style={{ marginBottom:32 }} className="page-section">
-            <div style={RS.sTitle}>5. Included in Scope</div>
-            <div style={{ background:"rgba(48,209,88,0.06)",borderRadius:6,
-              padding:"14px 18px",border:"1px solid #bbf7d0" }}>
-              {includedItems.map((l,i)=>{
-                const text = l.replace(/^(✗\s*)?included\s*:\s*/i,"");
-                return <div key={i} style={{ ...RS.bullet,color:"#166534" }}>✓ {text}</div>;
-              })}
-            </div>
+          <div style={{ fontSize:13,marginBottom:24 }}>
+            Click <strong>Print / Save PDF</strong> to generate the full report in a new window.
           </div>
-        )}
-
-        {/* ── 6. OUT OF SCOPE ───────────────────────────────────────── */}
-        {outOfScope.length>0 && (
-          <div style={{ marginBottom:32 }} className="page-section">
-            <div style={RS.sTitle}>{includedItems.length>0?"6.":"5."} Out of Scope</div>
-            <div style={{ background:"rgba(255,69,58,0.06)",borderRadius:6,
-              padding:"14px 18px",border:"1px solid #FECACA" }}>
-              {outOfScope.map((l,i)=>{
-                const text = l.replace(/^(out of scope|not included|excluded)\s*:?\s*/i,"");
-                return <div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {text||l}</div>;
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ── 7. COST BREAKDOWN ─────────────────────────────────────── */}
-        {finalQuote>0 && (
-          <div style={{ marginBottom:32 }} className="page-section">
-            <div style={RS.sTitle}>7. Cost Breakdown</div>
-          <div style={{ fontSize:11,color:"#6b7280",marginBottom:10 }}>
-            All amounts include materials &amp; labour (proportional to final quotation)
-          </div>
-            {(()=>{
-              const interiorRooms = rooms.filter(r=>!ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
-              const addOnRooms    = rooms.filter(r=> ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
-              // When includeAddOn=true: split finalQuote proportionally
-              // When includeAddOn=false: interiorAmt = effectiveQuote (the interior-only quote), addOnAmt=0
-              const interiorAmt = includeAddOn
-                ? (rawTotal>0 ? Math.round(finalQuote*(rawInterior/rawTotal)) : finalQuote)
-                : effectiveQuote;
-              const addOnAmt = includeAddOn
-                ? (rawTotal>0 ? Math.round(finalQuote*(rawAddOn/rawTotal)) : 0)
-                : 0;
-              return (
-                <div>
-                  {interiorRooms.length>0 && (
-                    <>
-                      <div style={{ display:"flex",justifyContent:"space-between",
-                        background:"#dbeafe",borderBottom:"2px solid #1e3a5f",
-                        padding:"9px 16px",marginBottom:1 }}>
-                        <span style={{ fontWeight:700,color:"#1e3a5f",fontSize:13 }}>Interior Works</span>
-                        <strong style={{ color:"#1e3a5f",fontSize:13 }}>{fmt(interiorAmt)}</strong>
-                      </div>
-                      {interiorRooms.map((r,i)=>(
-                        <div key={r} className="page-row" style={{ display:"flex",justifyContent:"space-between",
-                          padding:"7px 16px 7px 28px",fontSize:12,
-                          background:i%2===0?"#f8fafc":"#f1f5f9",
-                          borderBottom:"1px solid #e2e8f0" }}>
-                          <span style={{ color:"#374151" }}>🏠 {r}</span>
-                          <span style={{ fontWeight:600,color:"#475569" }}>{fmt(roomQuoteAmt(r))}</span>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                  {addOnRooms.length>0 && (
-                    <>
-                      <div className="room-hdr-addon" style={{ display:"flex",justifyContent:"space-between",
-                        background:"#fef3c7",borderBottom:"2px solid #92400e",
-                        padding:"9px 16px",marginTop:8,marginBottom:1 }}>
-                        <span style={{ fontWeight:700,color:"#92400e",fontSize:13 }}>Add On</span>
-                        <strong style={{ color:"#92400e",fontSize:13 }}>{fmt(addOnAmt)}</strong>
-                      </div>
-                      {/* Only show sub-rows if there are multiple add-on rooms */}
-                      {addOnRooms.length>1 && addOnRooms.map((r,i)=>(
-                        <div key={r} className="page-row" style={{ display:"flex",justifyContent:"space-between",
-                          padding:"7px 16px 7px 28px",fontSize:12,
-                          background:i%2===0?"#fffbf0":"#fef9ec",
-                          borderBottom:"1px solid #fde68a" }}>
-                          <span style={{ color:"#374151" }}>🏠 {r}</span>
-                          <span style={{ fontWeight:600,color:"#92400e" }}>{fmt(roomQuoteAmt(r))}</span>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                  <div style={{ display:"flex",justifyContent:"space-between",
-                    background:"#dbeafe",borderTop:"2px solid #1e3a5f",
-                    padding:"12px 16px",marginTop:8 }}>
-                    <span style={{ fontWeight:700,color:"#1e3a5f",fontSize:14 }}>Final Quotation</span>
-                    <strong style={{ color:"#1e3a5f",fontSize:16 }}>{fmt(effectiveQuote)}</strong>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* ── 8. BUDGET SUMMARY ─────────────────────────────────────── */}
-        <div style={{ marginBottom:32 }} className="page-section">
-          <div style={RS.sTitle}>8. Budget Summary</div>
-          {selected.previousQuotation && (
-            <div style={RS.row}>
-              <span style={{ color:"#6b7280" }}>Previous Quotation</span>
-              <span style={{ textDecoration:"line-through", color:"#9ca3af" }}>
-                {/* Show previous quote proportionally adjusted if Add On excluded */}
-                {fmt(includeAddOn
-                  ? parseFloat(selected.previousQuotation)
-                  : (rawTotal>0 ? Math.round(parseFloat(selected.previousQuotation)*(rawInterior/rawTotal)) : parseFloat(selected.previousQuotation))
-                )}
-              </span>
-            </div>
-          )}
-          {selected.rebateValue && Number(selected.rebateValue)>0 && (
-            <div style={{ background:"rgba(48,209,88,0.08)",borderRadius:6,
-              padding:"10px 14px",margin:"6px 0",border:"1px solid #86EFAC" }}>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <span style={{ fontSize:13,fontWeight:600,color:"#166534" }}>
-                  {selected.rebateType==="pct"
-                    ? `Rebate / Discount (${selected.rebateValue}%)`
-                    : `Rebate / Discount`}
-                </span>
-                <span style={{ fontWeight:700,color:"#166534" }}>
-                  {selected.rebateType==="pct"
-                    ? `- ${fmt(Math.round((includeAddOn?finalQuote:interiorQuote)*(parseFloat(selected.rebateValue)/100)))}`
-                    : `- ${fmt(selected.rebateValue)}`}
-                </span>
-              </div>
-            </div>
-          )}
-          {/* Revised / final quote — always uses effectiveQuote */}
-          <div style={RS.row}>
-            <span style={{ color:"#6b7280" }}>
-              {selected.revisedQuotation ? "Revised Quotation (After Rebate)" : "Quotation"}
-            </span>
-            <span style={{ fontWeight:700,fontSize:15,color:"#0F1923" }}>
-              {fmt(effectiveQuote)}
-            </span>
-          </div>
-          {!includeAddOn && addOnQuote>0 && (
-            <div style={{ marginTop:8,padding:"8px 12px",background:"#fffbf0",
-              border:"1px solid #fde68a",fontSize:12,color:"#92400e" }}>
-              ℹ Add On (₹{addOnQuote.toLocaleString("en-IN")}) excluded — see Annexure
-            </div>
-          )}
-          {/* Referral code — Active clients only */}
-          {selected.referralCode && selected.status==="Active" && (
-            <div style={{ background:"rgba(48,209,88,0.1)",borderRadius:6,
-              padding:"12px 16px",margin:"10px 0",border:"1px solid #86EFAC" }}>
-              <div style={{ fontSize:9,fontWeight:700,color:"#30D158",
-                letterSpacing:2,marginBottom:6,textTransform:"uppercase" }}>🎁 Your Referral Code</div>
-              <div style={{ fontSize:22,fontWeight:800,letterSpacing:5,
-                color:"#30D158",fontFamily:"monospace",marginBottom:6 }}>{selected.referralCode}</div>
-              <div style={{ fontSize:12,color:"#30D158",lineHeight:1.9 }}>
-                <div>• Share with friends & family</div>
-                <div>• Referred friend gets <strong>5% off</strong> their project</div>
-                <div>• You earn <strong>5% cashback</strong> on your next payment</div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── 9. FINAL QUOTATION ────────────────────────────────────── */}
-        {finalQuote>0 && (
-          <div style={{ marginBottom:32 }} className="page-section">
-            <div className="final-quote-bar" style={{ background:"#dbeafe",
-              border:"2px solid #1e3a5f",
-              padding:"18px 24px",
-              display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-              <div>
-                <div style={{ fontSize:11,fontWeight:700,color:"#1e3a5f",
-                  letterSpacing:2,textTransform:"uppercase",marginBottom:4 }}>9. Final Quotation</div>
-                <div style={{ fontSize:12,color:"#374151" }}>
-                  Inclusive of materials &amp; labour
-                </div>
-              </div>
-              <div style={{ fontSize:28,fontWeight:800,color:"#1e3a5f",letterSpacing:-1 }}>
-                {fmt(effectiveQuote)}
-              </div>
-              {!includeAddOn && addOnQuote>0 && (
-                <div style={{ fontSize:11,color:"rgba(255,255,255,0.6)",marginTop:6 }}>
-                  Add On ₹{addOnQuote.toLocaleString("en-IN")} — see Annexure
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── 10. PROJECT TIMELINE ──────────────────────────────────── */}
-        <div style={{ marginBottom:32 }} className="page-section">
-          <div style={RS.sTitle}>10. Project Timeline</div>
-          {(()=>{
-            const total = parseInt(selected.timeline)||120;
-            const start = selected.startDate ? new Date(selected.startDate) : null;
-            const plan  = selected.projectPlan||{};
-            const getD  = (pct) => Math.max(1,Math.round(pct/100*total)+1);
-            const getDur= (pct) => Math.max(1,Math.round(pct/100*total));
-            const PHASES = [
-              {key:"requirements", label:"Requirements & Planning",   from:0,  to:6},
-              {key:"design",       label:"Design Finalisation",       from:6,  to:12},
-              {key:"designFinal",  label:"Design Approval",           from:12, to:18},
-              {key:"ceiling",      label:"Ceiling & Civil Work",      from:18, to:26},
-              {key:"procurement",  label:"Material Procurement",      from:26, to:48},
-              {key:"graniteTiles", label:"Granite & Tiles",           from:48, to:54},
-              {key:"woodFraming",  label:"Wood Framing & Carpentry",  from:54, to:69},
-              {key:"deco",         label:"Decoration & Finishing",    from:69, to:76},
-              {key:"painting",     label:"Painting",                  from:76, to:83},
-              {key:"cleaning",     label:"Site Cleaning",             from:83, to:86},
-              {key:"handover",     label:"Handover",                  from:86, to:87},
-              {key:"cooling",      label:"Settling & Cooling",        from:87, to:100},
-            ];
-            return (
-              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                <thead>
-                  <tr style={{ background:"#dbeafe",borderBottom:"2px solid #1e3a5f" }}>
-                    {["Phase","Day Start","Duration","Status"].map(h=>(
-                      <th key={h} style={{ padding:"8px 12px",color:"#1e3a5f",fontWeight:700,
-                        fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {PHASES.map((ph,i)=>{
-                    const status = plan[ph.key]?.status||"Not Started";
-                    const dot = status==="Completed"?"#30D158":status==="In Progress"?"#0A84FF":"#d1d5db";
-                    const startDay = getD(ph.from);
-                    const dur = getDur(ph.to - ph.from);
-                    const startDate = start ? new Date(start.getTime()+(startDay-1)*86400000)
-                      .toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : `Day ${startDay}`;
-                    return (
-                      <tr key={ph.key} className="page-row"
-                        style={{ background:i%2===0?"#fff":"#f9fafb",borderBottom:"1px solid #f3f4f6" }}>
-                        <td style={{ padding:"7px 12px",fontWeight:600,color:"#0F1923" }}>{ph.label}</td>
-                        <td style={{ padding:"7px 12px",color:"#374151" }}>{startDate}</td>
-                        <td style={{ padding:"7px 12px",color:"#374151" }}>{dur} days</td>
-                        <td style={{ padding:"7px 12px" }}>
-                          <span style={{ display:"inline-flex",alignItems:"center",gap:5,
-                            fontSize:11,fontWeight:600,color:dot }}>
-                            <span style={{ width:7,height:7,borderRadius:"50%",background:dot,
-                              display:"inline-block" }}/>
-                            {status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            );
-          })()}
-        </div>
-
-        {/* ── 11. DISCLAIMERS & TERMS ───────────────────────────────── */}
-        <div style={{ marginBottom:32 }} className="page-section">
-          <div style={RS.sTitle}>11. Disclaimers & Terms</div>
-          <div style={{ fontSize:13,lineHeight:2.1,color:"#374151" }}>
-            <div style={{ marginBottom:6 }}>
-              <strong>1. No Refund Policy:</strong> All payments are strictly non-refundable once work has commenced.
-            </div>
-            <div><strong>2. Draft Quotation:</strong> This is a draft and may vary based on final quantity and material selection.</div>
-            <div><strong>3. Material Prices:</strong> Subject to market fluctuations. Valid for 30 days from date of issue.</div>
-            <div><strong>4. Scope Changes:</strong> Any additions will be quoted and billed separately with written approval.</div>
-            <div><strong>5. Timeline:</strong> {selected.timeline||"Agreed duration"} is indicative. Delays due to civil work or approvals not included.</div>
-            <div><strong>6. Warranty:</strong> 1-year workmanship warranty. Material warranty per manufacturer.</div>
-            <div><strong>7. Cancellation:</strong> Amounts paid till date are forfeited upon cancellation after commencement.</div>
-            <div><strong>8. Dispute Resolution:</strong> Subject to jurisdiction of Hyderabad courts only.</div>
-          </div>
-        </div>
-
-        {/* ── 12. SIGNATURES ────────────────────────────────────────── */}
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:32 }}
-          className="page-section">
-          <div style={{ borderTop:`2px solid ${C.teal}`,paddingTop:12 }}>
-            <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,
-              textTransform:"uppercase",marginBottom:6 }}>Client Signature</div>
-            <div style={{ fontSize:14,fontWeight:700,color:"#0F1923",marginBottom:12 }}>
-              {selected.name}
-            </div>
-            {signatures.client ? (
-              <div>
-                <img src={signatures.client} alt="sig"
-                  style={{ height:80,maxWidth:"100%",border:"1px solid #e5e7eb",
-                    borderRadius:3,background:"#fff",display:"block" }}/>
-                <div style={{ fontSize:10,color:"#6b7280",marginTop:4 }}>
-                  {new Date().toLocaleDateString("en-IN")}
-                </div>
-                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,
-                  padding:"4px 10px",marginTop:6 }}
-                  onClick={()=>setSignatures(s=>({...s,client:null}))}>✕ Clear</button>
-              </div>
-            ):(
-              <div>
-                <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  marginBottom:8,background:"#f8f9fa" }}>
-                  <span style={{ fontSize:11,color:"#6b7280" }}>Tap to sign</span>
-                </div>
-                <button className="no-print" style={{ ...S.btn(),fontSize:11,padding:"7px 16px" }}
-                  onClick={()=>setShowSigPad("client")}>✍ Sign Here</button>
-              </div>
-            )}
-          </div>
-          <div style={{ borderTop:`2px solid ${C.teal}`,paddingTop:12 }}>
-            <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,
-              textTransform:"uppercase",marginBottom:6 }}>Authorised by</div>
-            <div style={{ fontSize:14,fontWeight:700,color:C.teal,marginBottom:12 }}>
-              High Rise Interiors
-            </div>
-            {signatures.hri ? (
-              <div>
-                <img src={signatures.hri} alt="sig"
-                  style={{ height:80,maxWidth:"100%",border:"1px solid #e5e7eb",
-                    borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
-                <div style={{ fontSize:10,color:"#6b7280",marginTop:4 }}>
-                  {new Date().toLocaleDateString("en-IN")}
-                </div>
-                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,
-                  padding:"4px 10px",marginTop:6 }}
-                  onClick={()=>setSignatures(s=>({...s,hri:null}))}>✕ Clear</button>
-              </div>
-            ):(
-              <div>
-                <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  marginBottom:8,background:"#f8f9fa" }}>
-                  <span style={{ fontSize:11,color:"#6b7280" }}>Tap to sign</span>
-                </div>
-                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:11,
-                  padding:"7px 16px" }}
-                  onClick={()=>setShowSigPad("hri")}>✍ Sign Here</button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Signature Pad Modal */}
-        {showSigPad && (
-          <div className="no-print" style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",
-            zIndex:999,display:"flex",alignItems:"center",justifyContent:"center" }}>
-            <div style={{ background:"#fff",borderRadius:12,padding:24,width:360 }}>
-              <div style={{ fontWeight:700,marginBottom:12,fontSize:14 }}>
-                ✍ {showSigPad==="client"?"Client":"HRI"} Signature
-              </div>
-              <canvas id="sig-canvas" width={312} height={160}
-                style={{ border:"1.5px solid #e5e7eb",borderRadius:6,
-                  cursor:"crosshair",touchAction:"none",display:"block",background:"#fff" }}
-                onPointerDown={e=>{
-                  const c=document.getElementById("sig-canvas");
-                  const ctx=c.getContext("2d");
-                  const r=c.getBoundingClientRect();
-                  ctx.beginPath();
-                  ctx.moveTo(e.clientX-r.left,e.clientY-r.top);
-                  c._drawing=true;
-                  c._ctx=ctx;
-                }}
-                onPointerMove={e=>{
-                  const c=document.getElementById("sig-canvas");
-                  if(!c._drawing)return;
-                  const r=c.getBoundingClientRect();
-                  c._ctx.lineTo(e.clientX-r.left,e.clientY-r.top);
-                  c._ctx.strokeStyle="#0F1923";
-                  c._ctx.lineWidth=2;
-                  c._ctx.stroke();
-                }}
-                onPointerUp={()=>{
-                  const c=document.getElementById("sig-canvas");
-                  c._drawing=false;
-                }}
-              />
-              <div style={{ display:"flex",gap:8,marginTop:12 }}>
-                <button style={{ ...S.btn(),flex:1,fontSize:12 }} onClick={async()=>{
-                  const c=document.getElementById("sig-canvas");
-                  const img=c.toDataURL("image/png");
-                  const which=showSigPad;
-                  setSignatures(s=>({...s,[which]:img}));
-                  setShowSigPad(null);
-                  // Save to DB
-                  const newSigs={ clientImg: which==="client"?img:signatures.client,
-                                  hriImg:    which==="hri"   ?img:signatures.hri };
-                  const entry=makeEntry("signed","Signature captured",{},{},
-                    { clientImg:newSigs.clientImg, hriImg:newSigs.hriImg });
-                  const updatedLog=[...(selected.auditLog||[]),entry];
-                  try {
-                    const res=await fetch(
-                      `https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${selected.id}`,
-                      { method:"PATCH",
-                        headers:{"Content-Type":"application/json",
-                          "apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY",
-                          "Prefer":"return=minimal"},
-                        body:JSON.stringify({
-                          client_signatures:JSON.stringify(newSigs),
-                          audit_log:JSON.stringify(updatedLog)
-                        })});
-                    if(res.ok){
-                      showToast("✍ Signature saved","success");
-                      setCustomers(prev=>prev.map(c=>
-                        c.id===selected.id?{...c,auditLog:updatedLog,clientSignatures:newSigs}:c));
-                    } else { showToast("Signature save failed","error"); }
-                  } catch(e){ showToast("Signature save error","error"); }
-                }}>Save Signature</button>
-                <button style={{ ...S.btn("ghost"),fontSize:12 }} onClick={()=>{
-                  const c=document.getElementById("sig-canvas");
-                  const ctx=c.getContext("2d");
-                  ctx.clearRect(0,0,c.width,c.height);
-                }}>Clear</button>
-                <button style={{ ...S.btn("ghost"),fontSize:12 }}
-                  onClick={()=>setShowSigPad(null)}>Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-
-        {/* ── ANNEXURE: Add On Details (when not included in quotation) ─ */}
-        {!includeAddOn && addOnRoomsAll.length>0 && (
-          <div style={{ marginTop:48, borderTop:"3px solid #e5e7eb", paddingTop:32 }}>
-            {/* Annexure header */}
-            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-              marginBottom:24,paddingBottom:16,borderBottom:"2px solid #e5e7eb" }}>
-              <div>
-                <div style={{ fontSize:16,fontWeight:800,color:"#0F1923",letterSpacing:-0.5 }}>
-                  ANNEXURE — Additional Works (Add On)
-                </div>
-                <div style={{ fontSize:11,color:"#6b7280",marginTop:2 }}>
-                  These items are not included in the Final Quotation above.
-                  If selected, the estimated total increases as shown below.
-                </div>
-              </div>
-              <div style={{ textAlign:"right" }}>
-                <div style={{ fontSize:11,color:"#6b7280" }}>Estimated Add On</div>
-                <div style={{ fontSize:20,fontWeight:800,color:"#FF9F0A",marginTop:2 }}>
-                  + {fmt(addOnQuote)}
-                </div>
-              </div>
-            </div>
-
-            {/* Add On rooms */}
-            {addOnRoomsAll.map((r)=>{
-              const works = (selected.roomWork?.[r]||[]).filter(w=>w.product);
-              if (!works.length) return null;
-              return (
-                <div key={r} className="page-row" style={{ marginBottom:12,
-                  border:"1px solid #fde68a" }}>
-                  <div className="room-hdr-addon" style={{ padding:"9px 14px",display:"flex",
-                    justifyContent:"space-between",alignItems:"center",
-                    background:"#fef3c7",borderBottom:"2px solid #92400e" }}>
-                    <span style={{ fontWeight:700,fontSize:13,color:"#92400e" }}>🏠 {r}</span>
-                    <span style={{ fontWeight:700,fontSize:13,color:"#92400e" }}>
-                      {fmt(rawTotal>0?Math.round(addOnQuote*(calcRoom(r)/rawAddOn)):0)}
-                    </span>
-                  </div>
-                  <div style={{ display:"grid",
-                    gridTemplateColumns:"2.5fr 1.2fr 0.8fr 0.7fr 1fr",
-                    background:"#fffbf0",padding:"6px 14px" }}>
-                    {["Product","Type","H × W","Qty","Brand"].map(h=>(
-                      <div key={h} style={{ fontSize:9,fontWeight:700,
-                        color:"#92400e",letterSpacing:1,textTransform:"uppercase" }}>{h}</div>
-                    ))}
-                  </div>
-                  {works.map((w,wi)=>{
-                    const sqft = w.height&&w.width
-                      ? `${w.height}×${w.width} (${(parseFloat(w.height)*parseFloat(w.width)).toFixed(1)} sft)`
-                      : "—";
-                    const isQtyType = QTY_TYPES&&QTY_TYPES.has(w.type);
-                    const qty = parseFloat(w.qty)||1;
-                    return (
-                      <div key={wi} className="page-row" style={{
-                        display:"grid",gridTemplateColumns:"2.5fr 1.2fr 0.8fr 0.7fr 1fr",
-                        padding:"7px 14px",borderTop:"1px solid #fef3c7",
-                        background:wi%2===0?"#fff":"#fffbf0" }}>
-                        <div>
-                          <div style={{ fontWeight:600,fontSize:12,color:"#0F1923" }}>{w.product}</div>
-                          {w.notes&&<div style={{ fontSize:10,color:"#9ca3af" }}>{w.notes}</div>}
-                        </div>
-                        <div style={{ fontSize:11,color:"#6b7280" }}>{w.type}</div>
-                        <div style={{ fontSize:11,color:"#374151" }}>{isQtyType?"—":sqft}</div>
-                        <div style={{ fontSize:11,fontWeight:700,
-                          color:qty>1?"#FF9F0A":"#374151" }}>×{qty}</div>
-                        <div style={{ fontSize:11,color:"#374151" }}>{w.brand||"—"}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-
-            {/* Estimated total if Add On included */}
-            <div style={{ marginTop:16,padding:"16px 20px",
-              background:"#fffbf0",border:"2px solid #FF9F0A" }}>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-                marginBottom:8 }}>
-                <span style={{ fontSize:13,color:"#374151" }}>
-                  Interior Works (Final Quotation)
-                </span>
-                <span style={{ fontWeight:700,color:"#374151",fontSize:13 }}>
-                  {fmt(effectiveQuote)}
-                </span>
-              </div>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-                marginBottom:8,paddingBottom:8,borderBottom:"1px solid #fde68a" }}>
-                <span style={{ fontSize:13,color:"#374151" }}>
-                  Add On (estimated, incl. labour)
-                </span>
-                <span style={{ fontWeight:700,color:"#FF9F0A",fontSize:13 }}>
-                  + {fmt(addOnQuote)}
-                </span>
-              </div>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <span style={{ fontSize:14,fontWeight:700,color:"#0F1923" }}>
-                  Estimated Total (if Add On selected)
-                </span>
-                <span style={{ fontSize:20,fontWeight:800,color:"#FF9F0A" }}>
-                  {fmt(effectiveQuote + addOnQuote)}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ marginTop:12,fontSize:11,color:"#9ca3af",fontStyle:"italic",
-              textAlign:"center" }}>
-              * Add On items are optional. Confirm with your designer to include them in the final agreement.
-            </div>
-          </div>
-        )}
-
-        {/* ── FOOTER ────────────────────────────────────────────────── */}
-        <div style={{ borderTop:`2px solid #e5e7eb`,paddingTop:16,marginTop:8 }}>
-          <div style={{ display:"flex",justifyContent:"space-between",
-            fontSize:11,color:"#6b7280" }}>
-            <span style={{ display:"flex",alignItems:"center",gap:6 }}>
-              <img src={LOGO_SRC} alt="HRI" style={{ height:14,objectFit:"contain" }}/>
-              <span>Powered by Genovatech IT Services Pvt. Ltd.</span>
-            </span>
-            <span>{d}</span>
-          </div>
-          <div style={{ fontSize:10,color:"#9ca3af",textAlign:"center",marginTop:6,lineHeight:1.8 }}>
-            Confidential — intended solely for {selected.name}. All prices in INR ₹.
+          <div style={{ fontSize:11,color:"#9ca3af" }}>
+            The report opens as clean HTML — no black triangles, prints perfectly.
           </div>
         </div>
 
       </div>
     </div>
   );
-  }
+}
 
 
 
