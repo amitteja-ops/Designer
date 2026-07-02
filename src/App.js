@@ -1573,16 +1573,16 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                 const isAddon = ADD_ON_ROOMS.has(r);
                 return (
                   <div key={r} className="page-row" style={{ marginBottom:12,
-                    border:"1px solid #e5e7eb", borderRadius:6, overflow:"hidden" }}>
+                    border:"1px solid #e5e7eb" }}>
                     {/* Room header with cost */}
-                    <div className={isAddon?"room-hdr-addon":"room-hdr-interior"}
-                      style={{ padding:"9px 14px", display:"flex",
+                    <div style={{ padding:"9px 14px", display:"flex",
                       justifyContent:"space-between", alignItems:"center",
-                      background: isAddon ? "#78350f" : "#1e3a5f" }}>
-                      <span style={{ fontWeight:700,fontSize:13,color:"#fff" }}>🏠 {r}</span>
+                      background: isAddon ? "#fef3c7" : "#dbeafe",
+                      borderBottom: isAddon?"2px solid #92400e":"2px solid #1e3a5f" }}>
+                      <span style={{ fontWeight:700,fontSize:13,color:isAddon?"#92400e":"#1e3a5f" }}>🏠 {r}</span>
                       {finalQuote>0 && (
                         <span style={{ fontWeight:700,fontSize:13,
-                          color: isAddon?"#fcd34d":"#93c5fd" }}>
+                          color:isAddon?"#92400e":"#1e3a5f" }}>
                           {fmt(rAmt)}
                         </span>
                       )}
@@ -1716,8 +1716,14 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
             {(()=>{
               const interiorRooms = rooms.filter(r=>!ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
               const addOnRooms    = rooms.filter(r=> ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
-              const interiorAmt = rawTotal>0?Math.round(effectiveQuote*(rawInterior/rawTotal)):effectiveQuote;
-              const addOnAmt    = rawTotal>0?Math.round(effectiveQuote*(rawAddOn/rawTotal)):0;
+              // When includeAddOn=true: split finalQuote proportionally
+              // When includeAddOn=false: interiorAmt = effectiveQuote (the interior-only quote), addOnAmt=0
+              const interiorAmt = includeAddOn
+                ? (rawTotal>0 ? Math.round(finalQuote*(rawInterior/rawTotal)) : finalQuote)
+                : effectiveQuote;
+              const addOnAmt = includeAddOn
+                ? (rawTotal>0 ? Math.round(finalQuote*(rawAddOn/rawTotal)) : 0)
+                : 0;
               return (
                 <div>
                   {interiorRooms.length>0 && (
@@ -2114,7 +2120,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
               if (!works.length) return null;
               return (
                 <div key={r} className="page-row" style={{ marginBottom:12,
-                  border:"1px solid #fde68a",borderRadius:6,overflow:"hidden" }}>
+                  border:"1px solid #fde68a" }}>
                   <div className="room-hdr-addon" style={{ padding:"9px 14px",display:"flex",
                     justifyContent:"space-between",alignItems:"center",
                     background:"#fef3c7",borderBottom:"2px solid #92400e" }}>
