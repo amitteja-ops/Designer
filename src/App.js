@@ -1814,7 +1814,7 @@ const EMPTY = {
   id:null, name:"", email:"", phone:"", address:"",
   status:"Lead", projectType:"Residential", propertyType:"3 BHK",
   budget:"₹30L–₹35L", timeline:"120 Days", startDate:"",
-  rooms:["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom"],
+  rooms:["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom","Others","Additional Accessories"],
   dimensions:{ length:"", width:"", height:"" },
   style:"Luxury", notes:"",
   quotation:"", previousQuotation:"", revisedQuotation:"",
@@ -2178,7 +2178,15 @@ High Rise Interiors, Hyderabad`
       roomWork:          c.roomWork          || {},
       inventory:         c.inventory         || {},
       auditLog:          c.auditLog          || [],
-      rooms:             c.rooms             || [],
+      // Merge saved room selection with any new rooms added since last save
+      // (preserves existing selection, adds new rooms like "Additional Accessories")
+      rooms: (() => {
+        const saved = c.rooms || [];
+        const allForType = PROPERTY_ROOMS_MAP[c.propertyType||"3 BHK"] || saved;
+        // Add any new rooms from the map that aren't in saved yet
+        const newRooms = allForType.filter(r => !saved.includes(r));
+        return [...saved, ...newRooms];
+      })(),
       customRooms:       c.customRooms       || [],
       labourPct:         c.labourPct         != null ? c.labourPct : 50,
       rebateType:        c.rebateType        || "amount",
@@ -2400,9 +2408,13 @@ High Rise Interiors, Hyderabad`
         const result = await safeCall(t => sb(TABLE, "POST", row, t));
         let savedClient = {...formToSave};
         if (result && result[0]?.id) {
-          const realCode = genReferralCode(result[0].id);
-          await safeCall(t => sb(`${TABLE}?id=eq.${result[0].id}`, "PATCH", { referral_code: realCode }, t));
-          savedClient = { ...formToSave, id: result[0].id, referralCode: realCode };
+          savedClient = { ...formToSave, id: result[0].id };
+          // Only generate referral code when status is Active
+          if (formToSave.status === "Active") {
+            const realCode = genReferralCode(result[0].id);
+            await safeCall(t => sb(`${TABLE}?id=eq.${result[0].id}`, "PATCH", { referral_code: realCode }, t));
+            savedClient = { ...savedClient, referralCode: realCode };
+          }
         }
         await fetchCustomers();
         showToast("✓ Client saved", "success");
