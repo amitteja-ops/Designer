@@ -1243,7 +1243,8 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
   const makeEntry = (type, summary, snapshot={}, user="", signatures={}) => ({
     ts: new Date().toISOString(), type, user, summary, snapshot, signatures,
   });
-  const [showSigPad, setShowSigPad] = React.useState(null);
+  const [showSigPad,   setShowSigPad]   = React.useState(null);
+  const [includeAddOn, setIncludeAddOn] = React.useState(true);
   // Load saved signatures from last audit log entry that has them
   const [signatures, setSignatures] = React.useState({ client:null, hri:null });
 
@@ -1295,11 +1296,20 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;600;700;800&display=swap');
     @media print {
       .no-print { display:none!important; }
-      body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-      @page { margin:18mm 14mm; size:A4; }
-      table { page-break-inside:auto; }
+      body { -webkit-print-color-adjust:exact; print-color-adjust:exact; background:#fff!important; }
+      @page { margin:15mm 12mm; size:A4 portrait; }
+      table { page-break-inside:auto; width:100%; }
       tr, .page-row { page-break-inside:avoid; page-break-after:auto; }
       .page-section { page-break-inside:avoid; }
+      /* Force all dark backgrounds to light equivalents on print */
+      .room-hdr-interior { background:#e8f0fe!important; color:#1e3a5f!important; }
+      .room-hdr-interior span, .room-hdr-interior strong { color:#1e3a5f!important; }
+      .room-hdr-addon    { background:#fff8e6!important; color:#7c4a00!important; }
+      .room-hdr-addon span, .room-hdr-addon strong { color:#7c4a00!important; }
+      .section-hdr-dark  { background:#e8f0fe!important; color:#1e3a5f!important; }
+      .section-hdr-dark span, .section-hdr-dark strong { color:#1e3a5f!important; }
+      .final-quote-bar   { background:#e8f0fe!important; color:#1e3a5f!important; }
+      .final-quote-bar * { color:#1e3a5f!important; }
     }
   `;
 
@@ -1312,13 +1322,23 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
     const spec  = selected.roomDetails?.[room]||{};
     return works.reduce((rt,w)=>rt+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
   };
-  const rooms = selected.rooms||[];
-  const rawInterior = rooms.filter(r=>!ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
-  const rawAddOn    = rooms.filter(r=> ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
-  const rawTotal    = rawInterior + rawAddOn;
-  const finalQuote  = parseFloat(selected.quotation)||0;
-  // Scale room cost to final quotation (which includes labour)
-  const roomQuoteAmt = (room) => rawTotal>0 ? Math.round(finalQuote*(calcRoom(room)/rawTotal)) : 0;
+  const allRooms      = selected.rooms||[];
+  // If Add On excluded from quotation, filter them out of rendered rooms
+  const rooms         = includeAddOn ? allRooms : allRooms.filter(r=>!ADD_ON_ROOMS.has(r));
+  const addOnRoomsAll = allRooms.filter(r=>ADD_ON_ROOMS.has(r));
+  const rawInterior   = allRooms.filter(r=>!ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
+  const rawAddOn      = allRooms.filter(r=> ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
+  const rawTotal      = rawInterior + rawAddOn;
+  const finalQuote    = parseFloat(selected.quotation)||0;
+  // Effective quote: full when Add On included; interior-proportional when excluded
+  const interiorQuote  = rawTotal>0 ? Math.round(finalQuote*(rawInterior/rawTotal)) : finalQuote;
+  const addOnQuote     = rawTotal>0 ? Math.round(finalQuote*(rawAddOn/rawTotal))    : 0;
+  const effectiveQuote = includeAddOn ? finalQuote : interiorQuote;
+  // Scale room cost from effective quote proportionally
+  const roomQuoteAmt = (room) => {
+    const denom = includeAddOn ? rawTotal : rawInterior;
+    return denom>0 ? Math.round(effectiveQuote*(calcRoom(room)/denom)) : 0;
+  };
 
   return (
     <div style={{ background:"#fff", minHeight:"100vh",
@@ -1329,15 +1349,28 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
       <div className="no-print" style={{ position:"sticky",top:0,zIndex:100,
         background:"rgba(255,255,255,0.96)",backdropFilter:"blur(8px)",
         borderBottom:"1px solid #e5e7eb",padding:"10px 24px",
-        display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-        <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>
-          📄 Client Report — {selected.name}
+        display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8 }}>
+        <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+          <button className="no-print" style={{ ...S.btn("ghost"),fontSize:12,padding:"6px 12px" }}
+            onClick={()=>setView("list")}>← Back</button>
+          <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>
+            📄 Client Report — {selected.name}
+          </div>
         </div>
-        <div style={{ display:"flex",gap:8 }}>
+        <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+          {/* Add On toggle */}
+          <label style={{ display:"flex",alignItems:"center",gap:6,cursor:"pointer",
+            fontSize:12,fontWeight:600,color:"#374151",
+            background:includeAddOn?"rgba(255,159,10,0.1)":"#f3f4f6",
+            border:`1px solid ${includeAddOn?"#FF9F0A":"#d1d5db"}`,
+            borderRadius:20,padding:"5px 12px" }}>
+            <input type="checkbox" checked={includeAddOn}
+              onChange={e=>setIncludeAddOn(e.target.checked)}
+              style={{ accentColor:"#FF9F0A",width:14,height:14 }}/>
+            Include Add On in Quotation
+          </label>
           <button className="no-print" style={{ ...S.btn(),fontSize:11,padding:"7px 16px" }}
             onClick={()=>window.print()}>🖨 Print / Save PDF</button>
-          <button className="no-print" style={{ ...S.btn("ghost"),fontSize:11,padding:"7px 14px" }}
-            onClick={()=>setView("list")}>✕ Close</button>
         </div>
       </div>
 
@@ -1358,7 +1391,12 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
             <div style={{ fontSize:11,color:"#6b7280" }}>Date: {d}</div>
             {selected.quotation && (
               <div style={{ fontSize:18,fontWeight:800,color:C.teal,marginTop:4 }}>
-                {fmt(finalQuote)}
+                {fmt(effectiveQuote)}
+                {!includeAddOn && addOnQuote>0 && (
+                  <div style={{ fontSize:11,color:"#9ca3af",fontWeight:400,marginTop:2 }}>
+                    (Add On ₹{addOnQuote.toLocaleString("en-IN")} shown in Annexure)
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1432,13 +1470,14 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                   <div key={r} className="page-row" style={{ marginBottom:12,
                     border:"1px solid #e5e7eb", borderRadius:6, overflow:"hidden" }}>
                     {/* Room header with cost */}
-                    <div style={{ padding:"9px 14px", display:"flex",
+                    <div className={isAddon?"room-hdr-addon":"room-hdr-interior"}
+                      style={{ padding:"9px 14px", display:"flex",
                       justifyContent:"space-between", alignItems:"center",
-                      background: isAddon ? "#1c1408" : "#0F1923" }}>
+                      background: isAddon ? "#78350f" : "#1e3a5f" }}>
                       <span style={{ fontWeight:700,fontSize:13,color:"#fff" }}>🏠 {r}</span>
                       {finalQuote>0 && (
                         <span style={{ fontWeight:700,fontSize:13,
-                          color: isAddon?"#FF9F0A":C.teal }}>
+                          color: isAddon?"#fcd34d":"#93c5fd" }}>
                           {fmt(rAmt)}
                         </span>
                       )}
@@ -1508,7 +1547,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
             return (
               <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
                 <thead>
-                  <tr style={{ background:"#0F1923" }}>
+                  <tr style={{ background:"#1e3a5f" }}>
                     {["#","Category","Brand / Specification","Used In"].map(h=>(
                       <th key={h} style={{ padding:"8px 12px",color:"#fff",fontWeight:700,
                         fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
@@ -1569,17 +1608,18 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
             {(()=>{
               const interiorRooms = rooms.filter(r=>!ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
               const addOnRooms    = rooms.filter(r=> ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
-              const interiorAmt = rawTotal>0?Math.round(finalQuote*(rawInterior/rawTotal)):finalQuote;
-              const addOnAmt    = rawTotal>0?Math.round(finalQuote*(rawAddOn/rawTotal)):0;
+              const interiorAmt = rawTotal>0?Math.round(effectiveQuote*(rawInterior/rawTotal)):effectiveQuote;
+              const addOnAmt    = rawTotal>0?Math.round(effectiveQuote*(rawAddOn/rawTotal)):0;
               return (
                 <div>
                   {interiorRooms.length>0 && (
                     <>
-                      <div style={{ display:"flex",justifyContent:"space-between",
-                        background:"#0f172a",padding:"9px 16px",
+                      <div className="section-hdr-dark"
+                        style={{ display:"flex",justifyContent:"space-between",
+                        background:"#1e3a5f",padding:"9px 16px",
                         borderRadius:"6px 6px 0 0",marginBottom:1 }}>
                         <span style={{ fontWeight:700,color:"#fff",fontSize:13 }}>Interior Works</span>
-                        <strong style={{ color:C.teal,fontSize:13 }}>{fmt(interiorAmt)}</strong>
+                        <strong style={{ color:"#93c5fd",fontSize:13 }}>{fmt(interiorAmt)}</strong>
                       </div>
                       {interiorRooms.map((r,i)=>(
                         <div key={r} className="page-row" style={{ display:"flex",justifyContent:"space-between",
@@ -1594,13 +1634,15 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                   )}
                   {addOnRooms.length>0 && (
                     <>
-                      <div style={{ display:"flex",justifyContent:"space-between",
-                        background:"#1c1408",padding:"9px 16px",
+                      <div className="room-hdr-addon"
+                        style={{ display:"flex",justifyContent:"space-between",
+                        background:"#78350f",padding:"9px 16px",
                         borderRadius:"6px 6px 0 0",marginTop:8,marginBottom:1 }}>
                         <span style={{ fontWeight:700,color:"#fff",fontSize:13 }}>Add On</span>
-                        <strong style={{ color:"#FF9F0A",fontSize:13 }}>{fmt(addOnAmt)}</strong>
+                        <strong style={{ color:"#fcd34d",fontSize:13 }}>{fmt(addOnAmt)}</strong>
                       </div>
-                      {addOnRooms.map((r,i)=>(
+                      {/* Only show sub-rows if there are multiple add-on rooms */}
+                      {addOnRooms.length>1 && addOnRooms.map((r,i)=>(
                         <div key={r} className="page-row" style={{ display:"flex",justifyContent:"space-between",
                           padding:"7px 16px 7px 28px",fontSize:12,
                           background:i%2===0?"#fffbf0":"#fef9ec",
@@ -1612,7 +1654,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                     </>
                   )}
                   <div style={{ display:"flex",justifyContent:"space-between",
-                    background:"#0F1923",padding:"12px 16px",borderRadius:6,marginTop:8 }}>
+                    background:"#1e3a5f",padding:"12px 16px",borderRadius:6,marginTop:8 }}>
                     <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Final Quotation</span>
                     <strong style={{ color:C.teal,fontSize:16 }}>{fmt(finalQuote)}</strong>
                   </div>
@@ -1675,7 +1717,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
         {/* ── 9. FINAL QUOTATION ────────────────────────────────────── */}
         {finalQuote>0 && (
           <div style={{ marginBottom:32 }} className="page-section">
-            <div style={{ background:`linear-gradient(135deg,${C.teal},#0066cc)`,
+            <div className="final-quote-bar" style={{ background:`linear-gradient(135deg,${C.teal},#0066cc)`,
               borderRadius:8,padding:"18px 24px",
               display:"flex",justifyContent:"space-between",alignItems:"center" }}>
               <div>
@@ -1686,8 +1728,13 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                 </div>
               </div>
               <div style={{ fontSize:28,fontWeight:800,color:"#fff",letterSpacing:-1 }}>
-                {fmt(finalQuote)}
+                {fmt(effectiveQuote)}
               </div>
+              {!includeAddOn && addOnQuote>0 && (
+                <div style={{ fontSize:11,color:"rgba(255,255,255,0.6)",marginTop:6 }}>
+                  Add On ₹{addOnQuote.toLocaleString("en-IN")} — see Annexure
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1718,7 +1765,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
             return (
               <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
                 <thead>
-                  <tr style={{ background:"#0F1923" }}>
+                  <tr style={{ background:"#1e3a5f" }}>
                     {["Phase","Day Start","Duration","Status"].map(h=>(
                       <th key={h} style={{ padding:"8px 12px",color:"#fff",fontWeight:700,
                         fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
@@ -1912,6 +1959,119 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                 <button style={{ ...S.btn("ghost"),fontSize:12 }}
                   onClick={()=>setShowSigPad(null)}>Cancel</button>
               </div>
+            </div>
+          </div>
+        )}
+
+
+        {/* ── ANNEXURE: Add On Details (when not included in quotation) ─ */}
+        {!includeAddOn && addOnRoomsAll.length>0 && (
+          <div style={{ marginTop:48, borderTop:"3px solid #e5e7eb", paddingTop:32 }}>
+            {/* Annexure header */}
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+              marginBottom:24,paddingBottom:16,borderBottom:"2px solid #e5e7eb" }}>
+              <div>
+                <div style={{ fontSize:16,fontWeight:800,color:"#0F1923",letterSpacing:-0.5 }}>
+                  ANNEXURE — Additional Works (Add On)
+                </div>
+                <div style={{ fontSize:11,color:"#6b7280",marginTop:2 }}>
+                  These items are not included in the Final Quotation above.
+                  If selected, the estimated total increases as shown below.
+                </div>
+              </div>
+              <div style={{ textAlign:"right" }}>
+                <div style={{ fontSize:11,color:"#6b7280" }}>Estimated Add On</div>
+                <div style={{ fontSize:20,fontWeight:800,color:"#FF9F0A",marginTop:2 }}>
+                  + {fmt(addOnQuote)}
+                </div>
+              </div>
+            </div>
+
+            {/* Add On rooms */}
+            {addOnRoomsAll.map((r)=>{
+              const works = (selected.roomWork?.[r]||[]).filter(w=>w.product);
+              if (!works.length) return null;
+              return (
+                <div key={r} className="page-row" style={{ marginBottom:12,
+                  border:"1px solid #fde68a",borderRadius:6,overflow:"hidden" }}>
+                  <div className="room-hdr-addon"
+                    style={{ padding:"9px 14px",display:"flex",
+                    justifyContent:"space-between",alignItems:"center",
+                    background:"#78350f" }}>
+                    <span style={{ fontWeight:700,fontSize:13,color:"#fff" }}>🏠 {r}</span>
+                    <span style={{ fontWeight:700,fontSize:13,color:"#fcd34d" }}>
+                      {fmt(rawTotal>0?Math.round(addOnQuote*(calcRoom(r)/rawAddOn)):0)}
+                    </span>
+                  </div>
+                  <div style={{ display:"grid",
+                    gridTemplateColumns:"2.5fr 1.2fr 0.8fr 0.7fr 1fr",
+                    background:"#fffbf0",padding:"6px 14px" }}>
+                    {["Product","Type","H × W","Qty","Brand"].map(h=>(
+                      <div key={h} style={{ fontSize:9,fontWeight:700,
+                        color:"#92400e",letterSpacing:1,textTransform:"uppercase" }}>{h}</div>
+                    ))}
+                  </div>
+                  {works.map((w,wi)=>{
+                    const sqft = w.height&&w.width
+                      ? `${w.height}×${w.width} (${(parseFloat(w.height)*parseFloat(w.width)).toFixed(1)} sft)`
+                      : "—";
+                    const isQtyType = QTY_TYPES&&QTY_TYPES.has(w.type);
+                    const qty = parseFloat(w.qty)||1;
+                    return (
+                      <div key={wi} className="page-row" style={{
+                        display:"grid",gridTemplateColumns:"2.5fr 1.2fr 0.8fr 0.7fr 1fr",
+                        padding:"7px 14px",borderTop:"1px solid #fef3c7",
+                        background:wi%2===0?"#fff":"#fffbf0" }}>
+                        <div>
+                          <div style={{ fontWeight:600,fontSize:12,color:"#0F1923" }}>{w.product}</div>
+                          {w.notes&&<div style={{ fontSize:10,color:"#9ca3af" }}>{w.notes}</div>}
+                        </div>
+                        <div style={{ fontSize:11,color:"#6b7280" }}>{w.type}</div>
+                        <div style={{ fontSize:11,color:"#374151" }}>{isQtyType?"—":sqft}</div>
+                        <div style={{ fontSize:11,fontWeight:700,
+                          color:qty>1?"#FF9F0A":"#374151" }}>×{qty}</div>
+                        <div style={{ fontSize:11,color:"#374151" }}>{w.brand||"—"}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+
+            {/* Estimated total if Add On included */}
+            <div style={{ marginTop:16,padding:"16px 20px",
+              background:"#fffbf0",border:"2px solid #FF9F0A",borderRadius:8 }}>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+                marginBottom:8 }}>
+                <span style={{ fontSize:13,color:"#374151" }}>
+                  Interior Works (Final Quotation)
+                </span>
+                <span style={{ fontWeight:700,color:"#374151",fontSize:13 }}>
+                  {fmt(effectiveQuote)}
+                </span>
+              </div>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+                marginBottom:8,paddingBottom:8,borderBottom:"1px solid #fde68a" }}>
+                <span style={{ fontSize:13,color:"#374151" }}>
+                  Add On (estimated, incl. labour)
+                </span>
+                <span style={{ fontWeight:700,color:"#FF9F0A",fontSize:13 }}>
+                  + {fmt(addOnQuote)}
+                </span>
+              </div>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                <span style={{ fontSize:14,fontWeight:700,color:"#0F1923" }}>
+                  Estimated Total (if Add On selected)
+                </span>
+                <span style={{ fontSize:20,fontWeight:800,color:"#FF9F0A" }}>
+                  {fmt(effectiveQuote + addOnQuote)}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ marginTop:12,fontSize:11,color:"#9ca3af",fontStyle:"italic",
+              textAlign:"center" }}>
+              * Add On items are optional. Confirm with your designer to include them in the final agreement.
             </div>
           </div>
         )}
