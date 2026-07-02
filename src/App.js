@@ -1583,28 +1583,72 @@ Hyderabad`);
               const interiorAmt = rawTotal>0 ? Math.round(finalQuote * (rawInterior/rawTotal)) : finalQuote;
               const addOnAmt    = rawTotal>0 ? Math.round(finalQuote * (rawAddOn/rawTotal))    : 0;
               const grandTotal  = finalQuote;
+              // Per-room amounts scaled from final quotation
+              const roomAmt = (room) => rawTotal>0
+                ? Math.round(finalQuote * (calcRoom(room)/rawTotal))
+                : 0;
+
+              const interiorRooms = rooms.filter(r=>!ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
+              const addOnRooms    = rooms.filter(r=> ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
+
               return (
                 <div style={{ marginTop:8 }}>
-                  {rawInterior>0 && (
-                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-                      background:"#1e293b",borderRadius:3,padding:"10px 18px",marginBottom:4 }}>
-                      <span style={{ fontWeight:600,color:"#94a3b8",fontSize:13 }}>
-                        Interior Works (incl. {lp}% labour)
-                      </span>
-                      <strong style={{ fontSize:15,color:C.teal }}>{fmt(interiorAmt)}</strong>
-                    </div>
+                  {/* Interior Works — header row */}
+                  {interiorRooms.length>0 && (
+                    <>
+                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+                        background:"#0f172a",padding:"8px 18px",marginBottom:2,
+                        borderRadius:"3px 3px 0 0" }}>
+                        <span style={{ fontWeight:700,color:"#fff",fontSize:13,letterSpacing:0.5 }}>
+                          Interior Works
+                        </span>
+                        <strong style={{ fontSize:14,color:C.teal }}>{fmt(interiorAmt)}</strong>
+                      </div>
+                      {/* Per-room rows */}
+                      {interiorRooms.map((room,i)=>(
+                        <div key={room} style={{ display:"flex",justifyContent:"space-between",
+                          alignItems:"center",background:i%2===0?"#1e293b":"#1a2535",
+                          padding:"7px 18px 7px 30px",
+                          borderBottom:"1px solid rgba(255,255,255,0.05)",
+                          marginBottom: i===interiorRooms.length-1?8:0 }}>
+                          <span style={{ fontSize:12,color:"#94a3b8" }}>🏠 {room}</span>
+                          <span style={{ fontSize:12,fontWeight:600,color:"#64748b" }}>
+                            {fmt(roomAmt(room))}
+                          </span>
+                        </div>
+                      ))}
+                    </>
                   )}
-                  {rawAddOn>0 && (
-                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-                      background:"#1e293b",borderRadius:3,padding:"10px 18px",marginBottom:4 }}>
-                      <span style={{ fontWeight:600,color:"#94a3b8",fontSize:13 }}>
-                        Add On (incl. {lp}% labour)
-                      </span>
-                      <strong style={{ fontSize:15,color:"#FF9F0A" }}>{fmt(addOnAmt)}</strong>
-                    </div>
+
+                  {/* Add On — header row */}
+                  {addOnRooms.length>0 && (
+                    <>
+                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+                        background:"#1c1408",padding:"8px 18px",marginBottom:2,
+                        borderRadius:"3px 3px 0 0",marginTop:4 }}>
+                        <span style={{ fontWeight:700,color:"#fff",fontSize:13,letterSpacing:0.5 }}>
+                          Add On
+                        </span>
+                        <strong style={{ fontSize:14,color:"#FF9F0A" }}>{fmt(addOnAmt)}</strong>
+                      </div>
+                      {addOnRooms.map((room,i)=>(
+                        <div key={room} style={{ display:"flex",justifyContent:"space-between",
+                          alignItems:"center",background:i%2===0?"#1e293b":"#1a2535",
+                          padding:"7px 18px 7px 30px",
+                          borderBottom:"1px solid rgba(255,255,255,0.05)",
+                          marginBottom: i===addOnRooms.length-1?8:0 }}>
+                          <span style={{ fontSize:12,color:"#94a3b8" }}>🏠 {room}</span>
+                          <span style={{ fontSize:12,fontWeight:600,color:"#64748b" }}>
+                            {fmt(roomAmt(room))}
+                          </span>
+                        </div>
+                      ))}
+                    </>
                   )}
+
+                  {/* Grand total */}
                   <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-                    background:"#0F1923",borderRadius:3,padding:"12px 18px" }}>
+                    background:"#0F1923",borderRadius:3,padding:"12px 18px",marginTop:4 }}>
                     <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Final Quotation</span>
                     <strong style={{ fontSize:18,color:C.teal }}>{fmt(grandTotal)}</strong>
                   </div>
