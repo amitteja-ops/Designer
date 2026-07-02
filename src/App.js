@@ -144,13 +144,13 @@ const PROPERTY_BUDGET_MAP = {
 };
 
 const PROPERTY_ROOMS_MAP = {
-  "Studio":            ["Entrance","Living Area","Kitchen","Bathroom","Others","Additional Accessories"],
-  "1 BHK":             ["Entrance","Living Area","Kitchen","Master Bedroom","Bathroom","Others","Additional Accessories"],
-  "2 BHK":             ["Entrance","Drawing Room","Living Area","Kitchen","Master Bedroom","Children Bedroom","Bathroom","Others","Additional Accessories"],
-  "3 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom","Others","Additional Accessories"],
-  "4 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony","Others","Additional Accessories"],
-  "Villa":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony","Others","Additional Accessories"],
-  "Independent House": ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony","Others","Additional Accessories"],
+  "Studio":            ["Entrance","Living Area","Kitchen","Bathroom","Others","Add On"],
+  "1 BHK":             ["Entrance","Living Area","Kitchen","Master Bedroom","Bathroom","Others","Add On"],
+  "2 BHK":             ["Entrance","Drawing Room","Living Area","Kitchen","Master Bedroom","Children Bedroom","Bathroom","Others","Add On"],
+  "3 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom","Others","Add On"],
+  "4 BHK":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony","Others","Add On"],
+  "Villa":             ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony","Others","Add On"],
+  "Independent House": ["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Study Room","Bathroom","Balcony","Others","Add On"],
   "Commercial":        ["Entrance","Living Area","Bathroom","Others"],
   "Office":            ["Entrance","Living Area","Bathroom","Others"],
 };
@@ -244,7 +244,7 @@ const DEFAULT_ROOM_WORK = {
     {id:4, product:"Medium Drawers",         type:"Drawer",    height:"", width:"", qty:"10", matType:"hardware",brand:"Hettich KA5632 250mm Black Coated", notes:"", price:""},
     {id:5, product:"Transport & Cleaning",   type:"Transport", height:"", width:"", qty:"1",  matType:"",       brand:"",                   notes:"", price:""},
   ],
-  "Additional Accessories": [
+  "Add On": [
     {id:1,  product:"Balcony Wooden PVC Ceiling",        type:"PVC Ceiling",  height:"",   width:"",  qty:"1",  matType:"ceiling", brand:"Saint Gobain Gyproc", notes:"", price:""},
     {id:2,  product:"Mesh Doors",                         type:"Service",      height:"",   width:"",  qty:"1",  matType:"",        brand:"",                   notes:"", price:""},
     {id:3,  product:"Invisible Grill",                    type:"Grill",        height:"",   width:"",  qty:"152",matType:"",        brand:"",                   notes:"", price:""},
@@ -740,7 +740,7 @@ const ROOM_PRODUCTS = {
     { name:"Mesh Doors",                 type:"Service",           mats:[] },
     { name:"Mosquito Net",               type:"Service",           mats:[] },
   ],
-  "Additional Accessories": [
+  "Add On": [
     { name:"Balcony Wooden PVC Ceiling",       type:"PVC Ceiling",  mats:["ceiling"] },
     { name:"Mesh Doors",                        type:"Service",      mats:[] },
     { name:"Invisible Grill",                   type:"Grill",        mats:[] },
@@ -1528,18 +1528,39 @@ Hyderabad`);
                 </div>
               );
             })}
-            {/* Grand total — sum of ALL rooms */}
+            {/* Grand total — Interior + Add On shown separately */}
             {(()=>{
-              const grandTotal = (selected.rooms||Object.keys(selected.roomWork)).reduce((t,room)=>{
+              const ADD_ON_ROOMS = new Set(["Add On","Others"]);
+              const calcRoom = (room) => {
                 const works = selected.roomWork?.[room]||[];
                 const spec  = selected.roomDetails?.[room]||{};
-                return t + works.reduce((rt,w)=>rt+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
-              },0);
+                return works.reduce((rt,w)=>rt+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
+              };
+              const rooms = selected.rooms||Object.keys(selected.roomWork||{});
+              const interiorTotal = rooms.filter(r=>!ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
+              const addOnTotal    = rooms.filter(r=> ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
+              const grandTotal    = interiorTotal + addOnTotal;
               return grandTotal>0?(
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-                  background:"#0F1923",borderRadius:3,padding:"12px 18px",marginTop:8 }}>
-                  <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Total Material Cost — All Rooms</span>
-                  <strong style={{ fontSize:18,color:C.teal }}>{fmt(grandTotal)}</strong>
+                <div style={{ marginTop:8 }}>
+                  {interiorTotal>0 && (
+                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+                      background:"#1e293b",borderRadius:3,padding:"10px 18px",marginBottom:4 }}>
+                      <span style={{ fontWeight:600,color:"#94a3b8",fontSize:13 }}>Interior Works</span>
+                      <strong style={{ fontSize:15,color:C.teal }}>{fmt(interiorTotal)}</strong>
+                    </div>
+                  )}
+                  {addOnTotal>0 && (
+                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+                      background:"#1e293b",borderRadius:3,padding:"10px 18px",marginBottom:4 }}>
+                      <span style={{ fontWeight:600,color:"#94a3b8",fontSize:13 }}>Add On</span>
+                      <strong style={{ fontSize:15,color:"#FF9F0A" }}>{fmt(addOnTotal)}</strong>
+                    </div>
+                  )}
+                  <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+                    background:"#0F1923",borderRadius:3,padding:"12px 18px" }}>
+                    <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Total Material Cost — All Rooms</span>
+                    <strong style={{ fontSize:18,color:C.teal }}>{fmt(grandTotal)}</strong>
+                  </div>
                 </div>
               ):null;
             })()}
@@ -1821,7 +1842,7 @@ const EMPTY = {
   id:null, name:"", email:"", phone:"", address:"",
   status:"Lead", projectType:"Residential", propertyType:"3 BHK",
   budget:"₹30L–₹35L", timeline:"120 Days", startDate:"",
-  rooms:["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom","Others","Additional Accessories"],
+  rooms:["Entrance","Drawing Room","Living Area","Dining","Kitchen","Pooja","Master Bedroom","Children Bedroom","Guest Bedroom","Bathroom","Others","Add On"],
   dimensions:{ length:"", width:"", height:"" },
   style:"Luxury", notes:"",
   quotation:"", previousQuotation:"", revisedQuotation:"",
@@ -4403,19 +4424,35 @@ Dimension rules:
                 );
               })}
 
-              {/* Grand total */}
+              {/* Grand total — Interior + Add On split */}
               {(()=>{
-                const grand = form.rooms.reduce((t,room)=>{
-                  const works   = form.roomWork?.[room]||[];
-                  const rSpec   = form.roomDetails?.[room]||{};
-                  return t+works.reduce((rt,w)=>
-                    rt+(w.price?parseFloat(w.price):calcItemPrice(w,rSpec))
-                  ,0);
-                },0);
+                const ADD_ON_ROOMS = new Set(["Add On","Others"]);
+                const calcR = (room) => {
+                  const works = form.roomWork?.[room]||[];
+                  const rSpec = form.roomDetails?.[room]||{};
+                  return works.reduce((rt,w)=>rt+(w.price?parseFloat(w.price):calcItemPrice(w,rSpec)),0);
+                };
+                const interiorGrand = form.rooms.filter(r=>!ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcR(r),0);
+                const addOnGrand    = form.rooms.filter(r=> ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcR(r),0);
+                const grand = interiorGrand + addOnGrand;
                 return grand>0?(
-                  <div className="glass" style={{padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,69,58,0.1)",borderColor:"rgba(255,69,58,0.3)"}}>
-                    <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.7)"}}>Total — All Rooms</span>
-                    <span style={{fontSize:22,fontWeight:800,color:"#FF453A"}}>₹{grand.toLocaleString("en-IN")}</span>
+                  <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                    {interiorGrand>0 && (
+                      <div className="glass" style={{padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(10,132,255,0.08)",borderColor:"rgba(10,132,255,0.2)"}}>
+                        <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.55)"}}>Interior Works</span>
+                        <span style={{fontSize:16,fontWeight:800,color:"#0A84FF"}}>₹{interiorGrand.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                    {addOnGrand>0 && (
+                      <div className="glass" style={{padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,159,10,0.08)",borderColor:"rgba(255,159,10,0.2)"}}>
+                        <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.55)"}}>Add On</span>
+                        <span style={{fontSize:16,fontWeight:800,color:"#FF9F0A"}}>₹{addOnGrand.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                    <div className="glass" style={{padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,69,58,0.1)",borderColor:"rgba(255,69,58,0.3)"}}>
+                      <span style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.7)"}}>Total — All Rooms</span>
+                      <span style={{fontSize:22,fontWeight:800,color:"#FF453A"}}>₹{grand.toLocaleString("en-IN")}</span>
+                    </div>
                   </div>
                 ):null;
               })()}
@@ -4447,28 +4484,56 @@ Dimension rules:
 
               {/* Auto-calculate from roomWork */}
               {form.roomWork && Object.keys(form.roomWork).length > 0 && (() => {
-                const matCost = Object.entries(form.roomWork).reduce((t, [room, works]) => {
-                  const spec = form.roomDetails?.[room] || {};
-                  return t + (works||[]).reduce((rt, w) =>
-                    rt + (w.price ? parseFloat(w.price) : calcItemPrice(w, spec))
-                  , 0);
-                }, 0);
+                // Split: interior rooms vs Add On
+                const ADD_ON_ROOMS = new Set(["Add On", "Others"]);
+                const calcRoomTotal = (room) => {
+                  const works = form.roomWork?.[room] || [];
+                  const spec  = form.roomDetails?.[room] || {};
+                  return works.reduce((t, w) => t + (w.price ? parseFloat(w.price) : calcItemPrice(w, spec)), 0);
+                };
+                const interiorCost = Object.keys(form.roomWork||{})
+                  .filter(r => !ADD_ON_ROOMS.has(r))
+                  .reduce((t, r) => t + calcRoomTotal(r), 0);
+                const addOnCost = Object.keys(form.roomWork||{})
+                  .filter(r => ADD_ON_ROOMS.has(r))
+                  .reduce((t, r) => t + calcRoomTotal(r), 0);
+                const matCost = interiorCost + addOnCost;
                 const labourMult = 1 + (form.labourPct != null ? form.labourPct : 50)/100;
+                const interiorWithLabour = Math.round(interiorCost * labourMult);
+                const addOnWithLabour    = Math.round(addOnCost * labourMult);
                 const withLabour = Math.round(matCost * labourMult);
                 return matCost > 0 ? (
-                  <div className="glass" style={{ borderRadius:12, padding:"14px 18px", marginBottom:20, border:"1px solid rgba(255,255,255,0.12)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <div>
-                      <div style={{ fontSize:12, fontWeight:700, color:"#FF453A", letterSpacing:1 }}>AUTO-CALCULATED FROM MATERIALS</div>
-                      <div style={{ fontSize:13, color:"rgba(255,255,255,0.5)", marginTop:4 }}>Material cost {fmt(Math.round(matCost))} + Labour ({form.labourPct||50}%) = <strong style={{ color:"#0A84FF" }}>{fmt(withLabour)}</strong></div>
+                  <div className="glass" style={{ borderRadius:12, padding:"14px 18px", marginBottom:20, border:"1px solid rgba(255,255,255,0.12)" }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#FF453A", letterSpacing:1, marginBottom:10 }}>AUTO-CALCULATED FROM MATERIALS</div>
+                    {/* Interior breakdown */}
+                    {interiorCost > 0 && (
+                      <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, color:"rgba(255,255,255,0.6)", marginBottom:6 }}>
+                        <span>Interior Works (material + {form.labourPct||50}% labour)</span>
+                        <strong style={{ color:"#0A84FF" }}>{fmt(interiorWithLabour)}</strong>
+                      </div>
+                    )}
+                    {/* Add On breakdown */}
+                    {addOnCost > 0 && (
+                      <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, color:"rgba(255,255,255,0.6)", marginBottom:6 }}>
+                        <span>Add On — Others (material + {form.labourPct||50}% labour)</span>
+                        <strong style={{ color:"#FF9F0A" }}>{fmt(addOnWithLabour)}</strong>
+                      </div>
+                    )}
+                    {/* Divider + Grand Total */}
+                    <div style={{ borderTop:"1px solid rgba(255,255,255,0.12)", marginTop:8, paddingTop:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <span style={{ fontSize:13, color:"rgba(255,255,255,0.5)" }}>Total</span>
+                      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                        <strong style={{ color:"#0A84FF", fontSize:16 }}>{fmt(withLabour)}</strong>
+                        <button style={{ ...S.btn(), fontSize:11, padding:"6px 14px" }}
+                          onClick={() => {
+                            setF("previousQuotation", withLabour.toString());
+                            setF("quotation", withLabour.toString());
+                            setF("revisedQuotation", withLabour.toString());
+                          }}>
+                          ↓ Use This
+                        </button>
+                      </div>
                     </div>
-                    <button style={{ ...S.btn(), fontSize:11, padding:"8px 16px" }}
-                      onClick={() => {
-                        setF("previousQuotation", withLabour.toString());
-                        setF("quotation", withLabour.toString());
-                        setF("revisedQuotation", withLabour.toString());
-                      }}>
-                      ↓ Use This
-                    </button>
                   </div>
                 ) : null;
               })()}
