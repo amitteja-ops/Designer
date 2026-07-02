@@ -1593,7 +1593,7 @@ Hyderabad`);
               </div>
             </div>
           )}
-          {selected.referralCode && (
+          {selected.referralCode && selected.status==="Active" && (
             <div style={{ background:"rgba(48,209,88,0.15)", borderRadius:3, padding:"14px 18px", margin:"8px 0", border:"1px solid #86EFAC" }}>
               <div style={{ fontSize:10, fontWeight:700, color:"#30D158", letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>🎁 Your Referral Code</div>
               <div style={{ fontSize:24, fontWeight:800, letterSpacing:5, color:"#30D158", fontFamily:"monospace", marginBottom:8 }}>{selected.referralCode}</div>
@@ -4529,7 +4529,8 @@ Dimension rules:
                   </Field>
                 </div>
 
-                {/* This client's own referral code */}
+                {/* This client's own referral code — only shown when Active */}
+                {form.status === "Active" && (
                 <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"14px 18px", marginBottom:20, border:"1px solid rgba(255,255,255,0.12)" }}>
                   <div style={{ fontSize:10, fontWeight:700, color:"#0A84FF", letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>
                     This Client's Referral Code
@@ -4547,6 +4548,7 @@ Dimension rules:
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Client Portal Access Code */}
                 <div style={{ marginBottom:20 }}>
