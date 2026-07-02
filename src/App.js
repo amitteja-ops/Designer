@@ -1550,7 +1550,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                 {/* Notes paragraph if any discussion notes */}
                 {discussions.length>0 && (
                   <div style={{ marginTop:16,fontSize:12,lineHeight:1.8,color:"#6b7280",
-                    padding:"10px 14px",background:"#f8fafc",borderRadius:6,
+                    padding:"10px 14px",background:"#f8fafc",
                     borderLeft:"3px solid #93c5fd" }}>
                     <strong style={{ color:"#374151" }}>Designer's Notes:</strong>{" "}
                     {discussions.slice(0,5).join(" ")}
@@ -1766,9 +1766,10 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                     </>
                   )}
                   <div style={{ display:"flex",justifyContent:"space-between",
-                    background:"#dbeafe",padding:"12px 16px",borderRadius:6,marginTop:8 }}>
-                    <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Final Quotation</span>
-                    <strong style={{ color:C.teal,fontSize:16 }}>{fmt(finalQuote)}</strong>
+                    background:"#dbeafe",borderTop:"2px solid #1e3a5f",
+                    padding:"12px 16px",marginTop:8 }}>
+                    <span style={{ fontWeight:700,color:"#1e3a5f",fontSize:14 }}>Final Quotation</span>
+                    <strong style={{ color:"#1e3a5f",fontSize:16 }}>{fmt(effectiveQuote)}</strong>
                   </div>
                 </div>
               );
@@ -1819,7 +1820,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
           </div>
           {!includeAddOn && addOnQuote>0 && (
             <div style={{ marginTop:8,padding:"8px 12px",background:"#fffbf0",
-              borderRadius:6,border:"1px solid #fde68a",fontSize:12,color:"#92400e" }}>
+              border:"1px solid #fde68a",fontSize:12,color:"#92400e" }}>
               ℹ Add On (₹{addOnQuote.toLocaleString("en-IN")}) excluded — see Annexure
             </div>
           )}
@@ -2166,7 +2167,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
 
             {/* Estimated total if Add On included */}
             <div style={{ marginTop:16,padding:"16px 20px",
-              background:"#fffbf0",border:"2px solid #FF9F0A",borderRadius:8 }}>
+              background:"#fffbf0",border:"2px solid #FF9F0A" }}>
               <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
                 marginBottom:8 }}>
                 <span style={{ fontSize:13,color:"#374151" }}>
