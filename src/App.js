@@ -1298,39 +1298,39 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;600;700;800&display=swap');
     @media print {
       .no-print { display:none!important; }
-      body { background:#fff!important; margin:0; }
+      body, html { background:#fff!important; margin:0; color:#0F1923!important; }
       @page { margin:15mm 12mm; size:A4 portrait; }
       table { page-break-inside:auto!important; width:100%!important; border-collapse:collapse!important; }
       tr    { page-break-inside:avoid!important; }
       .page-row { page-break-inside:avoid!important; }
       .page-section { page-break-inside:avoid!important; }
 
-      /* CRITICAL: Strip ALL backgrounds and border-radius on print
-         This prevents WebKit from generating clipping mask triangles */
-      * {
-        background:transparent!important;
+      /* Strip only backgrounds and border-radius — keep all text colors */
+      div, span, p, td, th, strong, section, article, header, footer {
         background-color:transparent!important;
         background-image:none!important;
         border-radius:0!important;
         box-shadow:none!important;
       }
-      body, html { background:#fff!important; }
 
-      /* Restore readable styling using only borders and text color */
-      .room-hdr-interior span,
-      .room-hdr-interior strong { color:#1e3a5f!important; font-weight:700!important; }
-      .room-hdr-interior { border-bottom:2px solid #1e3a5f!important; padding:6px 12px!important; }
+      /* Room headers — border-only styling */
+      .room-hdr-interior { border-top:2px solid #1e3a5f!important; border-bottom:1px solid #1e3a5f!important; padding:6px 12px!important; }
+      .room-hdr-interior span  { color:#1e3a5f!important; font-weight:700!important; }
+      .room-hdr-interior strong{ color:#1e3a5f!important; font-weight:700!important; }
 
-      .room-hdr-addon span,
-      .room-hdr-addon strong { color:#92400e!important; font-weight:700!important; }
-      .room-hdr-addon { border-bottom:2px solid #92400e!important; padding:6px 12px!important; }
+      .room-hdr-addon { border-top:2px solid #92400e!important; border-bottom:1px solid #92400e!important; padding:6px 12px!important; }
+      .room-hdr-addon span  { color:#92400e!important; font-weight:700!important; }
+      .room-hdr-addon strong{ color:#92400e!important; font-weight:700!important; }
 
-      .section-hdr-dark th { color:#1e3a5f!important; font-weight:700!important; }
-      .section-hdr-dark { border-bottom:2px solid #1e3a5f!important; }
+      /* Table headers */
+      .section-hdr-dark th { color:#1e3a5f!important; font-weight:700!important; border-bottom:2px solid #1e3a5f!important; }
+      th { border-bottom:1px solid #374151!important; }
+      td { border-bottom:1px solid #e5e7eb!important; }
 
-      /* Table borders for readability */
-      th, td { border-bottom:1px solid #e5e7eb!important; }
-      th { font-weight:700!important; color:#1e3a5f!important; }
+      /* Ensure all text is visible */
+      * { color:#0F1923!important; }
+      strong { color:#0F1923!important; font-weight:700!important; }
+      a { color:#1e3a5f!important; }
     }
   `;
 
