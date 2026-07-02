@@ -237,6 +237,13 @@ const DEFAULT_ROOM_WORK = {
     {id:2, product:"Bathroom Accessories",    type:"Service",     height:"",   width:"",   qty:"1", matType:"",        brand:"", notes:"", price:""},
     {id:3, product:"Bathroom Lighting",       type:"Service",     height:"",   width:"",   qty:"1", matType:"lights",  brand:"Gola Profile", notes:"", price:""},
   ],
+  "Others": [
+    {id:1, product:"Electrical",             type:"Service",   height:"", width:"", qty:"1",  matType:"",       brand:"",                   notes:"", price:""},
+    {id:2, product:"Channels & Accessories", type:"Channels",  height:"", width:"", qty:"1",  matType:"hardware",brand:"Hettich KA5632 250mm Black Coated", notes:"", price:""},
+    {id:3, product:"Small Drawers",          type:"Drawer",    height:"", width:"", qty:"15", matType:"hardware",brand:"Hettich KA5632 250mm Black Coated", notes:"", price:""},
+    {id:4, product:"Medium Drawers",         type:"Drawer",    height:"", width:"", qty:"10", matType:"hardware",brand:"Hettich KA5632 250mm Black Coated", notes:"", price:""},
+    {id:5, product:"Transport & Cleaning",   type:"Transport", height:"", width:"", qty:"1",  matType:"",       brand:"",                   notes:"", price:""},
+  ],
   "Additional Accessories": [
     {id:1,  product:"Balcony Wooden PVC Ceiling",        type:"PVC Ceiling",  height:"",   width:"",  qty:"1",  matType:"ceiling", brand:"Saint Gobain Gyproc", notes:"", price:""},
     {id:2,  product:"Mesh Doors",                         type:"Service",      height:"",   width:"",  qty:"1",  matType:"",        brand:"",                   notes:"", price:""},
@@ -1903,7 +1910,13 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
         console.warn("Full select failed, retrying without new columns:", schemaErr.message);
         rows = await safeCall(t => sb(`${TABLE}?select=*&order=created_at.desc`, "GET", null, t));
       }
-      setCustomers((rows||[]).map(r => { try { return fromRow(r); } catch(e) { console.error("fromRow error:", e, r); return null; } }).filter(Boolean));
+      const mergeRooms = (c) => {
+        const saved = c.rooms || [];
+        const allForType = PROPERTY_ROOMS_MAP[c.propertyType||"3 BHK"] || saved;
+        const newRooms = allForType.filter(r => !saved.includes(r));
+        return newRooms.length ? { ...c, rooms: [...saved, ...newRooms] } : c;
+      };
+      setCustomers((rows||[]).map(r => { try { return mergeRooms(fromRow(r)); } catch(e) { console.error("fromRow error:", e, r); return null; } }).filter(Boolean));
       setConnected(true);
     } catch(e) {
       setConnected(false);
@@ -2186,15 +2199,7 @@ High Rise Interiors, Hyderabad`
       roomWork:          c.roomWork          || {},
       inventory:         c.inventory         || {},
       auditLog:          c.auditLog          || [],
-      // Merge saved room selection with any new rooms added since last save
-      // (preserves existing selection, adds new rooms like "Additional Accessories")
-      rooms: (() => {
-        const saved = c.rooms || [];
-        const allForType = PROPERTY_ROOMS_MAP[c.propertyType||"3 BHK"] || saved;
-        // Add any new rooms from the map that aren't in saved yet
-        const newRooms = allForType.filter(r => !saved.includes(r));
-        return [...saved, ...newRooms];
-      })(),
+      rooms: c.rooms || [],  // already merged by fetchCustomers
       customRooms:       c.customRooms       || [],
       labourPct:         c.labourPct         != null ? c.labourPct : 50,
       rebateType:        c.rebateType        || "amount",
