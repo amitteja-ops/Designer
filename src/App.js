@@ -1289,255 +1289,257 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
                       fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",
                       fontFamily:"'DM Sans',sans-serif" }),
   };
-    return (
-    <div style={{ background:"#fff",minHeight:"100vh",
-                  fontFamily:"'DM Sans',system-ui,sans-serif",
-                  color:"#0F1923",paddingBottom:60 }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
-      <div className="np" style={{ background:"rgba(6,8,18,0.85)",padding:"12px 36px",display:"flex",gap:12,alignItems:"center",borderBottom:`3px solid ${C.teal}` }}>
-        <button onClick={()=>setView("detail")} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>← Back</button>
-        <button onClick={()=>window.print()} style={S.btn()}>🖨 Print / Save PDF</button>
-        <button onClick={()=>{
-          const subject = encodeURIComponent(`High Rise Interiors — Project Report for ${selected.name}`);
-          const body = encodeURIComponent(`Dear ${selected.name},
 
-Please find your project summary report attached.
+  // ── Print styles ─────────────────────────────────────────────────────
+  const printStyle = `
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;600;700;800&display=swap');
+    @media print {
+      .no-print { display:none!important; }
+      body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      @page { margin:18mm 14mm; size:A4; }
+      table { page-break-inside:auto; }
+      tr, .page-row { page-break-inside:avoid; page-break-after:auto; }
+      .page-section { page-break-inside:avoid; }
+    }
+  `;
 
-Project: ${selected.projectType} at ${selected.address||"your location"}
-Quotation: ${selected.quotation?"₹"+Number(selected.quotation).toLocaleString("en-IN"):"TBD"}
+  // ── Helpers ───────────────────────────────────────────────────────────
+  const lp          = selected.labourPct != null ? selected.labourPct : 50;
+  const labourMult  = 1 + lp/100;
+  const ADD_ON_ROOMS = new Set(["Add On"]);
+  const calcRoom = (room) => {
+    const works = selected.roomWork?.[room]||[];
+    const spec  = selected.roomDetails?.[room]||{};
+    return works.reduce((rt,w)=>rt+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
+  };
+  const rooms = selected.rooms||[];
+  const rawInterior = rooms.filter(r=>!ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
+  const rawAddOn    = rooms.filter(r=> ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
+  const rawTotal    = rawInterior + rawAddOn;
+  const finalQuote  = parseFloat(selected.quotation)||0;
+  // Scale room cost to final quotation (which includes labour)
+  const roomQuoteAmt = (room) => rawTotal>0 ? Math.round(finalQuote*(calcRoom(room)/rawTotal)) : 0;
 
-Kindly review and sign.
+  return (
+    <div style={{ background:"#fff", minHeight:"100vh",
+      fontFamily:"'DM Sans',system-ui,sans-serif", color:"#0F1923" }}>
+      <style>{printStyle}</style>
 
-Warm regards,
-High Rise Interiors
-Hyderabad`);
-          const ml = document.createElement("a");
-            ml.href = `mailto:${selected.email||""}?subject=${subject}&body=${body}`;
-            ml.style.display = "none";
-            document.body.appendChild(ml);
-            ml.click();
-            setTimeout(() => document.body.removeChild(ml), 500);
-        }} className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}>📧 Email Client</button>
-        <span style={{ color:"#6b7280",fontSize:11,marginLeft:"auto" }}>
-          {signatures.client&&signatures.hri?"✓ Both signed — ready to print"
-            :signatures.client?"Client signed — awaiting HRI"
-            :signatures.hri?"HRI signed — awaiting client"
-            :"Sign below before printing"}
-        </span>
-      </div>
-      <div style={{ background:"#060812",padding:"28px 48px",marginBottom:36,borderBottom:`3px solid ${C.teal}` }}>
-        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
-          <div>
-            <div style={{ color:"#fff",fontSize:20,fontWeight:700,letterSpacing:4,textTransform:"uppercase",fontFamily:"'DM Sans',sans-serif" }}>High Rise Interiors</div>
-            <div style={{ color:C.teal,fontSize:10,letterSpacing:5,marginTop:6,textTransform:"uppercase" }}>Project Summary Report</div>
-          </div>
-          <div style={{ textAlign:"right",color:"#6b7280",fontSize:11,letterSpacing:1 }}><div>{d}</div><div style={{ color:"#fff",fontSize:11,marginTop:4 }}>CONFIDENTIAL</div></div>
+      {/* Print / Close buttons */}
+      <div className="no-print" style={{ position:"sticky",top:0,zIndex:100,
+        background:"rgba(255,255,255,0.96)",backdropFilter:"blur(8px)",
+        borderBottom:"1px solid #e5e7eb",padding:"10px 24px",
+        display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+        <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>
+          📄 Client Report — {selected.name}
+        </div>
+        <div style={{ display:"flex",gap:8 }}>
+          <button className="no-print" style={{ ...S.btn(),fontSize:11,padding:"7px 16px" }}
+            onClick={()=>window.print()}>🖨 Print / Save PDF</button>
+          <button className="no-print" style={{ ...S.btn("ghost"),fontSize:11,padding:"7px 14px" }}
+            onClick={()=>setView("list")}>✕ Close</button>
         </div>
       </div>
-      <div style={{ maxWidth:820,margin:"0 auto",padding:"0 48px" }}>
-        {/* Client */}
-        <div style={{ marginBottom:32 }}>
-          <div style={RS.sTitle}>Client Information</div>
-          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 32px" }}>
-            {[["Client Name",selected.name],["Phone",selected.phone],["Email",selected.email],["Project Type",selected.projectType],["Address",selected.address],["Style",selected.style],["Start Date",selected.startDate],["Duration",selected.timeline]].filter(([,v])=>v).map(([l,v])=>(
-              <div key={l} style={RS.row}><span style={{ color:"#6b7280" }}>{l}</span><strong>{v}</strong></div>
+
+      <div style={{ maxWidth:820, margin:"0 auto", padding:"32px 40px" }}>
+
+        {/* ── HEADER ────────────────────────────────────────────────── */}
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",
+          marginBottom:32,paddingBottom:20,borderBottom:`3px solid ${C.teal}` }}>
+          <div>
+            <div style={{ fontSize:22,fontWeight:800,color:"#0F1923",letterSpacing:-0.5 }}>
+              HIGH RISE INTERIORS
+            </div>
+            <div style={{ fontSize:11,color:"#6b7280",letterSpacing:2,textTransform:"uppercase",marginTop:2 }}>
+              Interior Design Proposal
+            </div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:11,color:"#6b7280" }}>Date: {d}</div>
+            {selected.quotation && (
+              <div style={{ fontSize:18,fontWeight:800,color:C.teal,marginTop:4 }}>
+                {fmt(finalQuote)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── 1. CLIENT INFORMATION ─────────────────────────────────── */}
+        <div style={{ marginBottom:32 }} className="page-section">
+          <div style={RS.sTitle}>1. Client Information</div>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 24px" }}>
+            {[
+              ["Client Name",      selected.name],
+              ["Phone",            selected.phone],
+              ["Email",            selected.email],
+              ["Address",          selected.address],
+              ["Property Type",    selected.propertyType],
+              ["Project Style",    selected.style],
+              ["Project Timeline", selected.timeline||"120 Days"],
+              ["Start Date",       selected.startDate],
+            ].filter(([,v])=>v).map(([label,val])=>(
+              <div key={label} style={RS.row}>
+                <span style={{ color:"#6b7280",fontSize:12 }}>{label}</span>
+                <span style={{ fontWeight:600,fontSize:12,textAlign:"right",maxWidth:"55%" }}>{val}</span>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* ── Project Timeline ── */}
-        <div style={{ marginBottom:32 }}>
-          <div style={RS.sTitle}>Project Timeline</div>
-          {(()=>{
-            const total = parseInt(selected.timeline)||60;
-            const start = selected.startDate ? new Date(selected.startDate) : null;
-            const plan  = selected.projectPlan||{};
-            const getD  = (pct) => Math.max(1,Math.round(pct/100*total)+1);
-            const getDur= (pct) => Math.max(1,Math.round(pct/100*total));
-            const fmtDate = (dayOff) => {
-              if(!start) return `Day ${dayOff}`;
-              const d=new Date(start); d.setDate(d.getDate()+dayOff-1);
-              return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
-            };
-            const STATUS_DOT = {"Not Started":"#d1d5db","In Progress":"#0A84FF","Completed":"#30D158","On Hold":"#FF453A"};
-            return (
+        {/* ── 2. PROJECT SUMMARY ────────────────────────────────────── */}
+        <div style={{ marginBottom:32 }} className="page-section">
+          <div style={RS.sTitle}>2. Project Summary</div>
+          <div style={{ background:"#f8fafc",borderRadius:8,padding:"16px 20px",
+            fontSize:13,lineHeight:2,color:"#374151",border:"1px solid #e2e8f0" }}>
+            {selected.notes ? (
               <div>
-                {start&&<div style={{fontSize:12,color:"#6b7280",marginBottom:12}}>Project Duration: {total} working days · Start: {start.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</div>}
-                {PROJECT_PHASES.map((ph,i)=>{
-                  const st  = plan[ph.id]?.status||"Not Started";
-                  const sd  = getD(ph.startPct);
-                  const dur = getDur(ph.durPct);
-                  const barL= (ph.startPct)+'%';
-                  const barW= (ph.durPct)+'%';
-                  return (
-                    <div key={ph.id} style={{display:"grid",gridTemplateColumns:"20px 180px 1fr 100px",gap:8,alignItems:"center",marginBottom:6}}>
-                      <span style={{fontSize:13}}>{ph.icon}</span>
-                      <span style={{fontSize:12,fontWeight:600,color:"#374151"}}>{ph.name}</span>
-                      <div style={{position:"relative",height:10,background:"#f3f4f6",borderRadius:5,overflow:"hidden"}}>
-                        <div style={{position:"absolute",left:barL,width:barW,height:"100%",borderRadius:5,
-                          background:st==="Completed"?"#30D158":st==="In Progress"?ph.color:"#d1d5db"}}/>
-                      </div>
-                      <span style={{fontSize:10,color:"#6b7280",textAlign:"right"}}>{fmtDate(sd)} → {fmtDate(sd+dur-1)}</span>
-                    </div>
-                  );
-                })}
-                {/* Payment milestones */}
-                <div style={{marginTop:16,padding:"12px 16px",background:"#f9fafb",borderRadius:6,border:"1px solid #e5e7eb"}}>
-                  <div style={{fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",color:"#6b7280",marginBottom:8}}>Payment Schedule</div>
-                  {buildPaymentSchedule(total, selected.quotation).map((p,i)=>(
-                    <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4,color:"#374151"}}>
-                      <span><strong>{p.label} ({p.pct}%)</strong> — {p.when}</span>
-                      <span style={{fontWeight:700,color:"#0F1923"}}>{p.amount>0?`₹${p.amount.toLocaleString("en-IN")}`:""}</span>
-                    </div>
-                  ))}
-                </div>
+                {discussions.length>0
+                  ? discussions.join(" ").slice(0,500)
+                  : `High Rise Interiors is pleased to present this proposal for the interior design
+                     of ${selected.name}'s ${selected.propertyType||"home"} at ${selected.address||"your property"}.
+                     The project encompasses ${rooms.filter(r=>calcRoom(r)>0).length} rooms/areas,
+                     styled in a ${selected.style||"contemporary"} aesthetic, with a planned timeline
+                     of ${selected.timeline||"120 days"}.
+                     Our team will handle all aspects of carpentry, modular units, ceiling work, and
+                     finish selection, ensuring every detail aligns with the agreed scope and budget.`
+                }
               </div>
-            );
-          })()}
+            ) : (
+              <div>
+                High Rise Interiors is pleased to present this proposal for the interior design
+                of <strong>{selected.name}</strong>'s {selected.propertyType||"home"}{selected.address?` at ${selected.address}`:""}.
+                The project covers {rooms.filter(r=>calcRoom(r)>0).length} rooms/areas,
+                styled in a <strong>{selected.style||"contemporary"}</strong> aesthetic, with a planned
+                timeline of <strong>{selected.timeline||"120 days"}</strong>.
+                Our team will handle all aspects of carpentry, modular units, ceiling work, and
+                finish selection, ensuring every detail aligns with the agreed scope and budget.
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Scope — Room wise Products & Materials */}
-        <div style={{ marginBottom:32 }}>
-          <div style={RS.sTitle}>Scope of Work</div>
-          {(selected.rooms||[]).length>0 ? (
+        {/* ── 3. SCOPE OF WORK ──────────────────────────────────────── */}
+        <div style={{ marginBottom:32 }} className="page-section">
+          <div style={RS.sTitle}>3. Scope of Work</div>
+          {rooms.length>0 ? (
             <div>
-              {selected.rooms.map((r,i) => {
+              {rooms.map((r)=>{
                 const works = (selected.roomWork?.[r]||[]).filter(w=>w.product);
                 if (!works.length) return null;
+                const rAmt   = roomQuoteAmt(r);
+                const isAddon = ADD_ON_ROOMS.has(r);
                 return (
-                  <div key={r} style={{ marginBottom:16, border:"1px solid #e5e7eb", borderRadius:8, overflow:"hidden" }}>
-                    {/* Room header */}
-                    <div style={{ padding:"8px 14px", background:"#0F1923", display:"flex", justifyContent:"space-between" }}>
-                      <span style={{ fontWeight:700, fontSize:13, color:"#fff" }}>🏠 {r}</span>
+                  <div key={r} className="page-row" style={{ marginBottom:12,
+                    border:"1px solid #e5e7eb", borderRadius:6, overflow:"hidden" }}>
+                    {/* Room header with cost */}
+                    <div style={{ padding:"9px 14px", display:"flex",
+                      justifyContent:"space-between", alignItems:"center",
+                      background: isAddon ? "#1c1408" : "#0F1923" }}>
+                      <span style={{ fontWeight:700,fontSize:13,color:"#fff" }}>🏠 {r}</span>
+                      {finalQuote>0 && (
+                        <span style={{ fontWeight:700,fontSize:13,
+                          color: isAddon?"#FF9F0A":C.teal }}>
+                          {fmt(rAmt)}
+                        </span>
+                      )}
                     </div>
                     {/* Column headers */}
-                    <div style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr", gap:0,
-                      background:"#f3f4f6", padding:"7px 14px" }}>
-                      {["Product / Type","Material","Qty / Area"].map(h=>(
-                        <div key={h} style={{ fontSize:10, fontWeight:700, color:"#6b7280", letterSpacing:1, textTransform:"uppercase" }}>{h}</div>
+                    <div style={{ display:"grid",
+                      gridTemplateColumns:"2.5fr 1.2fr 0.8fr 0.7fr 1fr", gap:0,
+                      background:"#f3f4f6", padding:"6px 14px" }}>
+                      {["Product","Type","H × W","Qty","Brand"].map(h=>(
+                        <div key={h} style={{ fontSize:9,fontWeight:700,
+                          color:"#6b7280",letterSpacing:1,textTransform:"uppercase" }}>{h}</div>
                       ))}
                     </div>
-                    {/* Work rows */}
+                    {/* Line items */}
                     {works.map((w,wi)=>{
-                      const sqft = w.height&&w.width ? (parseFloat(w.height)*parseFloat(w.width)).toFixed(1) : null;
-                      const isQty = QTY_TYPES && QTY_TYPES.has(w.type);
-                      const qtyDisplay = isQty ? `${w.qty||1} units` : sqft ? `${sqft} sq ft` : "—";
+                      const sqft = w.height&&w.width
+                        ? `${w.height}×${w.width} (${(parseFloat(w.height)*parseFloat(w.width)).toFixed(1)} sft)`
+                        : "—";
+                      const isQtyType = QTY_TYPES && QTY_TYPES.has(w.type);
+                      const qty = parseFloat(w.qty)||1;
                       return (
-                        <div key={wi} style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr", gap:0,
-                          padding:"8px 14px", borderTop:"1px solid #f3f4f6",
+                        <div key={wi} className="page-row" style={{
+                          display:"grid",
+                          gridTemplateColumns:"2.5fr 1.2fr 0.8fr 0.7fr 1fr",
+                          padding:"7px 14px",
+                          borderTop:"1px solid #f3f4f6",
                           background:wi%2===0?"#fff":"#f9fafb" }}>
                           <div>
-                            <div style={{ fontWeight:600, fontSize:13, color:"#0F1923" }}>{w.product}</div>
-                            <div style={{ fontSize:11, color:"#6b7280", marginTop:1 }}>{w.type}{w.notes?` · ${w.notes}`:""}</div>
+                            <div style={{ fontWeight:600,fontSize:12,color:"#0F1923" }}>{w.product}</div>
+                            {w.notes&&<div style={{ fontSize:10,color:"#9ca3af" }}>{w.notes}</div>}
                           </div>
-                          <div style={{ fontSize:12, color:"#374151" }}>{w.brand||"—"}</div>
-                          <div style={{ fontSize:12, color:"#374151", fontWeight:600 }}>{qtyDisplay}</div>
+                          <div style={{ fontSize:11,color:"#6b7280" }}>{w.type}</div>
+                          <div style={{ fontSize:11,color:"#374151" }}>
+                            {isQtyType?"—":sqft}
+                          </div>
+                          <div style={{ fontSize:11,fontWeight:700,
+                            color:qty>1?"#FF9F0A":"#374151" }}>×{qty}</div>
+                          <div style={{ fontSize:11,color:"#374151" }}>{w.brand||"—"}</div>
                         </div>
                       );
                     })}
                   </div>
                 );
               })}
-              
             </div>
           ) : (
-            <div style={{ color:"#6b7280", fontSize:13 }}>No rooms selected</div>
-          )}
-          {/* Scope notes */}
-          {scopeLines.length>0 && (
-            <div style={{ marginTop:16 }}>
-              <div style={{ fontSize:11, letterSpacing:2, color:"#6b7280", textTransform:"uppercase", marginBottom:8 }}>Work Description</div>
-              {scopeLines.map((l,i)=><div key={i} style={RS.bullet}>• {l}</div>)}
-            </div>
-          )}
-
-          {/* Room Photos in Client Report */}
-          {(selected.rooms||[]).some(r=>(selected.roomDetails?.[r]?.photos||[]).length>0) && (
-            <div style={{ marginTop:20 }}>
-              <div style={{ fontSize:11, letterSpacing:2, color:"#6b7280", textTransform:"uppercase", marginBottom:14 }}>Room Reference Photos</div>
-              {(selected.rooms||[]).map(r => {
-                const photos = selected.roomDetails?.[r]?.photos||[];
-                if (!photos.length) return null;
-                  return (
-                  <div key={r} style={{ marginBottom:20 }}>
-                    <div style={{ fontSize:12, fontWeight:700, color:C.teal, marginBottom:8 }}>🏠 {r}</div>
-                    <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                      {photos.map((p,i)=>(
-                        <div key={i}>
-                          <img src={p} alt={`${r} ${i+1}`} style={{ width:140, height:105,
-                            objectFit:"cover", borderRadius:3, border:"1px solid #e5e7eb" }}/>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <div style={{ color:"#6b7280",fontSize:13 }}>No rooms selected.</div>
           )}
         </div>
 
-        {/* Room-wise Materials & Cost — show brand/qty, hide rates */}
-                {/* Material Specifications — hidden per user preference */}
-        {false && selected.roomWork && Object.keys(selected.roomWork).length > 0 && (
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Material Specifications by Room</div>
-            {(selected.rooms||Object.keys(selected.roomWork)).map((room, ri) => {
-              const works = (selected.roomWork?.[room]||[]).filter(w=>w.product);
-              if (!works.length) return null;
-              const spec     = selected.roomDetails?.[room] || {};
-              const roomCost = works.reduce((t,w)=>t+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
-              return (
-                <div key={room} style={{ marginBottom:16, border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                    background:"#060812", padding:"10px 16px" }}>
-                    <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
-                    {roomCost>0 && <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{fmt(roomCost)}</span>}
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr",
-                    padding:"6px 14px", background:"#2A3A4A",
-                    fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
-                    <span>Product</span><span>Type</span><span>H×W / Sqft</span><span>Qty</span><span>Amount</span>
-                  </div>
-                  {works.map((w, i) => {
-                    const sqft = w.height&&w.width ? (parseFloat(w.height)*parseFloat(w.width)).toFixed(1) : null;
-                    const isQty = QTY_TYPES.has(w.type);
-                    const qty  = parseFloat(w.qty)||1;
-                    const amt  = w.price ? parseFloat(w.price) : calcItemPrice(w, spec);
-                    return (
-                      <div key={w.id||i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 0.6fr 1fr",
-                        padding:"9px 14px", background:i%2===0?"#ffffff":"#f8f9fa",
-                        borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
-                        <div>
-                          <div style={{ fontSize:12, fontWeight:600, color:"#0F1923" }}>{w.product}</div>
-                          {w.notes&&<div style={{fontSize:10,color:"#9ca3af"}}>{w.notes}</div>}
-                        </div>
-                        <div style={{ fontSize:11, color:"#6b7280" }}>{w.type}</div>
-                        <div style={{ fontSize:11, color:"#374151" }}>
-                          {isQty ? `${qty} units` : sqft ? `${sqft} sft` : "—"}
-                          {w.brand && <div style={{fontSize:10,color:"#9ca3af"}}>{w.brand}</div>}
-                        </div>
-                        <div style={{ fontSize:12, fontWeight:700, color:qty>1?"#FF9F0A":"#374151", textAlign:"center" }}>
-                          ×{qty}
-                        </div>
-                        <div style={{ fontSize:12, fontWeight:700, color:"#0F1923" }}>
-                          {amt>0?fmt(amt):"—"}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-            {/* Grand total — Interior + Add On shown separately */}
+        {/* ── 4. MATERIALS ORDER LIST & SPECIFICATIONS ──────────────── */}
+        <div style={{ marginBottom:32 }} className="page-section">
+          <div style={RS.sTitle}>4. Materials Order List & Specifications</div>
+          {(()=>{
+            const matList = [];
+            rooms.forEach(room=>{
+              const works = selected.roomWork?.[room]||[];
+              const spec  = selected.roomDetails?.[room]||{};
+              works.forEach(w=>{
+                if (!w.product || !w.brand) return;
+                const exists = matList.find(m=>m.matType===w.matType&&m.brand===w.brand);
+                if (!exists) matList.push({ matType:w.matType, brand:w.brand, rooms:[room] });
+                else if (!exists.rooms.includes(room)) exists.rooms.push(room);
+              });
+            });
+            if (!matList.length) return <div style={{ color:"#6b7280",fontSize:13 }}>No material specifications set.</div>;
+            return (
+              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                <thead>
+                  <tr style={{ background:"#0F1923" }}>
+                    {["#","Category","Brand / Specification","Used In"].map(h=>(
+                      <th key={h} style={{ padding:"8px 12px",color:"#fff",fontWeight:700,
+                        fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {matList.map((m,i)=>(
+                    <tr key={i} className="page-row"
+                      style={{ background:i%2===0?"#fff":"#f9fafb",borderBottom:"1px solid #f3f4f6" }}>
+                      <td style={{ padding:"7px 12px",color:"#6b7280",width:28 }}>{i+1}</td>
+                      <td style={{ padding:"7px 12px",fontWeight:700,color:"#374151",
+                        textTransform:"capitalize" }}>{m.matType}</td>
+                      <td style={{ padding:"7px 12px",fontWeight:600,color:"#0F1923" }}>{m.brand}</td>
+                      <td style={{ padding:"7px 12px",color:"#6b7280",fontSize:11 }}>
+                        {m.rooms.join(", ")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            );
+          })()}
+        </div>
 
-          </div>
-        )}
-
-        {/* Included Items */}
+        {/* ── 5. INCLUDED IN SCOPE ──────────────────────────────────── */}
         {includedItems.length>0 && (
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Included in Scope</div>
-            <div style={{ background:"rgba(48,209,88,0.06)",borderRadius:3,padding:"16px 20px",border:"1px solid #bbf7d0" }}>
+          <div style={{ marginBottom:32 }} className="page-section">
+            <div style={RS.sTitle}>5. Included in Scope</div>
+            <div style={{ background:"rgba(48,209,88,0.06)",borderRadius:6,
+              padding:"14px 18px",border:"1px solid #bbf7d0" }}>
               {includedItems.map((l,i)=>{
                 const text = l.replace(/^(✗\s*)?included\s*:\s*/i,"");
                 return <div key={i} style={{ ...RS.bullet,color:"#166534" }}>✓ {text}</div>;
@@ -1546,11 +1548,12 @@ Hyderabad`);
           </div>
         )}
 
-        {/* Out of Scope */}
+        {/* ── 6. OUT OF SCOPE ───────────────────────────────────────── */}
         {outOfScope.length>0 && (
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Out of Scope</div>
-            <div style={{ background:"rgba(255,69,58,0.08)",borderRadius:3,padding:"16px 20px",border:"1px solid #FECACA" }}>
+          <div style={{ marginBottom:32 }} className="page-section">
+            <div style={RS.sTitle}>{includedItems.length>0?"6.":"5."} Out of Scope</div>
+            <div style={{ background:"rgba(255,69,58,0.06)",borderRadius:6,
+              padding:"14px 18px",border:"1px solid #FECACA" }}>
               {outOfScope.map((l,i)=>{
                 const text = l.replace(/^(out of scope|not included|excluded)\s*:?\s*/i,"");
                 return <div key={i} style={{ ...RS.bullet,color:"#7A0000" }}>✗ {text||l}</div>;
@@ -1558,285 +1561,244 @@ Hyderabad`);
             </div>
           </div>
         )}
-        {/* Budget */}
-        <div style={{ marginBottom:32 }}>
-          {/* Cost Breakdown — from final quotation with labour */}
-        {selected.quotation && (
-        <div style={{ marginBottom:24 }}>
-          <div style={RS.sTitle}>Cost Breakdown</div>
-            {(()=>{
-              const finalQuote  = parseFloat(selected.quotation) || 0;
-              const lp          = selected.labourPct != null ? selected.labourPct : 50;
-              const labourMult  = 1 + lp/100;
-              const ADD_ON_ROOMS = new Set(["Add On"]);
-              // Calculate raw material proportions to split the final quotation
-              const calcRoom = (room) => {
-                const works = selected.roomWork?.[room]||[];
-                const spec  = selected.roomDetails?.[room]||{};
-                return works.reduce((rt,w)=>rt+(w.price?parseFloat(w.price):calcItemPrice(w,spec)),0);
-              };
-              const rooms = selected.rooms||Object.keys(selected.roomWork||{});
-              const rawInterior = rooms.filter(r=>!ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
-              const rawAddOn    = rooms.filter(r=> ADD_ON_ROOMS.has(r)).reduce((t,r)=>t+calcRoom(r),0);
-              const rawTotal    = rawInterior + rawAddOn;
-              // Apply proportion of final quotation
-              const interiorAmt = rawTotal>0 ? Math.round(finalQuote * (rawInterior/rawTotal)) : finalQuote;
-              const addOnAmt    = rawTotal>0 ? Math.round(finalQuote * (rawAddOn/rawTotal))    : 0;
-              const grandTotal  = finalQuote;
-              // Per-room amounts scaled from final quotation
-              const roomAmt = (room) => rawTotal>0
-                ? Math.round(finalQuote * (calcRoom(room)/rawTotal))
-                : 0;
 
+        {/* ── 7. COST BREAKDOWN ─────────────────────────────────────── */}
+        {finalQuote>0 && (
+          <div style={{ marginBottom:32 }} className="page-section">
+            <div style={RS.sTitle}>7. Cost Breakdown</div>
+            {(()=>{
               const interiorRooms = rooms.filter(r=>!ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
               const addOnRooms    = rooms.filter(r=> ADD_ON_ROOMS.has(r)&&calcRoom(r)>0);
-
+              const interiorAmt = rawTotal>0?Math.round(finalQuote*(rawInterior/rawTotal)):finalQuote;
+              const addOnAmt    = rawTotal>0?Math.round(finalQuote*(rawAddOn/rawTotal)):0;
               return (
-                <div style={{ marginTop:8 }}>
-                  {/* Interior Works — header row */}
+                <div>
                   {interiorRooms.length>0 && (
                     <>
-                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-                        background:"#0f172a",padding:"8px 18px",marginBottom:2,
-                        borderRadius:"3px 3px 0 0" }}>
-                        <span style={{ fontWeight:700,color:"#fff",fontSize:13,letterSpacing:0.5 }}>
-                          Interior Works
-                        </span>
-                        <strong style={{ fontSize:14,color:C.teal }}>{fmt(interiorAmt)}</strong>
+                      <div style={{ display:"flex",justifyContent:"space-between",
+                        background:"#0f172a",padding:"9px 16px",
+                        borderRadius:"6px 6px 0 0",marginBottom:1 }}>
+                        <span style={{ fontWeight:700,color:"#fff",fontSize:13 }}>Interior Works</span>
+                        <strong style={{ color:C.teal,fontSize:13 }}>{fmt(interiorAmt)}</strong>
                       </div>
-                      {/* Per-room rows */}
-                      {interiorRooms.map((room,i)=>(
-                        <div key={room} style={{ display:"flex",justifyContent:"space-between",
-                          alignItems:"center",background:i%2===0?"#1e293b":"#1a2535",
-                          padding:"7px 18px 7px 30px",
-                          borderBottom:"1px solid rgba(255,255,255,0.05)",
-                          marginBottom: i===interiorRooms.length-1?8:0 }}>
-                          <span style={{ fontSize:12,color:"#94a3b8" }}>🏠 {room}</span>
-                          <span style={{ fontSize:12,fontWeight:600,color:"#64748b" }}>
-                            {fmt(roomAmt(room))}
-                          </span>
+                      {interiorRooms.map((r,i)=>(
+                        <div key={r} className="page-row" style={{ display:"flex",justifyContent:"space-between",
+                          padding:"7px 16px 7px 28px",fontSize:12,
+                          background:i%2===0?"#f8fafc":"#f1f5f9",
+                          borderBottom:"1px solid #e2e8f0" }}>
+                          <span style={{ color:"#374151" }}>🏠 {r}</span>
+                          <span style={{ fontWeight:600,color:"#475569" }}>{fmt(roomQuoteAmt(r))}</span>
                         </div>
                       ))}
                     </>
                   )}
-
-                  {/* Add On — header row */}
                   {addOnRooms.length>0 && (
                     <>
-                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-                        background:"#1c1408",padding:"8px 18px",marginBottom:2,
-                        borderRadius:"3px 3px 0 0",marginTop:4 }}>
-                        <span style={{ fontWeight:700,color:"#fff",fontSize:13,letterSpacing:0.5 }}>
-                          Add On
-                        </span>
-                        <strong style={{ fontSize:14,color:"#FF9F0A" }}>{fmt(addOnAmt)}</strong>
+                      <div style={{ display:"flex",justifyContent:"space-between",
+                        background:"#1c1408",padding:"9px 16px",
+                        borderRadius:"6px 6px 0 0",marginTop:8,marginBottom:1 }}>
+                        <span style={{ fontWeight:700,color:"#fff",fontSize:13 }}>Add On</span>
+                        <strong style={{ color:"#FF9F0A",fontSize:13 }}>{fmt(addOnAmt)}</strong>
                       </div>
-                      {addOnRooms.map((room,i)=>(
-                        <div key={room} style={{ display:"flex",justifyContent:"space-between",
-                          alignItems:"center",background:i%2===0?"#1e293b":"#1a2535",
-                          padding:"7px 18px 7px 30px",
-                          borderBottom:"1px solid rgba(255,255,255,0.05)",
-                          marginBottom: i===addOnRooms.length-1?8:0 }}>
-                          <span style={{ fontSize:12,color:"#94a3b8" }}>🏠 {room}</span>
-                          <span style={{ fontSize:12,fontWeight:600,color:"#64748b" }}>
-                            {fmt(roomAmt(room))}
-                          </span>
+                      {addOnRooms.map((r,i)=>(
+                        <div key={r} className="page-row" style={{ display:"flex",justifyContent:"space-between",
+                          padding:"7px 16px 7px 28px",fontSize:12,
+                          background:i%2===0?"#fffbf0":"#fef9ec",
+                          borderBottom:"1px solid #fde68a" }}>
+                          <span style={{ color:"#374151" }}>🏠 {r}</span>
+                          <span style={{ fontWeight:600,color:"#92400e" }}>{fmt(roomQuoteAmt(r))}</span>
                         </div>
                       ))}
                     </>
                   )}
-
-                  {/* Grand total */}
-                  <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
-                    background:"#0F1923",borderRadius:3,padding:"12px 18px",marginTop:4 }}>
+                  <div style={{ display:"flex",justifyContent:"space-between",
+                    background:"#0F1923",padding:"12px 16px",borderRadius:6,marginTop:8 }}>
                     <span style={{ fontWeight:700,color:"#fff",fontSize:14 }}>Final Quotation</span>
-                    <strong style={{ fontSize:18,color:C.teal }}>{fmt(grandTotal)}</strong>
+                    <strong style={{ color:C.teal,fontSize:16 }}>{fmt(finalQuote)}</strong>
                   </div>
                 </div>
               );
             })()}
-        </div>
+          </div>
         )}
 
-        <div style={RS.sTitle}>Budget Summary</div>
+        {/* ── 8. BUDGET SUMMARY ─────────────────────────────────────── */}
+        <div style={{ marginBottom:32 }} className="page-section">
+          <div style={RS.sTitle}>8. Budget Summary</div>
           {selected.previousQuotation && (
             <div style={RS.row}>
               <span style={{ color:"#6b7280" }}>Previous Quotation</span>
-              <span style={{ textDecoration: selected.revisedQuotation?"line-through":"none", color:"#6b7280" }}>{fmt(selected.previousQuotation)}</span>
+              <span style={{ textDecoration:selected.revisedQuotation?"line-through":"none",
+                color:"#6b7280" }}>{fmt(selected.previousQuotation)}</span>
             </div>
           )}
-          {selected.rebateValue && (
-            <div style={{ background:"rgba(48,209,88,0.15)", borderRadius:3, padding:"10px 14px", margin:"6px 0", border:"1px solid #86EFAC" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <span style={{ color:"#30D158", fontWeight:700 }}>
-                  🎁 Rebate Applied {selected.appliedReferralCode && `(Referral: ${selected.appliedReferralCode})`}
+          {selected.rebateValue && Number(selected.rebateValue)>0 && (
+            <div style={{ background:"rgba(48,209,88,0.08)",borderRadius:6,
+              padding:"10px 14px",margin:"6px 0",border:"1px solid #86EFAC" }}>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                <span style={{ fontSize:13,fontWeight:600,color:"#166534" }}>
+                  {selected.rebateType==="pct"
+                    ? `Rebate / Discount (${selected.rebateValue}%)`
+                    : `Rebate / Discount`}
                 </span>
-                <span style={{ color:"#30D158", fontWeight:700 }}>
-                  - {selected.rebateType==="percent" ? `${selected.rebateValue}%` : fmt(selected.rebateValue)}
-                  {selected.previousQuotation && ` = - ${fmt(selected.rebateType==="percent" ? Math.round(Number(selected.previousQuotation)*Number(selected.rebateValue)/100) : Number(selected.rebateValue))}`}
+                <span style={{ fontWeight:700,color:"#166534" }}>
+                  {selected.rebateType==="pct"
+                    ? `- ${fmt(Math.round((parseFloat(selected.previousQuotation)||0)*(parseFloat(selected.rebateValue)/100)))}`
+                    : `- ${fmt(selected.rebateValue)}`}
                 </span>
-              </div>
-            </div>
-          )}
-          {selected.referralCode && selected.status==="Active" && (
-            <div style={{ background:"rgba(48,209,88,0.15)", borderRadius:3, padding:"14px 18px", margin:"8px 0", border:"1px solid #86EFAC" }}>
-              <div style={{ fontSize:10, fontWeight:700, color:"#30D158", letterSpacing:2, marginBottom:10, textTransform:"uppercase" }}>🎁 Your Referral Code</div>
-              <div style={{ fontSize:24, fontWeight:800, letterSpacing:5, color:"#30D158", fontFamily:"monospace", marginBottom:8 }}>{selected.referralCode}</div>
-              <div style={{ fontSize:12, color:"#30D158", lineHeight:1.9 }}>
-                <div>• Share this code with friends & family</div>
-                <div>• Referred friend gets <strong>5% off</strong> their High Rise Interiors project</div>
-                <div>• You earn <strong>5% cashback</strong> credited on your next payment</div>
               </div>
             </div>
           )}
           {selected.revisedQuotation && (
             <div style={RS.row}>
               <span style={{ color:"#6b7280" }}>Revised Quotation (After Rebate)</span>
-              <span style={{ fontWeight:700, color:C.dark }}>{fmt(selected.revisedQuotation)}</span>
+              <span style={{ fontWeight:600 }}>{fmt(selected.revisedQuotation)}</span>
             </div>
           )}
-          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",background:C.red,borderRadius:12,padding:"16px 20px",marginTop:12 }}>
-            <div>
-              <span style={{ color:"#fff",fontWeight:700,fontSize:16 }}>Final Quotation</span>
-              {selected.appliedReferralCode && <div style={{ color:"#7ECFF0", fontSize:11, marginTop:2 }}>Referral: {selected.appliedReferralCode}</div>}
+          {/* Referral code — Active clients only */}
+          {selected.referralCode && selected.status==="Active" && (
+            <div style={{ background:"rgba(48,209,88,0.1)",borderRadius:6,
+              padding:"12px 16px",margin:"10px 0",border:"1px solid #86EFAC" }}>
+              <div style={{ fontSize:9,fontWeight:700,color:"#30D158",
+                letterSpacing:2,marginBottom:6,textTransform:"uppercase" }}>🎁 Your Referral Code</div>
+              <div style={{ fontSize:22,fontWeight:800,letterSpacing:5,
+                color:"#30D158",fontFamily:"monospace",marginBottom:6 }}>{selected.referralCode}</div>
+              <div style={{ fontSize:12,color:"#30D158",lineHeight:1.9 }}>
+                <div>• Share with friends & family</div>
+                <div>• Referred friend gets <strong>5% off</strong> their project</div>
+                <div>• You earn <strong>5% cashback</strong> on your next payment</div>
+              </div>
             </div>
-            <strong style={{ color:"#fff",fontSize:26 }}>{fmt(selected.quotation)||selected.budget||"TBD"}</strong>
-          </div>
+          )}
         </div>
-        {/* Discussions */}
-        {discussions.length>0 && (
-          <div style={{ marginBottom:32 }}>
-            <div style={RS.sTitle}>Discussions & Notes</div>
-            <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:12,padding:"16px 20px",border:"1px solid #e5e7eb" }}>
-              {discussions.map((l,i)=><div key={i} style={{ ...RS.bullet,marginBottom:4 }}>• {l}</div>)}
-            </div>
-          </div>
-        )}
-        {/* Payment Terms */}
-        <div style={{ marginBottom:32 }}>
-          <div style={RS.sTitle}>Payment Terms & Schedule</div>
-          {buildPaymentSchedule(parseInt(selected.timeline)||120, selected.quotation).map((p,i)=>(
-            <div key={i} style={RS.payRow}>
-              <div style={{ display:"flex",alignItems:"center",gap:14 }}>
-                <div style={{ background:C.red,color:"#fff",borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,flexShrink:0 }}>{i+1}</div>
-                <div>
-                  <div style={{ fontWeight:700,fontSize:13,color:C.teal }}>{p.label} — Day {p.day}</div>
-                  <div style={{ fontSize:12,color:"#6b7280",marginTop:2 }}>{p.pct}% — {p.when}</div>
+
+        {/* ── 9. FINAL QUOTATION ────────────────────────────────────── */}
+        {finalQuote>0 && (
+          <div style={{ marginBottom:32 }} className="page-section">
+            <div style={{ background:`linear-gradient(135deg,${C.teal},#0066cc)`,
+              borderRadius:8,padding:"18px 24px",
+              display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+              <div>
+                <div style={{ fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.7)",
+                  letterSpacing:2,textTransform:"uppercase",marginBottom:4 }}>9. Final Quotation</div>
+                <div style={{ fontSize:12,color:"rgba(255,255,255,0.6)" }}>
+                  Inclusive of materials &amp; labour
                 </div>
               </div>
-              <strong style={{ fontSize:16,color:"#0F1923" }}>{p.amount>0 ? fmt(p.amount) : `${p.pct}%`}</strong>
+              <div style={{ fontSize:28,fontWeight:800,color:"#fff",letterSpacing:-1 }}>
+                {fmt(finalQuote)}
+              </div>
             </div>
-          ))}
-          <div style={{ background:"rgba(255,255,255,0.07)",borderRadius:10,padding:"14px 18px",border:"1px solid #e5e7eb",fontSize:13,lineHeight:2,color:"#4A2A2A",marginTop:12 }}>
-            <div>• Payments via <strong>Bank Transfer / Cheque</strong> in favour of <strong>High Rise Interiors</strong></div>
-            <div>• Work commences only after advance payment (35%) is received</div>
-            <div>• Each phase must be cleared before proceeding to next</div>
-            <div>• GST @ 18% applicable as per government norms</div>
           </div>
-        </div>
-        {/* Disclaimers */}
-        <div style={{ marginBottom:32 }}>
-          <div style={RS.sTitle}>Disclaimers & Terms</div>
-          <div style={{ background:"rgba(255,255,255,0.06)",borderRadius:12,padding:"20px 24px",border:`1.5px solid #E8E0C0`,fontSize:13,lineHeight:2.1,color:"#4A4A2A" }}>
-            <div style={{ background:"rgba(255,69,58,0.08)",border:"1px solid #FECACA",borderRadius:3,padding:"10px 14px",marginBottom:12,color:C.rust,fontWeight:700 }}>
-              🚫 NO REFUND POLICY: All payments are strictly non-refundable once work has commenced.
-            </div>
-            <div>1. <strong>Draft Quotation:</strong> This is a draft and may vary based on final quantity and material selection.</div>
-            <div>2. <strong>Material Prices:</strong> Subject to market fluctuations. Valid for 30 days from date of issue.</div>
-            <div>3. <strong>Scope Changes:</strong> Any additions will be quoted and billed separately with written approval.</div>
-            <div>4. <strong>Timeline:</strong> {selected.timeline||"Agreed duration"} is indicative. Delays due to civil work or approvals not included.</div>
-            <div>5. <strong>Warranty:</strong> 1-year workmanship warranty. Material warranty per manufacturer.</div>
-            <div>6. <strong>Cancellation:</strong> Amounts paid till date are forfeited upon cancellation after commencement.</div>
-            <div>7. <strong>Dispute Resolution:</strong> Subject to jurisdiction of Hyderabad courts only.</div>
-          </div>
-        </div>
-        {/* Sign-on-Screen Pad */}
-        {showSigPad && (
-          <SignaturePad
-            label={showSigPad==="client"?`${selected.name} — Client Signature`:"High Rise Interiors — Authorised Signatory"}
-            onSave={async dataUrl=>{
-              const newSigs = {...signatures, [showSigPad]: dataUrl};
-              setSignatures(newSigs);
-              setShowSigPad(null);
-              // Build audit entry with actual image data for persistence
-              const sigEntry = makeEntry(
-                "signed",
-                `${showSigPad==="client"?selected.name:"High Rise Interiors"} signed the report`,
-                { quotation: selected.quotation, status: selected.status },
-                showSigPad==="client" ? selected.name : "High Rise Interiors",
-                {
-                  clientImg: showSigPad==="client" ? dataUrl : (signatures.client||null),
-                  hriImg:    showSigPad==="hri"    ? dataUrl : (signatures.hri||null),
-                  client:    showSigPad==="client" ? true : !!signatures.client,
-                  hri:       showSigPad==="hri"    ? true : !!signatures.hri,
-                }
-              );
-              const updatedLog = [...(selected.auditLog||[]), sigEntry];
-              try {
-                const tok = JSON.parse(localStorage.getItem("crm_session")||"{}").token;
-                // Save signatures in dedicated column + metadata in audit_log
-                // Strip large image data from audit_log to keep it small
-                const auditForDB = updatedLog.map(e => ({
-                  ...e,
-                  signatures: e.signatures ? {
-                    client: !!e.signatures.clientImg || !!e.signatures.client,
-                    hri:    !!e.signatures.hriImg    || !!e.signatures.hri,
-                  } : undefined
-                }));
-                const sigsForDB = {
-                  clientImg: newSigs.client || null,
-                  hriImg:    newSigs.hri    || null,
-                  savedAt:   new Date().toISOString(),
-                };
-                const res = await fetch(`https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${selected.id}`, {
-                  method:"PATCH",
-                  headers:{
-                    "apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY",
-                    "Authorization":`Bearer ${tok}`,
-                    "Content-Type":"application/json",
-                    "Prefer":"return=minimal"
-                  },
-                  body: JSON.stringify({
-                    audit_log:         JSON.stringify(auditForDB),
-                    client_signatures: JSON.stringify(sigsForDB),
-                  })
-                });
-                if (!res.ok) {
-                  const err = await res.json().catch(()=>({}));
-                  console.error("Signature save HTTP error:", res.status, err);
-                  showToast(`Signature save failed: ${err.message||res.status}`, "error");
-                } else {
-                  showToast("✍ Signature saved", "success");
-                  // Update customers list so signatures reload immediately
-                  setCustomers(prev => prev.map(c =>
-                    c.id===selected.id ? { ...c, auditLog: updatedLog, clientSignatures: sigsForDB } : c
-                  ));
-                }
-              } catch(e) {
-                console.error("Signature save error:", e);
-                showToast("Signature save failed — check connection", "error");
-              }
-            }}
-            onClose={()=>setShowSigPad(null)}
-          />
         )}
-        {/* Signature blocks */}
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:32 }}>
-          <div style={{ borderTop:`2px solid ${C.ink}`,paddingTop:12 }}>
-            <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Client Signature</div>
-            <div style={{ fontSize:14,fontWeight:700,marginBottom:12 }}>{selected.name}</div>
+
+        {/* ── 10. PROJECT TIMELINE ──────────────────────────────────── */}
+        <div style={{ marginBottom:32 }} className="page-section">
+          <div style={RS.sTitle}>10. Project Timeline</div>
+          {(()=>{
+            const total = parseInt(selected.timeline)||120;
+            const start = selected.startDate ? new Date(selected.startDate) : null;
+            const plan  = selected.projectPlan||{};
+            const getD  = (pct) => Math.max(1,Math.round(pct/100*total)+1);
+            const getDur= (pct) => Math.max(1,Math.round(pct/100*total));
+            const PHASES = [
+              {key:"requirements", label:"Requirements & Planning",   from:0,  to:6},
+              {key:"design",       label:"Design Finalisation",       from:6,  to:12},
+              {key:"designFinal",  label:"Design Approval",           from:12, to:18},
+              {key:"ceiling",      label:"Ceiling & Civil Work",      from:18, to:26},
+              {key:"procurement",  label:"Material Procurement",      from:26, to:48},
+              {key:"graniteTiles", label:"Granite & Tiles",           from:48, to:54},
+              {key:"woodFraming",  label:"Wood Framing & Carpentry",  from:54, to:69},
+              {key:"deco",         label:"Decoration & Finishing",    from:69, to:76},
+              {key:"painting",     label:"Painting",                  from:76, to:83},
+              {key:"cleaning",     label:"Site Cleaning",             from:83, to:86},
+              {key:"handover",     label:"Handover",                  from:86, to:87},
+              {key:"cooling",      label:"Settling & Cooling",        from:87, to:100},
+            ];
+            return (
+              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                <thead>
+                  <tr style={{ background:"#0F1923" }}>
+                    {["Phase","Day Start","Duration","Status"].map(h=>(
+                      <th key={h} style={{ padding:"8px 12px",color:"#fff",fontWeight:700,
+                        fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {PHASES.map((ph,i)=>{
+                    const status = plan[ph.key]?.status||"Not Started";
+                    const dot = status==="Completed"?"#30D158":status==="In Progress"?"#0A84FF":"#d1d5db";
+                    const startDay = getD(ph.from);
+                    const dur = getDur(ph.to - ph.from);
+                    const startDate = start ? new Date(start.getTime()+(startDay-1)*86400000)
+                      .toLocaleDateString("en-IN",{day:"numeric",month:"short"}) : `Day ${startDay}`;
+                    return (
+                      <tr key={ph.key} className="page-row"
+                        style={{ background:i%2===0?"#fff":"#f9fafb",borderBottom:"1px solid #f3f4f6" }}>
+                        <td style={{ padding:"7px 12px",fontWeight:600,color:"#0F1923" }}>{ph.label}</td>
+                        <td style={{ padding:"7px 12px",color:"#374151" }}>{startDate}</td>
+                        <td style={{ padding:"7px 12px",color:"#374151" }}>{dur} days</td>
+                        <td style={{ padding:"7px 12px" }}>
+                          <span style={{ display:"inline-flex",alignItems:"center",gap:5,
+                            fontSize:11,fontWeight:600,color:dot }}>
+                            <span style={{ width:7,height:7,borderRadius:"50%",background:dot,
+                              display:"inline-block" }}/>
+                            {status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            );
+          })()}
+        </div>
+
+        {/* ── 11. DISCLAIMERS & TERMS ───────────────────────────────── */}
+        <div style={{ marginBottom:32 }} className="page-section">
+          <div style={RS.sTitle}>11. Disclaimers & Terms</div>
+          <div style={{ fontSize:13,lineHeight:2.1,color:"#374151" }}>
+            <div style={{ marginBottom:6 }}>
+              <strong>1. No Refund Policy:</strong> All payments are strictly non-refundable once work has commenced.
+            </div>
+            <div><strong>2. Draft Quotation:</strong> This is a draft and may vary based on final quantity and material selection.</div>
+            <div><strong>3. Material Prices:</strong> Subject to market fluctuations. Valid for 30 days from date of issue.</div>
+            <div><strong>4. Scope Changes:</strong> Any additions will be quoted and billed separately with written approval.</div>
+            <div><strong>5. Timeline:</strong> {selected.timeline||"Agreed duration"} is indicative. Delays due to civil work or approvals not included.</div>
+            <div><strong>6. Warranty:</strong> 1-year workmanship warranty. Material warranty per manufacturer.</div>
+            <div><strong>7. Cancellation:</strong> Amounts paid till date are forfeited upon cancellation after commencement.</div>
+            <div><strong>8. Dispute Resolution:</strong> Subject to jurisdiction of Hyderabad courts only.</div>
+          </div>
+        </div>
+
+        {/* ── 12. SIGNATURES ────────────────────────────────────────── */}
+        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,marginBottom:32 }}
+          className="page-section">
+          <div style={{ borderTop:`2px solid ${C.teal}`,paddingTop:12 }}>
+            <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,
+              textTransform:"uppercase",marginBottom:6 }}>Client Signature</div>
+            <div style={{ fontSize:14,fontWeight:700,color:"#0F1923",marginBottom:12 }}>
+              {selected.name}
+            </div>
             {signatures.client ? (
               <div>
                 <img src={signatures.client} alt="sig"
-                  style={{ height:80,maxWidth:"100%",border:"1px solid #e5e7eb",borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
-                <div style={{ fontSize:10,color:"#6b7280",marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
-                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
+                  style={{ height:80,maxWidth:"100%",border:"1px solid #e5e7eb",
+                    borderRadius:3,background:"#fff",display:"block" }}/>
+                <div style={{ fontSize:10,color:"#6b7280",marginTop:4 }}>
+                  {new Date().toLocaleDateString("en-IN")}
+                </div>
+                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,
+                  padding:"4px 10px",marginTop:6 }}
                   onClick={()=>setSignatures(s=>({...s,client:null}))}>✕ Clear</button>
               </div>
             ):(
               <div>
                 <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
-                  display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:"#f8f9fa" }}>
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  marginBottom:8,background:"#f8f9fa" }}>
                   <span style={{ fontSize:11,color:"#6b7280" }}>Tap to sign</span>
                 </div>
                 <button className="no-print" style={{ ...S.btn(),fontSize:11,padding:"7px 16px" }}
@@ -1845,38 +1807,127 @@ Hyderabad`);
             )}
           </div>
           <div style={{ borderTop:`2px solid ${C.teal}`,paddingTop:12 }}>
-            <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,textTransform:"uppercase",marginBottom:6 }}>Authorised by</div>
-            <div style={{ fontSize:14,fontWeight:700,color:C.teal,marginBottom:12 }}>High Rise Interiors</div>
+            <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,
+              textTransform:"uppercase",marginBottom:6 }}>Authorised by</div>
+            <div style={{ fontSize:14,fontWeight:700,color:C.teal,marginBottom:12 }}>
+              High Rise Interiors
+            </div>
             {signatures.hri ? (
               <div>
                 <img src={signatures.hri} alt="sig"
-                  style={{ height:80,maxWidth:"100%",border:"1px solid #e5e7eb",borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
-                <div style={{ fontSize:10,color:"#6b7280",marginTop:4 }}>{new Date().toLocaleDateString("en-IN")}</div>
-                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,padding:"4px 10px",marginTop:6 }}
+                  style={{ height:80,maxWidth:"100%",border:"1px solid #e5e7eb",
+                    borderRadius:3,background:"rgba(255,255,255,0.06)",display:"block" }}/>
+                <div style={{ fontSize:10,color:"#6b7280",marginTop:4 }}>
+                  {new Date().toLocaleDateString("en-IN")}
+                </div>
+                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:10,
+                  padding:"4px 10px",marginTop:6 }}
                   onClick={()=>setSignatures(s=>({...s,hri:null}))}>✕ Clear</button>
               </div>
             ):(
               <div>
                 <div style={{ height:64,border:`1.5px dashed ${C.line}`,borderRadius:3,
-                  display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8,background:"#f8f9fa" }}>
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  marginBottom:8,background:"#f8f9fa" }}>
                   <span style={{ fontSize:11,color:"#6b7280" }}>Tap to sign</span>
                 </div>
-                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:11,padding:"7px 16px" }}
+                <button className="no-print" style={{ ...S.btn("ghost"),fontSize:11,
+                  padding:"7px 16px" }}
                   onClick={()=>setShowSigPad("hri")}>✍ Sign Here</button>
               </div>
             )}
           </div>
         </div>
-        {/* Footer */}
-        <div style={{ borderTop:`2px solid ${C.line}`,paddingTop:16,marginTop:24 }}>
-          <div style={{ display:"flex",justifyContent:"space-between",fontSize:12,color:"#6b7280",marginBottom:6 }}>
+
+        {/* Signature Pad Modal */}
+        {showSigPad && (
+          <div className="no-print" style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",
+            zIndex:999,display:"flex",alignItems:"center",justifyContent:"center" }}>
+            <div style={{ background:"#fff",borderRadius:12,padding:24,width:360 }}>
+              <div style={{ fontWeight:700,marginBottom:12,fontSize:14 }}>
+                ✍ {showSigPad==="client"?"Client":"HRI"} Signature
+              </div>
+              <canvas id="sig-canvas" width={312} height={160}
+                style={{ border:"1.5px solid #e5e7eb",borderRadius:6,
+                  cursor:"crosshair",touchAction:"none",display:"block",background:"#fff" }}
+                onPointerDown={e=>{
+                  const c=document.getElementById("sig-canvas");
+                  const ctx=c.getContext("2d");
+                  const r=c.getBoundingClientRect();
+                  ctx.beginPath();
+                  ctx.moveTo(e.clientX-r.left,e.clientY-r.top);
+                  c._drawing=true;
+                  c._ctx=ctx;
+                }}
+                onPointerMove={e=>{
+                  const c=document.getElementById("sig-canvas");
+                  if(!c._drawing)return;
+                  const r=c.getBoundingClientRect();
+                  c._ctx.lineTo(e.clientX-r.left,e.clientY-r.top);
+                  c._ctx.strokeStyle="#0F1923";
+                  c._ctx.lineWidth=2;
+                  c._ctx.stroke();
+                }}
+                onPointerUp={()=>{
+                  const c=document.getElementById("sig-canvas");
+                  c._drawing=false;
+                }}
+              />
+              <div style={{ display:"flex",gap:8,marginTop:12 }}>
+                <button style={{ ...S.btn(),flex:1,fontSize:12 }} onClick={async()=>{
+                  const c=document.getElementById("sig-canvas");
+                  const img=c.toDataURL("image/png");
+                  const which=showSigPad;
+                  setSignatures(s=>({...s,[which]:img}));
+                  setShowSigPad(null);
+                  // Save to DB
+                  const newSigs={ clientImg: which==="client"?img:signatures.client,
+                                  hriImg:    which==="hri"   ?img:signatures.hri };
+                  const entry=makeEntry("signed","Signature captured",{},{},
+                    { clientImg:newSigs.clientImg, hriImg:newSigs.hriImg });
+                  const updatedLog=[...(selected.auditLog||[]),entry];
+                  try {
+                    const res=await fetch(
+                      `https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${selected.id}`,
+                      { method:"PATCH",
+                        headers:{"Content-Type":"application/json",
+                          "apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY",
+                          "Prefer":"return=minimal"},
+                        body:JSON.stringify({
+                          client_signatures:JSON.stringify(newSigs),
+                          audit_log:JSON.stringify(updatedLog)
+                        })});
+                    if(res.ok){
+                      showToast("✍ Signature saved","success");
+                      setCustomers(prev=>prev.map(c=>
+                        c.id===selected.id?{...c,auditLog:updatedLog,clientSignatures:newSigs}:c));
+                    } else { showToast("Signature save failed","error"); }
+                  } catch(e){ showToast("Signature save error","error"); }
+                }}>Save Signature</button>
+                <button style={{ ...S.btn("ghost"),fontSize:12 }} onClick={()=>{
+                  const c=document.getElementById("sig-canvas");
+                  const ctx=c.getContext("2d");
+                  ctx.clearRect(0,0,c.width,c.height);
+                }}>Clear</button>
+                <button style={{ ...S.btn("ghost"),fontSize:12 }}
+                  onClick={()=>setShowSigPad(null)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── FOOTER ────────────────────────────────────────────────── */}
+        <div style={{ borderTop:`2px solid #e5e7eb`,paddingTop:16,marginTop:8 }}>
+          <div style={{ display:"flex",justifyContent:"space-between",
+            fontSize:11,color:"#6b7280" }}>
             <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
             <span>{d}</span>
           </div>
-          <div style={{ fontSize:11,color:"rgba(255,255,255,0.1)",textAlign:"center",lineHeight:1.8 }}>
-            Confidential — intended solely for {selected.name}. All payments are non-refundable. Prices in INR ₹.
+          <div style={{ fontSize:10,color:"#9ca3af",textAlign:"center",marginTop:6,lineHeight:1.8 }}>
+            Confidential — intended solely for {selected.name}. All prices in INR ₹.
           </div>
         </div>
+
       </div>
     </div>
   );
@@ -4535,7 +4586,7 @@ Dimension rules:
 
               {/* Grand total — Interior + Add On split */}
               {(()=>{
-                const ADD_ON_ROOMS = new Set(["Add On","Others"]);
+                const ADD_ON_ROOMS = new Set(["Add On"]);
                 const calcR = (room) => {
                   const works = form.roomWork?.[room]||[];
                   const rSpec = form.roomDetails?.[room]||{};
@@ -4594,7 +4645,7 @@ Dimension rules:
               {/* Auto-calculate from roomWork */}
               {form.roomWork && Object.keys(form.roomWork).length > 0 && (() => {
                 // Split: interior rooms vs Add On
-                const ADD_ON_ROOMS = new Set(["Add On", "Others"]);
+                const ADD_ON_ROOMS = new Set(["Add On"]);
                 const calcRoomTotal = (room) => {
                   const works = form.roomWork?.[room] || [];
                   const spec  = form.roomDetails?.[room] || {};
