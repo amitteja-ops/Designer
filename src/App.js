@@ -1246,7 +1246,7 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
     ts: new Date().toISOString(), type, user, summary, snapshot, signatures,
   });
   const [showSigPad,   setShowSigPad]   = React.useState(null);
-  const [includeAddOn, setIncludeAddOn] = React.useState(true);
+  const [includeAddOn, setIncludeAddOn] = React.useState(selected.quotationIncludesAddOn !== false);
   // Load saved signatures from last audit log entry that has them
   const [signatures, setSignatures] = React.useState({ client:null, hri:null });
 
@@ -2216,6 +2216,7 @@ const EMPTY = {
   couponCode:"",
   couponApplied:false,
   clientAccessCode:"",
+  quotationIncludesAddOn:true,
 };
 
 export default function App({ token, user, onLogout, onSessionExpired }) {
@@ -4904,9 +4905,27 @@ Dimension rules:
                 const interiorWithLabour = Math.round(interiorCost * labourMult);
                 const addOnWithLabour    = Math.round(addOnCost * labourMult);
                 const withLabour = Math.round(matCost * labourMult);
+                // The effective quotation depends on whether Add On is included
+                const qIncludesAddOn = form.quotationIncludesAddOn !== false;
+                const effectiveTotal = qIncludesAddOn ? withLabour : interiorWithLabour;
                 return matCost > 0 ? (
                   <div className="glass" style={{ borderRadius:12, padding:"14px 18px", marginBottom:20, border:"1px solid rgba(255,255,255,0.12)" }}>
-                    <div style={{ fontSize:12, fontWeight:700, color:"#FF453A", letterSpacing:1, marginBottom:10 }}>AUTO-CALCULATED FROM MATERIALS</div>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#FF453A", letterSpacing:1 }}>AUTO-CALCULATED FROM MATERIALS</div>
+                      {/* Add On toggle in quotation tab */}
+                      {addOnCost > 0 && (
+                        <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer",
+                          fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.7)",
+                          background:qIncludesAddOn?"rgba(255,159,10,0.15)":"rgba(255,255,255,0.06)",
+                          border:`1px solid ${qIncludesAddOn?"#FF9F0A":"rgba(255,255,255,0.15)"}`,
+                          borderRadius:16, padding:"4px 10px" }}>
+                          <input type="checkbox" checked={qIncludesAddOn}
+                            onChange={e=>setF("quotationIncludesAddOn", e.target.checked)}
+                            style={{ accentColor:"#FF9F0A", width:13, height:13 }}/>
+                          Include Add On
+                        </label>
+                      )}
+                    </div>
                     {/* Interior breakdown */}
                     {interiorCost > 0 && (
                       <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, color:"rgba(255,255,255,0.6)", marginBottom:6 }}>
@@ -4914,23 +4933,28 @@ Dimension rules:
                         <strong style={{ color:"#0A84FF" }}>{fmt(interiorWithLabour)}</strong>
                       </div>
                     )}
-                    {/* Add On breakdown */}
-                    {addOnCost > 0 && (
+                    {/* Add On breakdown — shown only when included */}
+                    {addOnCost > 0 && qIncludesAddOn && (
                       <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, color:"rgba(255,255,255,0.6)", marginBottom:6 }}>
-                        <span>Add On — Others (material + {form.labourPct||50}% labour)</span>
+                        <span>Add On (material + {form.labourPct||50}% labour)</span>
                         <strong style={{ color:"#FF9F0A" }}>{fmt(addOnWithLabour)}</strong>
+                      </div>
+                    )}
+                    {addOnCost > 0 && !qIncludesAddOn && (
+                      <div style={{ fontSize:11, color:"rgba(255,159,10,0.6)", marginBottom:6 }}>
+                        Add On ({fmt(addOnWithLabour)}) excluded from quotation
                       </div>
                     )}
                     {/* Divider + Grand Total */}
                     <div style={{ borderTop:"1px solid rgba(255,255,255,0.12)", marginTop:8, paddingTop:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                       <span style={{ fontSize:13, color:"rgba(255,255,255,0.5)" }}>Total</span>
                       <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-                        <strong style={{ color:"#0A84FF", fontSize:16 }}>{fmt(withLabour)}</strong>
+                        <strong style={{ color:"#0A84FF", fontSize:16 }}>{fmt(effectiveTotal)}</strong>
                         <button style={{ ...S.btn(), fontSize:11, padding:"6px 14px" }}
                           onClick={() => {
-                            setF("previousQuotation", withLabour.toString());
-                            setF("quotation", withLabour.toString());
-                            setF("revisedQuotation", withLabour.toString());
+                            setF("previousQuotation", effectiveTotal.toString());
+                            setF("quotation", effectiveTotal.toString());
+                            setF("revisedQuotation", effectiveTotal.toString());
                           }}>
                           ↓ Use This
                         </button>
