@@ -4992,7 +4992,11 @@ Dimension rules:
                   <input className="glass-input" style={{}} type="number" value={form.previousQuotation} onChange={e=>setF("previousQuotation",e.target.value)} placeholder="Auto-filled from materials"/>
                 </Field>
                 <Field label="Revised Quotation ₹">
-                  <input style={{ ...S.input, color: form.revisedQuotation ? C.red : C.muted }} type="number" value={form.revisedQuotation} onChange={e=>setF("revisedQuotation",e.target.value)} placeholder="After rebate"/>
+                  <input style={{ ...S.input, color: form.revisedQuotation ? C.red : C.muted }} type="number" value={form.revisedQuotation}
+                    onChange={e=>{
+                      setF("revisedQuotation",e.target.value);
+                      setF("quotation",e.target.value);
+                    }} placeholder="After rebate"/>
                 </Field>
               </div>
 
@@ -5210,8 +5214,12 @@ Dimension rules:
               {/* Final Quotation */}
               <div style={{ marginBottom:24 }}>
                 <label style={{fontSize:10,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",marginBottom:6,display:"block",fontWeight:600}}>Final {getDocTerm(form.status)} ₹ (Client sees this)</label>
-                <input style={{ ...S.input, fontSize:18, fontWeight:700, borderColor:C.red }} type="number" value={form.quotation}
-                  onChange={e=>setF("quotation",e.target.value)} placeholder="e.g. 2504040"/>
+                <input style={{ ...S.input, fontSize:18, fontWeight:700, borderColor:C.red }} type="number"
+                  value={form.revisedQuotation||form.quotation}
+                  onChange={e=>{
+                    setF("quotation",e.target.value);
+                    setF("revisedQuotation",e.target.value);
+                  }} placeholder="e.g. 2504040"/>
                 <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", marginTop:6, letterSpacing:1 }}>
                   💡 Tip: Set Final = Revised Quotation after applying rebate
                 </div>
