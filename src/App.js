@@ -1302,29 +1302,40 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
   const allRoomsP       = selected.rooms || [];
   const lp              = selected.labourPct != null ? selected.labourPct : 50;
   const labourMult      = 1 + lp / 100;
-  // calcRoomP returns raw material cost; calcRoomWithLabour includes labour
-  const calcRoomP       = (room) => {
+  // calcRoomP: raw material; calcRoomWithLabour: with labour — ALWAYS use with-labour for display
+  const calcRoomP           = (room) => {
     const works = selected.roomWork?.[room] || [];
     const spec  = selected.roomDetails?.[room] || {};
     return works.reduce((t, w) => t + (w.price ? parseFloat(w.price) : calcItemPrice(w, spec)), 0);
   };
-  const calcRoomWithLabour = (room) => Math.round(calcRoomP(room) * labourMult);
-  const rawInteriorP    = allRoomsP.filter(r => !ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
-  const rawAddOnP       = allRoomsP.filter(r =>  ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
-  const rawTotalP       = rawInteriorP + rawAddOnP;
-  // With-labour totals for interior and add-on
-  const interiorWithLabourP = Math.round(rawInteriorP * labourMult);
-  const addOnWithLabourP    = Math.round(rawAddOnP    * labourMult);
+  const calcRoomWithLabour  = (room) => Math.round(calcRoomP(room) * labourMult);
+  // Compute with-labour totals directly from room work (always correct regardless of saved quotation)
+  const interiorWithLabourP = allRoomsP
+    .filter(r => !ADD_ON_ROOMS_P.has(r))
+    .reduce((t,r) => t + calcRoomWithLabour(r), 0);
+  const addOnWithLabourP    = allRoomsP
+    .filter(r =>  ADD_ON_ROOMS_P.has(r))
+    .reduce((t,r) => t + calcRoomWithLabour(r), 0);
   const totalWithLabourP    = interiorWithLabourP + addOnWithLabourP;
-  // finalQuoteP: use saved quotation if set, otherwise auto-calc with labour
-  const finalQuoteP     = parseFloat(selected.quotation) || totalWithLabourP;
-  const interiorQuoteP  = rawTotalP > 0 ? Math.round(finalQuoteP * (rawInteriorP / rawTotalP)) : finalQuoteP;
-  const addOnQuoteP     = rawTotalP > 0 ? Math.round(finalQuoteP * (rawAddOnP    / rawTotalP)) : 0;
+  // finalQuoteP: use saved quotation if set; ensure it reflects labour
+  // If saved quotation ≈ raw material (no labour), fall back to totalWithLabour
+  const rawTotalP       = allRoomsP.reduce((t,r) => t + calcRoomP(r), 0);
+  const savedQuoteP     = parseFloat(selected.quotation) || 0;
+  // Detect if saved quote is without labour (within 5% of raw total)
+  const quoteHasLabour  = !savedQuoteP || savedQuoteP > rawTotalP * 1.02;
+  const finalQuoteP     = quoteHasLabour
+    ? (savedQuoteP || totalWithLabourP)
+    : totalWithLabourP;
+  const addOnQuoteP     = addOnWithLabourP > 0
+    ? Math.round(finalQuoteP * (addOnWithLabourP / totalWithLabourP))
+    : 0;
+  const interiorQuoteP  = finalQuoteP - addOnQuoteP;
   const effectiveQuoteP = includeAddOn ? finalQuoteP : interiorQuoteP;
-  // Per-room amount: proportional slice of effectiveQuote, includes labour since effectiveQuote does
-  const roomAmtP        = (room) => {
-    const denom = includeAddOn ? rawTotalP : rawInteriorP;
-    return denom > 0 ? Math.round(effectiveQuoteP * (calcRoomP(room) / denom)) : 0;
+  // Per-room: always use with-labour amount, proportional to effectiveQuote
+  const roomAmtP = (room) => {
+    const roomWithLabour = calcRoomWithLabour(room);
+    const denom = includeAddOn ? totalWithLabourP : interiorWithLabourP;
+    return denom > 0 ? Math.round(effectiveQuoteP * (roomWithLabour / denom)) : 0;
   };
 
   const generatePrintHTML = () => {
@@ -1904,8 +1915,9 @@ ${!includeAddOn&&rawAddOnP>0?`
           {(()=>{
             const iRooms=allRoomsP.filter(r=>!ADD_ON_ROOMS_P.has(r)&&calcRoomP(r)>0);
             const aRooms=allRoomsP.filter(r=> ADD_ON_ROOMS_P.has(r)&&calcRoomP(r)>0);
-            const iAmt=includeAddOn?(rawTotalP>0?Math.round(finalQuoteP*(rawInteriorP/rawTotalP)):finalQuoteP):effectiveQuoteP;
-            const aAmt=includeAddOn?(rawTotalP>0?Math.round(finalQuoteP*(rawAddOnP/rawTotalP)):0):0;
+            // Use with-labour totals directly
+            const iAmt = includeAddOn ? interiorQuoteP : effectiveQuoteP;
+            const aAmt = includeAddOn ? addOnQuoteP : 0;
             return (<div>
               {iRooms.length>0&&(<div style={{ marginBottom:4 }}>
                 <div style={{ display:"flex",justifyContent:"space-between",padding:"8px 14px",
