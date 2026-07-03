@@ -1772,7 +1772,46 @@ ${!includeAddOn&&rawAddOnP>0?`
           })()}
         </div>
 
-        {/* ── 3. SCOPE OF WORK ── */}
+        {/* ── 3. MATERIALS LIST ── */}
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            4. Materials Order List &amp; Specifications
+          </div>
+          {(()=>{
+            const matList=[];
+            // Only include rooms in current scope (respects includeAddOn toggle)
+            const matRooms = includeAddOn ? allRoomsP : allRoomsP.filter(r=>!ADD_ON_ROOMS_P.has(r));
+            matRooms.forEach(room=>{
+              (selected.roomWork?.[room]||[]).forEach(w=>{
+                if(!w.brand||!w.matType)return;
+                const ex=matList.find(m=>m.matType===w.matType&&m.brand===w.brand);
+                if(!ex)matList.push({matType:w.matType,brand:w.brand,rooms:[room]});
+                else if(!ex.rooms.includes(room))ex.rooms.push(room);
+              });
+            });
+            return matList.length>0?(
+              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                <thead><tr style={{ borderBottom:"2px solid #1e3a5f" }}>
+                  {["#","Category","Brand / Specification","Used In"].map(h=>(
+                    <th key={h} style={{ padding:"7px 12px",textAlign:"left",fontSize:10,
+                      fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#1e3a5f" }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>{matList.map((m,i)=>(
+                  <tr key={i} style={{ background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #f3f4f6" }}>
+                    <td style={{ padding:"7px 12px",color:"#6b7280" }}>{i+1}</td>
+                    <td style={{ padding:"7px 12px",fontWeight:700,textTransform:"capitalize" }}>{m.matType}</td>
+                    <td style={{ padding:"7px 12px",fontWeight:600 }}>{m.brand}</td>
+                    <td style={{ padding:"7px 12px",color:"#6b7280",fontSize:11 }}>{m.rooms.join(", ")}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            ):<div style={{ color:"#6b7280",fontSize:13 }}>No material specs set.</div>;
+          })()}
+        </div>
+
+        {/* ── 4. SCOPE OF WORK ── */}
         <div style={{ marginBottom:28 }}>
           <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
             color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
@@ -1817,43 +1856,6 @@ ${!includeAddOn&&rawAddOnP>0?`
               })}
             </div>);
           })}
-        </div>
-
-        {/* ── 4. MATERIALS LIST ── */}
-        <div style={{ marginBottom:28 }}>
-          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
-            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
-            4. Materials Order List &amp; Specifications
-          </div>
-          {(()=>{
-            const matList=[];
-            allRoomsP.forEach(room=>{
-              (selected.roomWork?.[room]||[]).forEach(w=>{
-                if(!w.brand||!w.matType)return;
-                const ex=matList.find(m=>m.matType===w.matType&&m.brand===w.brand);
-                if(!ex)matList.push({matType:w.matType,brand:w.brand,rooms:[room]});
-                else if(!ex.rooms.includes(room))ex.rooms.push(room);
-              });
-            });
-            return matList.length>0?(
-              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                <thead><tr style={{ borderBottom:"2px solid #1e3a5f" }}>
-                  {["#","Category","Brand / Specification","Used In"].map(h=>(
-                    <th key={h} style={{ padding:"7px 12px",textAlign:"left",fontSize:10,
-                      fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#1e3a5f" }}>{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody>{matList.map((m,i)=>(
-                  <tr key={i} style={{ background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #f3f4f6" }}>
-                    <td style={{ padding:"7px 12px",color:"#6b7280" }}>{i+1}</td>
-                    <td style={{ padding:"7px 12px",fontWeight:700,textTransform:"capitalize" }}>{m.matType}</td>
-                    <td style={{ padding:"7px 12px",fontWeight:600 }}>{m.brand}</td>
-                    <td style={{ padding:"7px 12px",color:"#6b7280",fontSize:11 }}>{m.rooms.join(", ")}</td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            ):<div style={{ color:"#6b7280",fontSize:13 }}>No material specs set.</div>;
-          })()}
         </div>
 
         {/* ── 5. INCLUDED ── */}
