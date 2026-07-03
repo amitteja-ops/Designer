@@ -1660,7 +1660,7 @@ ${!includeAddOn&&rawAddOnP>0?`
     <div style={{ background:"#fff", minHeight:"100vh",
       fontFamily:"'DM Sans',system-ui,sans-serif", color:"#0F1923" }}>
 
-      {/* Toolbar */}
+      {/* ── TOOLBAR ── */}
       <div className="no-print" style={{ position:"sticky",top:0,zIndex:100,
         background:"rgba(255,255,255,0.97)",backdropFilter:"blur(8px)",
         borderBottom:"1px solid #e5e7eb",padding:"10px 24px",
@@ -1685,67 +1685,490 @@ ${!includeAddOn&&rawAddOnP>0?`
               style={{ accentColor:"#FF9F0A",width:14,height:14 }}/>
             Include Add On in Quotation
           </label>
-          <button
-            style={{ fontSize:11,padding:"7px 16px",fontWeight:600,cursor:"pointer",
-              background:"#1e3a5f",color:"#fff",border:"none",
-              borderRadius:8,fontFamily:"inherit" }}
+          <button style={{ fontSize:11,padding:"7px 16px",fontWeight:600,cursor:"pointer",
+              background:"#1e3a5f",color:"#fff",border:"none",borderRadius:8,fontFamily:"inherit" }}
             onClick={()=>{
-              const html = generatePrintHTML();
-              const w = window.open('','_blank','width=900,height=700');
-              w.document.write(html);
-              w.document.close();
-              w.focus();
-              setTimeout(()=>w.print(), 800);
+              const html=generatePrintHTML();
+              const w=window.open('','_blank','width=900,height=700');
+              w.document.write(html); w.document.close(); w.focus();
+              setTimeout(()=>w.print(),800);
             }}>🖨 Print / Save PDF</button>
         </div>
       </div>
 
-      {/* On-screen preview — simple clean version */}
-      <div style={{ maxWidth:820, margin:"0 auto", padding:"32px 40px" }}>
+      <div style={{ maxWidth:820,margin:"0 auto",padding:"32px 40px" }}>
 
-        {/* Header */}
+        {/* ── HEADER ── */}
         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",
           marginBottom:32,paddingBottom:20,borderBottom:`3px solid ${C.teal}` }}>
           <div>
-            <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-              <img src={LOGO_SRC} alt="High Rise Interiors" style={{ height:40,objectFit:"contain" }}/>
-            </div>
+            <img src={LOGO_SRC} alt="High Rise Interiors" style={{ height:40,objectFit:"contain" }}/>
             <div style={{ fontSize:10,color:"#6b7280",letterSpacing:2,textTransform:"uppercase",marginTop:4 }}>
               Interior Design Proposal
             </div>
           </div>
           <div style={{ textAlign:"right" }}>
             <div style={{ fontSize:11,color:"#6b7280" }}>Date: {d}</div>
-            {selected.quotation && (
-              <div style={{ fontSize:18,fontWeight:800,color:C.teal,marginTop:4 }}>
-                {fmtN(effectiveQuoteP)}
-                {!includeAddOn && addOnQuoteP>0 && (
-                  <div style={{ fontSize:11,color:"#9ca3af",fontWeight:400,marginTop:2 }}>
-                    (Add On {fmtN(addOnQuoteP)} shown in Annexure)
-                  </div>
-                )}
-              </div>
-            )}
+            {selected.quotation&&(<div style={{ fontSize:18,fontWeight:800,color:C.teal,marginTop:4 }}>
+              {fmtN(effectiveQuoteP)}
+              {!includeAddOn&&addOnQuoteP>0&&(<div style={{ fontSize:11,color:"#9ca3af",fontWeight:400,marginTop:2 }}>
+                (Add On {fmtN(addOnQuoteP)} in Annexure)
+              </div>)}
+            </div>)}
           </div>
         </div>
 
-        <div style={{ textAlign:"center",padding:"60px 0",color:"#6b7280" }}>
-          <div style={{ fontSize:32,marginBottom:16 }}>📄</div>
-          <div style={{ fontSize:16,fontWeight:700,color:"#374151",marginBottom:8 }}>
-            Report ready for {selected.name}
+        {/* ── 1. CLIENT INFORMATION ── */}
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            1. Client Information
           </div>
-          <div style={{ fontSize:13,marginBottom:24 }}>
-            Click <strong>Print / Save PDF</strong> to generate the full report in a new window.
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 24px" }}>
+            {[["Client Name",selected.name],["Phone",selected.phone],["Email",selected.email],
+              ["Address",selected.address],["Property Type",selected.propertyType],
+              ["Style",selected.style],["Timeline",selected.timeline],["Start Date",selected.startDate]]
+              .filter(([,v])=>v).map(([l,v])=>(
+              <div key={l} style={{ display:"flex",justifyContent:"space-between",
+                padding:"7px 0",borderBottom:"1px solid #f3f4f6",fontSize:13 }}>
+                <span style={{ color:"#6b7280" }}>{l}</span>
+                <span style={{ fontWeight:600,maxWidth:"55%",textAlign:"right" }}>{v}</span>
+              </div>
+            ))}
           </div>
-          <div style={{ fontSize:11,color:"#9ca3af" }}>
-            The report opens as clean HTML — no black triangles, prints perfectly.
+        </div>
+
+        {/* ── 2. PROJECT SUMMARY ── */}
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            2. Project Summary
           </div>
+          {(()=>{
+            const irms=allRoomsP.filter(r=>!ADD_ON_ROOMS_P.has(r)&&calcRoomP(r)>0);
+            const adrms=allRoomsP.filter(r=>ADD_ON_ROOMS_P.has(r)&&calcRoomP(r)>0);
+            const totalSqft=irms.reduce((t,r)=>{
+              return t+(selected.roomWork?.[r]||[]).reduce((s,w)=>
+                s+(w.height&&w.width?parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1):0),0);
+            },0);
+            const matSet={};
+            allRoomsP.forEach(r=>(selected.roomWork?.[r]||[]).forEach(w=>{if(w.brand&&w.matType&&!matSet[w.matType])matSet[w.matType]=w.brand;}));
+            const matLine=[matSet.plywood&&"Plywood: "+matSet.plywood,matSet.ceiling&&"Ceiling: "+matSet.ceiling,
+              matSet.glass&&"Glass: "+matSet.glass,matSet.hardware&&"Hardware: "+matSet.hardware].filter(Boolean).join(" · ");
+            return (<div>
+              <div style={{ fontSize:13,lineHeight:2,color:"#374151",marginBottom:16 }}>
+                High Rise Interiors is pleased to present this interior design proposal for{" "}
+                <strong>{selected.name}</strong>'s {selected.propertyType||"residence"}
+                {selected.address?` at ${selected.address}`:""}.
+                Designed in a <strong>{selected.style||"contemporary"}</strong> aesthetic,
+                scheduled for <strong>{selected.timeline||"120 days"}</strong>
+                {selected.startDate?`, commencing ${new Date(selected.startDate).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}`:""},
+                covering <strong>{irms.length} interior room{irms.length!==1?"s":""}</strong>
+                {adrms.length>0?` plus ${adrms.length} add-on area`:""}.
+                {totalSqft>0?<span> Approximately <strong>{Math.round(totalSqft)} sq ft</strong> of carpentry work.</span>:null}
+              </div>
+              {matLine&&<div style={{ fontSize:13,color:"#374151",marginBottom:16 }}><strong>Primary Materials:</strong> {matLine}</div>}
+              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                <thead>
+                  <tr style={{ borderBottom:"2px solid #1e3a5f" }}>
+                    {["Room","Items","Work Area (sq ft)","Plywood Grade"].map(h=>(
+                      <th key={h} style={{ padding:"7px 12px",textAlign:"left",fontSize:10,
+                        fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#1e3a5f" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {irms.map((r,i)=>{
+                    const works=(selected.roomWork?.[r]||[]).filter(w=>w.product);
+                    const sqft=works.reduce((s,w)=>s+(w.height&&w.width?parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1):0),0);
+                    const spec=selected.roomDetails?.[r]||{};
+                    return (<tr key={r} style={{ background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #f3f4f6" }}>
+                      <td style={{ padding:"7px 12px",fontWeight:600 }}>🏠 {r}</td>
+                      <td style={{ padding:"7px 12px",textAlign:"center" }}>{works.length}</td>
+                      <td style={{ padding:"7px 12px",textAlign:"center" }}>{sqft>0?sqft.toFixed(0)+" sq ft":"—"}</td>
+                      <td style={{ padding:"7px 12px",fontSize:11,color:"#374151" }}>{spec.plywoodGrade||matSet.plywood||"—"}</td>
+                    </tr>);
+                  })}
+                  {totalSqft>0&&<tr style={{ borderTop:"2px solid #1e3a5f",background:"#e8f0fe" }}>
+                    <td style={{ padding:"7px 12px",fontWeight:700,color:"#1e3a5f" }}>Total</td>
+                    <td style={{ padding:"7px 12px",textAlign:"center",fontWeight:700,color:"#1e3a5f" }}>
+                      {irms.reduce((t,r)=>t+(selected.roomWork?.[r]||[]).filter(w=>w.product).length,0)}
+                    </td>
+                    <td style={{ padding:"7px 12px",textAlign:"center",fontWeight:700,color:"#1e3a5f" }}>{Math.round(totalSqft)} sq ft</td>
+                    <td></td>
+                  </tr>}
+                </tbody>
+              </table>
+            </div>);
+          })()}
+        </div>
+
+        {/* ── 3. SCOPE OF WORK ── */}
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            3. Scope of Work
+          </div>
+          {(allRoomsP.filter(r=>includeAddOn||!ADD_ON_ROOMS_P.has(r))).map(r=>{
+            const works=(selected.roomWork?.[r]||[]).filter(w=>w.product);
+            if(!works.length)return null;
+            const isAddon=ADD_ON_ROOMS_P.has(r);
+            const rAmt=roomAmtP(r);
+            const hdrColor=isAddon?"#92400e":"#1e3a5f";
+            const hdrBg=isAddon?"#fef3c7":"#dbeafe";
+            return (<div key={r} style={{ marginBottom:12,border:"1px solid #e5e7eb" }}>
+              <div style={{ padding:"8px 14px",display:"flex",justifyContent:"space-between",
+                alignItems:"center",background:hdrBg,borderBottom:`2px solid ${hdrColor}` }}>
+                <span style={{ fontWeight:700,fontSize:13,color:hdrColor }}>🏠 {r}</span>
+                {finalQuoteP>0&&<span style={{ fontWeight:700,fontSize:13,color:hdrColor }}>{fmtN(rAmt)}</span>}
+              </div>
+              <div style={{ display:"grid",gridTemplateColumns:"2.5fr 1.2fr 1fr 0.6fr 1fr",
+                padding:"5px 14px",background:"#f9fafb",borderBottom:"1px solid #e5e7eb" }}>
+                {["Product","Type","H × W","Qty","Brand"].map(h=>(
+                  <div key={h} style={{ fontSize:9,fontWeight:700,color:"#6b7280",
+                    letterSpacing:1,textTransform:"uppercase" }}>{h}</div>
+                ))}
+              </div>
+              {works.map((w,wi)=>{
+                const sqft=w.height&&w.width?`${w.height}×${w.width} (${(parseFloat(w.height)*parseFloat(w.width)).toFixed(1)} sft)`:"—";
+                const isQtyT=QTY_TYPES&&QTY_TYPES.has(w.type);
+                const qty=parseFloat(w.qty)||1;
+                return (<div key={wi} style={{ display:"grid",gridTemplateColumns:"2.5fr 1.2fr 1fr 0.6fr 1fr",
+                  padding:"6px 14px",borderBottom:"1px solid #f3f4f6",
+                  background:wi%2===0?"#fff":"#f9fafb",alignItems:"center" }}>
+                  <div>
+                    <div style={{ fontWeight:600,fontSize:12,color:"#0F1923" }}>{w.product}</div>
+                    {w.notes&&<div style={{ fontSize:10,color:"#9ca3af" }}>{w.notes}</div>}
+                  </div>
+                  <div style={{ fontSize:11,color:"#6b7280" }}>{w.type}</div>
+                  <div style={{ fontSize:11,color:"#374151" }}>{isQtyT?"—":sqft}</div>
+                  <div style={{ fontSize:11,fontWeight:700,color:qty>1?"#FF9F0A":"#374151" }}>×{qty}</div>
+                  <div style={{ fontSize:11,color:"#374151" }}>{w.brand||"—"}</div>
+                </div>);
+              })}
+            </div>);
+          })}
+        </div>
+
+        {/* ── 4. MATERIALS LIST ── */}
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            4. Materials Order List &amp; Specifications
+          </div>
+          {(()=>{
+            const matList=[];
+            allRoomsP.forEach(room=>{
+              (selected.roomWork?.[room]||[]).forEach(w=>{
+                if(!w.brand||!w.matType)return;
+                const ex=matList.find(m=>m.matType===w.matType&&m.brand===w.brand);
+                if(!ex)matList.push({matType:w.matType,brand:w.brand,rooms:[room]});
+                else if(!ex.rooms.includes(room))ex.rooms.push(room);
+              });
+            });
+            return matList.length>0?(
+              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                <thead><tr style={{ borderBottom:"2px solid #1e3a5f" }}>
+                  {["#","Category","Brand / Specification","Used In"].map(h=>(
+                    <th key={h} style={{ padding:"7px 12px",textAlign:"left",fontSize:10,
+                      fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#1e3a5f" }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>{matList.map((m,i)=>(
+                  <tr key={i} style={{ background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #f3f4f6" }}>
+                    <td style={{ padding:"7px 12px",color:"#6b7280" }}>{i+1}</td>
+                    <td style={{ padding:"7px 12px",fontWeight:700,textTransform:"capitalize" }}>{m.matType}</td>
+                    <td style={{ padding:"7px 12px",fontWeight:600 }}>{m.brand}</td>
+                    <td style={{ padding:"7px 12px",color:"#6b7280",fontSize:11 }}>{m.rooms.join(", ")}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            ):<div style={{ color:"#6b7280",fontSize:13 }}>No material specs set.</div>;
+          })()}
+        </div>
+
+        {/* ── 5. INCLUDED ── */}
+        {includedItems.length>0&&(<div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            5. Included in Scope
+          </div>
+          <div style={{ padding:"12px 16px",borderLeft:"3px solid #16a34a" }}>
+            {includedItems.map((l,i)=><div key={i} style={{ color:"#166534",marginBottom:4,fontSize:13 }}>
+              ✓ {l.replace(/^(✗\s*)?included\s*:\s*/i,"")}
+            </div>)}
+          </div>
+        </div>)}
+
+        {/* ── 6. OUT OF SCOPE ── */}
+        {outOfScope.length>0&&(<div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            {includedItems.length>0?"6.":"5."} Out of Scope
+          </div>
+          <div style={{ padding:"12px 16px",borderLeft:"3px solid #dc2626" }}>
+            {outOfScope.map((l,i)=><div key={i} style={{ color:"#7A0000",marginBottom:4,fontSize:13 }}>
+              ✗ {l.replace(/^(out of scope|not included|excluded)\s*:?\s*/i,"")||l}
+            </div>)}
+          </div>
+        </div>)}
+
+        {/* ── 7. COST BREAKDOWN ── */}
+        {finalQuoteP>0&&(<div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            7. Cost Breakdown
+          </div>
+          <div style={{ fontSize:11,color:"#6b7280",marginBottom:8 }}>All amounts include materials &amp; labour</div>
+          {(()=>{
+            const iRooms=allRoomsP.filter(r=>!ADD_ON_ROOMS_P.has(r)&&calcRoomP(r)>0);
+            const aRooms=allRoomsP.filter(r=> ADD_ON_ROOMS_P.has(r)&&calcRoomP(r)>0);
+            const iAmt=includeAddOn?(rawTotalP>0?Math.round(finalQuoteP*(rawInteriorP/rawTotalP)):finalQuoteP):effectiveQuoteP;
+            const aAmt=includeAddOn?(rawTotalP>0?Math.round(finalQuoteP*(rawAddOnP/rawTotalP)):0):0;
+            return (<div>
+              {iRooms.length>0&&(<div style={{ marginBottom:4 }}>
+                <div style={{ display:"flex",justifyContent:"space-between",padding:"8px 14px",
+                  background:"#dbeafe",borderBottom:"2px solid #1e3a5f" }}>
+                  <span style={{ fontWeight:700,color:"#1e3a5f",fontSize:13 }}>Interior Works</span>
+                  <strong style={{ color:"#1e3a5f",fontSize:13 }}>{fmtN(iAmt)}</strong>
+                </div>
+                {iRooms.map((r,i)=>(
+                  <div key={r} style={{ display:"flex",justifyContent:"space-between",
+                    padding:"6px 14px 6px 28px",fontSize:12,
+                    background:i%2===0?"#f8fafc":"#f3f4f6",borderBottom:"1px solid #e5e7eb" }}>
+                    <span style={{ color:"#374151" }}>🏠 {r}</span>
+                    <span style={{ fontWeight:600,color:"#374151" }}>{fmtN(roomAmtP(r))}</span>
+                  </div>
+                ))}
+              </div>)}
+              {aRooms.length>0&&(<div style={{ marginTop:8,marginBottom:4 }}>
+                <div style={{ display:"flex",justifyContent:"space-between",padding:"8px 14px",
+                  background:"#fef3c7",borderBottom:"2px solid #92400e" }}>
+                  <span style={{ fontWeight:700,color:"#92400e",fontSize:13 }}>Add On</span>
+                  <strong style={{ color:"#92400e",fontSize:13 }}>{fmtN(aAmt)}</strong>
+                </div>
+                {aRooms.map((r,i)=>(
+                  <div key={r} style={{ display:"flex",justifyContent:"space-between",
+                    padding:"6px 14px 6px 28px",fontSize:12,
+                    background:i%2===0?"#fffbf0":"#fef9ec",borderBottom:"1px solid #fde68a" }}>
+                    <span style={{ color:"#374151" }}>🏠 {r}</span>
+                    <span style={{ fontWeight:600,color:"#92400e" }}>{fmtN(roomAmtP(r))}</span>
+                  </div>
+                ))}
+              </div>)}
+              <div style={{ display:"flex",justifyContent:"space-between",padding:"12px 14px",
+                marginTop:8,borderTop:"2px solid #1e3a5f",borderBottom:"2px solid #1e3a5f" }}>
+                <span style={{ fontWeight:700,color:"#1e3a5f",fontSize:14 }}>Final Quotation</span>
+                <strong style={{ color:"#1e3a5f",fontSize:16 }}>{fmtN(effectiveQuoteP)}</strong>
+              </div>
+            </div>);
+          })()}
+        </div>)}
+
+        {/* ── 8. BUDGET SUMMARY ── */}
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            8. Budget Summary
+          </div>
+          {selected.previousQuotation&&(
+            <div style={{ display:"flex",justifyContent:"space-between",padding:"9px 0",
+              borderBottom:"1px solid #f3f4f6",fontSize:13 }}>
+              <span style={{ color:"#6b7280" }}>Previous Quotation</span>
+              <span style={{ textDecoration:"line-through",color:"#9ca3af" }}>{fmtN(selected.previousQuotation)}</span>
+            </div>
+          )}
+          {selected.rebateValue&&Number(selected.rebateValue)>0&&(
+            <div style={{ display:"flex",justifyContent:"space-between",padding:"9px 0",
+              borderBottom:"1px solid #f3f4f6",fontSize:13 }}>
+              <span style={{ fontWeight:600,color:"#166534" }}>Rebate / Discount</span>
+              <span style={{ fontWeight:700,color:"#166534" }}>- {fmtN(selected.rebateValue)}</span>
+            </div>
+          )}
+          <div style={{ display:"flex",justifyContent:"space-between",padding:"9px 0",
+            borderBottom:"1px solid #f3f4f6",fontSize:13 }}>
+            <span style={{ fontWeight:600 }}>Final Quotation</span>
+            <span style={{ fontWeight:800,fontSize:15,color:"#1e3a5f" }}>{fmtN(effectiveQuoteP)}</span>
+          </div>
+          {!includeAddOn&&addOnQuoteP>0&&(
+            <div style={{ padding:"8px 12px",borderLeft:"3px solid #92400e",marginTop:8,
+              color:"#92400e",fontSize:12 }}>
+              ℹ Add On ({fmtN(addOnQuoteP)}) not included — see Annexure below
+            </div>
+          )}
+          {selected.referralCode&&selected.status==="Active"&&(
+            <div style={{ padding:"12px 16px",marginTop:12,borderLeft:"3px solid #30D158" }}>
+              <div style={{ fontSize:9,fontWeight:700,color:"#30D158",letterSpacing:2,marginBottom:6,textTransform:"uppercase" }}>🎁 Your Referral Code</div>
+              <div style={{ fontSize:22,fontWeight:800,letterSpacing:5,color:"#30D158",fontFamily:"monospace",marginBottom:6 }}>{selected.referralCode}</div>
+            </div>
+          )}
+        </div>
+
+        {/* ── 9. FINAL QUOTATION BANNER ── */}
+        {finalQuoteP>0&&(
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"18px 24px",marginBottom:28,border:"2px solid #1e3a5f" }}>
+            <div>
+              <div style={{ fontSize:11,fontWeight:700,color:"#1e3a5f",letterSpacing:2,
+                textTransform:"uppercase",marginBottom:4 }}>9. Final Quotation</div>
+              <div style={{ fontSize:12,color:"#374151" }}>Inclusive of materials &amp; labour</div>
+            </div>
+            <div style={{ fontSize:28,fontWeight:900,color:"#1e3a5f" }}>{fmtN(effectiveQuoteP)}</div>
+          </div>
+        )}
+
+        {/* ── 10. TIMELINE ── */}
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            10. Project Timeline
+          </div>
+          {(()=>{
+            const totalD=parseInt(selected.timeline)||120;
+            const start=selected.startDate?new Date(selected.startDate):null;
+            const plan=selected.projectPlan||{};
+            const PHASES=[
+              {key:"requirements",label:"Requirements & Planning",from:0,to:6},
+              {key:"design",label:"Design Finalisation",from:6,to:12},
+              {key:"designFinal",label:"Design Approval",from:12,to:18},
+              {key:"ceiling",label:"Ceiling & Civil Work",from:18,to:26},
+              {key:"procurement",label:"Material Procurement",from:26,to:48},
+              {key:"graniteTiles",label:"Granite & Tiles",from:48,to:54},
+              {key:"woodFraming",label:"Wood Framing & Carpentry",from:54,to:69},
+              {key:"deco",label:"Decoration & Finishing",from:69,to:76},
+              {key:"painting",label:"Painting",from:76,to:83},
+              {key:"cleaning",label:"Site Cleaning",from:83,to:86},
+              {key:"handover",label:"Handover",from:86,to:87},
+              {key:"cooling",label:"Settling & Cooling",from:87,to:100},
+            ];
+            return (<table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+              <thead><tr style={{ borderBottom:"2px solid #1e3a5f" }}>
+                {["Phase","Day Start","Duration","Status"].map(h=>(
+                  <th key={h} style={{ padding:"7px 12px",textAlign:"left",fontSize:10,
+                    fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#1e3a5f" }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>{PHASES.map((ph,i)=>{
+                const sd=Math.max(1,Math.round(ph.from/100*totalD)+1);
+                const dur=Math.max(1,Math.round((ph.to-ph.from)/100*totalD));
+                const dt=start?new Date(start.getTime()+(sd-1)*86400000).toLocaleDateString("en-IN",{day:"numeric",month:"short"}):"Day "+sd;
+                const status=plan[ph.key]?.status||"Not Started";
+                const col=status==="Completed"?"#16a34a":status==="In Progress"?"#1e3a5f":"#6b7280";
+                return (<tr key={ph.key} style={{ background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #f3f4f6" }}>
+                  <td style={{ padding:"7px 12px",fontWeight:600 }}>{ph.label}</td>
+                  <td style={{ padding:"7px 12px",color:"#374151" }}>{dt}</td>
+                  <td style={{ padding:"7px 12px",color:"#374151" }}>{dur} days</td>
+                  <td style={{ padding:"7px 12px",fontWeight:600,color:col }}>{status}</td>
+                </tr>);
+              })}</tbody>
+            </table>);
+          })()}
+        </div>
+
+        {/* ── 11. DISCLAIMERS ── */}
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            11. Disclaimers &amp; Terms
+          </div>
+          <div style={{ fontSize:13,lineHeight:2.1,color:"#374151" }}>
+            {[
+              "No Refund Policy: All payments are strictly non-refundable once work has commenced.",
+              "Draft Quotation: This is a draft and may vary based on final quantity and material selection.",
+              "Material Prices: Subject to market fluctuations. Valid for 30 days from date of issue.",
+              "Scope Changes: Any additions will be quoted and billed separately with written approval.",
+              `Timeline: ${selected.timeline||"Agreed duration"} is indicative. Delays due to civil work or approvals not included.`,
+              "Warranty: 1-year workmanship warranty. Material warranty per manufacturer.",
+              "Cancellation: Amounts paid till date are forfeited upon cancellation after commencement.",
+              "Dispute Resolution: Subject to jurisdiction of Hyderabad courts only.",
+            ].map((t,i)=>(
+              <div key={i} style={{ marginBottom:4 }}><strong>{i+1}. {t.split(":")[0]}:</strong> {t.split(":").slice(1).join(":")}</div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── 12. SIGNATURES ── */}
+        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:32,
+          marginBottom:28,paddingTop:20,borderTop:"2px solid #e5e7eb" }}>
+          <div>
+            <div style={{ fontSize:9,color:"#6b7280",letterSpacing:2,textTransform:"uppercase",marginBottom:8 }}>Client Signature</div>
+            <div style={{ fontWeight:700,fontSize:14,marginBottom:40 }}>{selected.name}</div>
+            <div style={{ borderTop:"1px solid #333",paddingTop:6,fontSize:10,color:"#6b7280" }}>Signature &amp; Date</div>
+          </div>
+          <div>
+            <div style={{ fontSize:9,color:"#6b7280",letterSpacing:2,textTransform:"uppercase",marginBottom:8 }}>Authorised By</div>
+            <div style={{ fontWeight:700,fontSize:14,color:C.teal,marginBottom:40 }}>High Rise Interiors</div>
+            <div style={{ borderTop:"1px solid #333",paddingTop:6,fontSize:10,color:"#6b7280" }}>Signature &amp; Date</div>
+          </div>
+        </div>
+
+        {/* ── ANNEXURE ── */}
+        {!includeAddOn&&addOnQuoteP>0&&allRoomsP.filter(r=>ADD_ON_ROOMS_P.has(r)).length>0&&(
+          <div style={{ marginTop:40,paddingTop:24,borderTop:"2px solid #e5e7eb" }}>
+            <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+              color:"#92400e",borderBottom:"2px solid #92400e",paddingBottom:6,marginBottom:14 }}>
+              Annexure — Additional Works (Add On)
+            </div>
+            <div style={{ fontSize:12,color:"#6b7280",marginBottom:12 }}>
+              These items are not included in the Final Quotation above. If selected, the estimated total increases as shown.
+            </div>
+            {allRoomsP.filter(r=>ADD_ON_ROOMS_P.has(r)).map(r=>{
+              const works=(selected.roomWork?.[r]||[]).filter(w=>w.product);
+              if(!works.length)return null;
+              return (<div key={r} style={{ marginBottom:12,border:"1px solid #fde68a" }}>
+                <div style={{ padding:"8px 14px",display:"flex",justifyContent:"space-between",
+                  background:"#fef3c7",borderBottom:"2px solid #92400e" }}>
+                  <span style={{ fontWeight:700,color:"#92400e" }}>🏠 {r}</span>
+                  <span style={{ fontWeight:700,color:"#92400e" }}>{fmtN(rawTotalP>0?Math.round(addOnQuoteP*(calcRoomP(r)/rawAddOnP)):0)}</span>
+                </div>
+                <div style={{ display:"grid",gridTemplateColumns:"2.5fr 1.2fr 1fr 0.6fr 1fr",
+                  padding:"5px 14px",background:"#fffbf0",borderBottom:"1px solid #fde68a" }}>
+                  {["Product","Type","H×W","Qty","Brand"].map(h=>(
+                    <div key={h} style={{ fontSize:9,fontWeight:700,color:"#92400e",letterSpacing:1,textTransform:"uppercase" }}>{h}</div>
+                  ))}
+                </div>
+                {works.map((w,wi)=>(
+                  <div key={wi} style={{ display:"grid",gridTemplateColumns:"2.5fr 1.2fr 1fr 0.6fr 1fr",
+                    padding:"6px 14px",borderBottom:"1px solid #fef3c7",
+                    background:wi%2===0?"#fff":"#fffbf0",alignItems:"center" }}>
+                    <div style={{ fontWeight:600,fontSize:12 }}>{w.product}</div>
+                    <div style={{ fontSize:11,color:"#6b7280" }}>{w.type}</div>
+                    <div style={{ fontSize:11 }}>{w.height&&w.width?`${w.height}×${w.width}`:"—"}</div>
+                    <div style={{ fontSize:11,fontWeight:700,color:"#FF9F0A" }}>×{parseFloat(w.qty)||1}</div>
+                    <div style={{ fontSize:11,color:"#374151" }}>{w.brand||"—"}</div>
+                  </div>
+                ))}
+              </div>);
+            })}
+            <div style={{ padding:"14px 16px",marginTop:12,border:"2px solid #92400e" }}>
+              <div style={{ display:"flex",justifyContent:"space-between",marginBottom:6,fontSize:13 }}>
+                <span>Interior Works</span><span style={{ fontWeight:700 }}>{fmtN(effectiveQuoteP)}</span>
+              </div>
+              <div style={{ display:"flex",justifyContent:"space-between",paddingBottom:8,
+                borderBottom:"1px solid #fde68a",fontSize:13 }}>
+                <span>Add On (estimated)</span>
+                <span style={{ fontWeight:700,color:"#92400e" }}>+ {fmtN(addOnQuoteP)}</span>
+              </div>
+              <div style={{ display:"flex",justifyContent:"space-between",marginTop:8 }}>
+                <span style={{ fontWeight:700,fontSize:14 }}>Estimated Total</span>
+                <span style={{ fontWeight:900,fontSize:18,color:"#92400e" }}>{fmtN(effectiveQuoteP+addOnQuoteP)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── FOOTER ── */}
+        <div style={{ borderTop:"2px solid #e5e7eb",paddingTop:16,marginTop:8,
+          display:"flex",justifyContent:"space-between",fontSize:11,color:"#6b7280" }}>
+          <span>High Rise Interiors — Powered by Genovatech IT Services Pvt. Ltd.</span>
+          <span>{d}</span>
         </div>
 
       </div>
     </div>
   );
 }
+
 
 
 
