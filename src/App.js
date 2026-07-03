@@ -1767,38 +1767,7 @@ ${!includeAddOn&&rawAddOnP>0?`
                 {adrms.length>0?` plus ${adrms.length} add-on area`:""}.
                 {totalSqft>0?<span> Approximately <strong>{Math.round(totalSqft)} sq ft</strong> of carpentry work.</span>:null}
               </div>
-              {matLine&&<div style={{ fontSize:13,color:"#374151",marginBottom:16 }}><strong>Primary Materials:</strong> {matLine}</div>}
-              <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                <thead>
-                  <tr style={{ borderBottom:"2px solid #1e3a5f" }}>
-                    {["Room","Items","Work Area (sq ft)","Plywood Grade"].map(h=>(
-                      <th key={h} style={{ padding:"7px 12px",textAlign:"left",fontSize:10,
-                        fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#1e3a5f" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {irms.map((r,i)=>{
-                    const works=(selected.roomWork?.[r]||[]).filter(w=>w.product);
-                    const sqft=works.reduce((s,w)=>s+(w.height&&w.width?parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1):0),0);
-                    const spec=selected.roomDetails?.[r]||{};
-                    return (<tr key={r} style={{ background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #f3f4f6" }}>
-                      <td style={{ padding:"7px 12px",fontWeight:600 }}>🏠 {r}</td>
-                      <td style={{ padding:"7px 12px",textAlign:"center" }}>{works.length}</td>
-                      <td style={{ padding:"7px 12px",textAlign:"center" }}>{sqft>0?sqft.toFixed(0)+" sq ft":"—"}</td>
-                      <td style={{ padding:"7px 12px",fontSize:11,color:"#374151" }}>{spec.plywoodGrade||matSet.plywood||"—"}</td>
-                    </tr>);
-                  })}
-                  {totalSqft>0&&<tr style={{ borderTop:"2px solid #1e3a5f",background:"#e8f0fe" }}>
-                    <td style={{ padding:"7px 12px",fontWeight:700,color:"#1e3a5f" }}>Total</td>
-                    <td style={{ padding:"7px 12px",textAlign:"center",fontWeight:700,color:"#1e3a5f" }}>
-                      {irms.reduce((t,r)=>t+(selected.roomWork?.[r]||[]).filter(w=>w.product).length,0)}
-                    </td>
-                    <td style={{ padding:"7px 12px",textAlign:"center",fontWeight:700,color:"#1e3a5f" }}>{Math.round(totalSqft)} sq ft</td>
-                    <td></td>
-                  </tr>}
-                </tbody>
-              </table>
+              {matLine&&<div style={{ fontSize:13,color:"#374151",marginBottom:4 }}><strong>Primary Materials:</strong> {matLine}</div>}
             </div>);
           })()}
         </div>
@@ -2065,7 +2034,35 @@ ${!includeAddOn&&rawAddOnP>0?`
           })()}
         </div>
 
-        {/* ── 11. DISCLAIMERS ── */}
+        {/* ── 11. PAYMENT SCHEDULE ── */}
+        {selected.quotation&&(<div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
+            color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
+            11. Payment Schedule
+          </div>
+          <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+            <thead><tr style={{ borderBottom:"2px solid #1e3a5f" }}>
+              {["Milestone","When","Day","Amount"].map(h=>(
+                <th key={h} style={{ padding:"7px 12px",textAlign:"left",fontSize:10,
+                  fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#1e3a5f" }}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {buildPaymentSchedule(parseInt(selected.timeline)||120, selected.quotation).map((p,i)=>(
+                <tr key={i} style={{ background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #f3f4f6" }}>
+                  <td style={{ padding:"7px 12px",fontWeight:600 }}>{p.label}</td>
+                  <td style={{ padding:"7px 12px",color:"#374151",fontSize:11 }}>{p.when}</td>
+                  <td style={{ padding:"7px 12px",color:"#374151" }}>Day {p.day}</td>
+                  <td style={{ padding:"7px 12px",fontWeight:700,color:"#1e3a5f" }}>
+                    {p.amount>0?fmtN(p.amount):`${p.pct}%`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>)}
+
+        {/* ── 12. DISCLAIMERS ── */}
         <div style={{ marginBottom:28 }}>
           <div style={{ fontSize:10,fontWeight:700,letterSpacing:3,textTransform:"uppercase",
             color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
