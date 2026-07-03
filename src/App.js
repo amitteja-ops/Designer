@@ -1320,6 +1320,9 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
   // finalQuoteP: use saved quotation if set; ensure it reflects labour
   // If saved quotation ≈ raw material (no labour), fall back to totalWithLabour
   const rawTotalP       = allRoomsP.reduce((t,r) => t + calcRoomP(r), 0);
+  // Aliases used by generatePrintHTML
+  const rawInteriorP    = allRoomsP.filter(r => !ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
+  const rawAddOnP       = allRoomsP.filter(r =>  ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
   const savedQuoteP     = parseFloat(selected.quotation) || 0;
   // Detect if saved quote is without labour (within 5% of raw total)
   const quoteHasLabour  = !savedQuoteP || savedQuoteP > rawTotalP * 1.02;
