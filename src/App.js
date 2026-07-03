@@ -1910,7 +1910,7 @@ ${!includeAddOn&&rawAddOnP>0?`
               {iRooms.length>0&&(<div style={{ marginBottom:4 }}>
                 <div style={{ display:"flex",justifyContent:"space-between",padding:"8px 14px",
                   background:"#dbeafe",borderBottom:"2px solid #1e3a5f" }}>
-                  <span style={{ fontWeight:700,color:"#1e3a5f",fontSize:13 }}>Interior Works</span>
+                  <span style={{ fontWeight:700,color:"#1e3a5f",fontSize:13 }}>Interior Works <span style={{fontSize:10,fontWeight:400,color:"#64748b"}}>(incl. {lp}% labour)</span></span>
                   <strong style={{ color:"#1e3a5f",fontSize:13 }}>{fmtN(iAmt)}</strong>
                 </div>
                 {iRooms.map((r,i)=>(
@@ -4963,8 +4963,20 @@ Dimension rules:
                         <button style={{ ...S.btn(), fontSize:11, padding:"6px 14px" }}
                           onClick={() => {
                             setF("previousQuotation", effectiveTotal.toString());
-                            setF("quotation", effectiveTotal.toString());
-                            setF("revisedQuotation", effectiveTotal.toString());
+                            // Auto-apply existing rebate if set
+                            const rebateVal = parseFloat(form.rebateValue||0);
+                            if (rebateVal > 0) {
+                              const rebateAmt = form.rebateType==="percent"
+                                ? Math.round(effectiveTotal * rebateVal / 100)
+                                : rebateVal;
+                              const couponAmt = form.couponApplied ? Math.round((effectiveTotal-rebateAmt)*0.05) : 0;
+                              const revised = Math.round(effectiveTotal - rebateAmt - couponAmt);
+                              setF("revisedQuotation", revised.toString());
+                              setF("quotation", revised.toString());
+                            } else {
+                              setF("quotation", effectiveTotal.toString());
+                              setF("revisedQuotation", effectiveTotal.toString());
+                            }
                           }}>
                           ↓ Use This
                         </button>
