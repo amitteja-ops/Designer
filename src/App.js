@@ -1296,26 +1296,28 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
   // ── Print styles ─────────────────────────────────────────────────────
 
   // ── Generate plain HTML for print (no React, no CSS class issues) ───
+  // ── Shared calculations (used by both on-screen and print) ─────────
+  const fmtN = (n) => '₹' + Number(n).toLocaleString('en-IN');
+  const ADD_ON_ROOMS_P  = new Set(["Add On"]);
+  const allRoomsP       = selected.rooms || [];
+  const calcRoomP       = (room) => {
+    const works = selected.roomWork?.[room] || [];
+    const spec  = selected.roomDetails?.[room] || {};
+    return works.reduce((t, w) => t + (w.price ? parseFloat(w.price) : calcItemPrice(w, spec)), 0);
+  };
+  const rawInteriorP    = allRoomsP.filter(r => !ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
+  const rawAddOnP       = allRoomsP.filter(r =>  ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
+  const rawTotalP       = rawInteriorP + rawAddOnP;
+  const finalQuoteP     = parseFloat(selected.quotation) || 0;
+  const interiorQuoteP  = rawTotalP > 0 ? Math.round(finalQuoteP * (rawInteriorP / rawTotalP)) : finalQuoteP;
+  const addOnQuoteP     = rawTotalP > 0 ? Math.round(finalQuoteP * (rawAddOnP  / rawTotalP)) : 0;
+  const effectiveQuoteP = includeAddOn ? finalQuoteP : interiorQuoteP;
+  const roomAmtP        = (room) => {
+    const denom = includeAddOn ? rawTotalP : rawInteriorP;
+    return denom > 0 ? Math.round(effectiveQuoteP * (calcRoomP(room) / denom)) : 0;
+  };
+
   const generatePrintHTML = () => {
-    const fmtN = (n) => '₹' + Number(n).toLocaleString('en-IN');
-    const ADD_ON_ROOMS_P = new Set(["Add On"]);
-    const allRoomsP = selected.rooms || [];
-    const roomsP = includeAddOn ? allRoomsP : allRoomsP.filter(r => !ADD_ON_ROOMS_P.has(r));
-    const calcRoomP = (room) => {
-      const works = selected.roomWork?.[room] || [];
-      const spec  = selected.roomDetails?.[room] || {};
-      return works.reduce((t, w) => t + (w.price ? parseFloat(w.price) : calcItemPrice(w, spec)), 0);
-    };
-    const rawInteriorP = allRoomsP.filter(r => !ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
-    const rawAddOnP    = allRoomsP.filter(r =>  ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
-    const rawTotalP    = rawInteriorP + rawAddOnP;
-    const finalQuoteP  = parseFloat(selected.quotation) || 0;
-    const interiorQuoteP = rawTotalP > 0 ? Math.round(finalQuoteP * (rawInteriorP / rawTotalP)) : finalQuoteP;
-    const effectiveQuoteP = includeAddOn ? finalQuoteP : interiorQuoteP;
-    const roomAmtP = (room) => {
-      const denom = includeAddOn ? rawTotalP : rawInteriorP;
-      return denom > 0 ? Math.round(effectiveQuoteP * (calcRoomP(room) / denom)) : 0;
-    };
 
     const td = (val, bold, right, color) =>
       `<td style="padding:6px 10px;border-bottom:1px solid #ddd;font-size:11px;${bold?'font-weight:700;':''}${right?'text-align:right;':''}${color?'color:'+color+';':''}">${val||'—'}</td>`;
@@ -1716,10 +1718,10 @@ ${!includeAddOn&&rawAddOnP>0?`
             <div style={{ fontSize:11,color:"#6b7280" }}>Date: {d}</div>
             {selected.quotation && (
               <div style={{ fontSize:18,fontWeight:800,color:C.teal,marginTop:4 }}>
-                {fmt(effectiveQuote)}
-                {!includeAddOn && addOnQuote>0 && (
+                {fmtN(effectiveQuoteP)}
+                {!includeAddOn && addOnQuoteP>0 && (
                   <div style={{ fontSize:11,color:"#9ca3af",fontWeight:400,marginTop:2 }}>
-                    (Add On {fmt(addOnQuote)} shown in Annexure)
+                    (Add On {fmtN(addOnQuoteP)} shown in Annexure)
                   </div>
                 )}
               </div>
