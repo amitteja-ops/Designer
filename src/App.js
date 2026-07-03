@@ -1300,18 +1300,28 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
   const fmtN = (n) => '₹' + Number(n).toLocaleString('en-IN');
   const ADD_ON_ROOMS_P  = new Set(["Add On"]);
   const allRoomsP       = selected.rooms || [];
+  const lp              = selected.labourPct != null ? selected.labourPct : 50;
+  const labourMult      = 1 + lp / 100;
+  // calcRoomP returns raw material cost; calcRoomWithLabour includes labour
   const calcRoomP       = (room) => {
     const works = selected.roomWork?.[room] || [];
     const spec  = selected.roomDetails?.[room] || {};
     return works.reduce((t, w) => t + (w.price ? parseFloat(w.price) : calcItemPrice(w, spec)), 0);
   };
+  const calcRoomWithLabour = (room) => Math.round(calcRoomP(room) * labourMult);
   const rawInteriorP    = allRoomsP.filter(r => !ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
   const rawAddOnP       = allRoomsP.filter(r =>  ADD_ON_ROOMS_P.has(r)).reduce((t,r) => t + calcRoomP(r), 0);
   const rawTotalP       = rawInteriorP + rawAddOnP;
-  const finalQuoteP     = parseFloat(selected.quotation) || 0;
+  // With-labour totals for interior and add-on
+  const interiorWithLabourP = Math.round(rawInteriorP * labourMult);
+  const addOnWithLabourP    = Math.round(rawAddOnP    * labourMult);
+  const totalWithLabourP    = interiorWithLabourP + addOnWithLabourP;
+  // finalQuoteP: use saved quotation if set, otherwise auto-calc with labour
+  const finalQuoteP     = parseFloat(selected.quotation) || totalWithLabourP;
   const interiorQuoteP  = rawTotalP > 0 ? Math.round(finalQuoteP * (rawInteriorP / rawTotalP)) : finalQuoteP;
-  const addOnQuoteP     = rawTotalP > 0 ? Math.round(finalQuoteP * (rawAddOnP  / rawTotalP)) : 0;
+  const addOnQuoteP     = rawTotalP > 0 ? Math.round(finalQuoteP * (rawAddOnP    / rawTotalP)) : 0;
   const effectiveQuoteP = includeAddOn ? finalQuoteP : interiorQuoteP;
+  // Per-room amount: proportional slice of effectiveQuote, includes labour since effectiveQuote does
   const roomAmtP        = (room) => {
     const denom = includeAddOn ? rawTotalP : rawInteriorP;
     return denom > 0 ? Math.round(effectiveQuoteP * (calcRoomP(room) / denom)) : 0;
