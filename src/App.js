@@ -5327,172 +5327,219 @@ Dimension rules:
           {/* ── INVENTORY ── */}
           {activeTab==="inventory" && (
             <div>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Project Material Inventory</div>
-              {!form.roomWork || Object.keys(form.roomWork).length===0 ? (
-                <div style={{ textAlign:"center", padding:40, background:"rgba(255,255,255,0.07)", borderRadius:3, color:"rgba(255,255,255,0.5)", fontSize:13, border:"1px solid rgba(255,255,255,0.12)" }}>
-                  ☝️ Add products in the <strong>Rooms & Materials</strong> tab first, then track them here
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,
+                color:"rgba(255,255,255,0.55)",textTransform:"uppercase",
+                borderBottom:"1px solid rgba(255,255,255,0.1)",
+                paddingBottom:8,marginBottom:16}}>Procurement Inventory</div>
+
+              {!form.roomWork||Object.keys(form.roomWork).length===0 ? (
+                <div style={{textAlign:"center",padding:40,
+                  background:"rgba(255,255,255,0.07)",borderRadius:12,
+                  color:"rgba(255,255,255,0.5)",fontSize:13,
+                  border:"1px solid rgba(255,255,255,0.12)"}}>
+                  ☝️ Add products in <strong>Rooms &amp; Materials</strong> first
                 </div>
-              ) : (
-                <>
-                  {/* Status legend */}
-                  <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap", alignItems:"center" }}>
-                    {[["Pending","rgba(255,159,10,0.15)","#92400E"],["Ordered","rgba(10,132,255,0.15)","#1E40AF"],["Delivered","rgba(48,209,88,0.12)","#065F46"],["Installed","rgba(191,90,242,0.15)","#4C1D95"]].map(([s,bg,c])=>(
-                      <span key={s} style={{ background:bg, color:c, padding:"4px 12px", borderRadius:2, fontSize:11, fontWeight:700, letterSpacing:1 }}>{s}</span>
-                    ))}
-                    <span style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>— tap status to cycle through stages</span>
-                  </div>
+              ) : (()=>{
+                // Smart material calculator - same as Materials Order List
+                const allItems2=[];
+                (form.rooms||[]).forEach(room=>{
+                  (form.roomWork?.[room]||[]).forEach(w=>{if(w.product) allItems2.push({...w,room});});
+                });
+                const pg2={},lt2={},hb2={};
+                let p12=0,p6=0,eb2=0,cSm=0,cMed=0,cLg=0,tD=0;
+                let gyp2=0,gA=0,gS=0,gl2=0,ti2=0,gr2=0,li2=0,rs2=0;
+                allItems2.forEach(w=>{
+                  const tp=(w.type||"").toLowerCase(),pr=(w.product||"").toLowerCase();
+                  const h=parseFloat(w.height)||0,wd=parseFloat(w.width)||0,qty=parseFloat(w.qty)||1,sqft=h*wd*qty;
+                  const sp=form.roomDetails?.[w.room]||{};
+                  const grade=sp.plywoodGrade||w.brand||"Standard Plywood";
+                  const lamT=sp.laminateType||"Standard Laminate";
+                  const hwB=sp.hardware||w.brand||"Standard Hardware";
+                  if(["box","frame","kitchen","wardrobe"].some(t=>tp.includes(t))&&sqft>0){
+                    const st=sqft*2.2; pg2[grade]=(pg2[grade]||0)+st;
+                    lt2[lamT]=(lt2[lamT]||0)+st*1.1; p6+=sqft*0.8; eb2+=sqft*0.4;
+                  }
+                  if(tp.includes("profile")||tp.includes("glass door")){
+                    gl2+=sqft*qty; tD+=qty;
+                    if(tp.includes("sliding")) cLg+=qty;
+                    else hb2[hwB]=(hb2[hwB]||0)+qty*4;
+                  }
+                  if(tp.includes("drawer")){
+                    if(pr.includes("small")||wd<18) cSm+=qty;
+                    else if(pr.includes("medium")||wd<24) cMed+=qty;
+                    else cLg+=qty;
+                    p12+=qty*3; eb2+=qty*2; hb2[hwB]=(hb2[hwB]||0)+qty;
+                  }
+                  if(tp.includes("ceiling")||tp.includes("pvc ceiling")){gyp2+=sqft*qty;gA+=Math.sqrt(sqft)*4*qty;gS+=sqft*qty*8;}
+                  if(tp.includes("mirror")) gl2+=sqft>0?sqft*qty:6*qty;
+                  if(tp.includes("glass")&&!tp.includes("profile")&&!tp.includes("mirror")) gl2+=sqft*qty;
+                  if(tp.includes("tile")) ti2+=sqft*qty;
+                  if(tp.includes("granite")||tp.includes("stone")) gr2+=sqft>0?sqft*qty:7*qty;
+                  if(tp.includes("roller shutter")) rs2+=qty;
+                  if(tp.includes("light")||tp.includes("lights")) li2+=qty;
+                });
+                const toS2=s=>Math.ceil(s/32);
+                const pItems2=[];
+                const aI=(cat,mat,qty,unit)=>{if(!qty||qty<=0) return; pItems2.push({key:`inv__${cat}__${mat}`,cat,mat,qty,unit});};
+                Object.entries(pg2).forEach(([g,s])=>aI("Plywood",`16mm ${g}`,toS2(s),"sheets"));
+                if(p12>0) aI("Plywood","12mm Plywood — Drawer Boxes",toS2(p12),"sheets");
+                if(p6>0)  aI("Plywood","6mm Plywood — Back Panels",toS2(p6),"sheets");
+                Object.entries(lt2).forEach(([l,s])=>aI("Laminate",l,toS2(s),"sheets"));
+                if(eb2>0) aI("Edge Banding","PVC Edge Banding 22mm",Math.ceil(eb2),"metres");
+                Object.entries(hb2).forEach(([b,c])=>aI("Hardware",`Hinges — ${b}`,c,"nos"));
+                if(cSm>0) aI("Hardware","Drawer Channels Small",cSm,"pairs");
+                if(cMed>0)aI("Hardware","Drawer Channels Medium",cMed,"pairs");
+                if(cLg>0) aI("Hardware","Channels Large/Sliding",cLg,"sets");
+                const hdl=Math.round(tD+(cSm+cMed+cLg));
+                if(hdl>0) aI("Hardware","Cabinet Handles / Knobs",hdl,"nos");
+                if(gl2>0) aI("Glass","Glass Panels",gl2.toFixed(1),"sq ft");
+                if(gyp2>0){aI("Ceiling","Gypsum Board 12.5mm",toS2(gyp2),"sheets");aI("Ceiling","GI Angle + Channel",Math.ceil(gA/10),"bundles");aI("Ceiling","Drywall Screws",Math.ceil(gS/200),"boxes");}
+                if(ti2>0) aI("Tiles","Tiles",Math.ceil(ti2*1.1),"sq ft");
+                if(gr2>0) aI("Granite","Granite / Stone",gr2.toFixed(1),"sq ft");
+                if(rs2>0) aI("Accessories","Roller Shutter",rs2,"nos");
+                if(li2>0) aI("Electrical","LED Lights",li2,"nos");
+                const totP=Object.values(pg2).reduce((a,b)=>a+b,0)+p12+p6;
+                aI("Consumables","Fevicol / Wood Adhesive",Math.ceil(totP/300)||1,"kg tins");
+                aI("Consumables","Wood Screws & Fasteners",1,"lot");
+                aI("Consumables","Wood Filler / Putty",1,"lot");
+                if(gyp2>0) aI("Consumables","Joint Compound & Tape",Math.ceil(gyp2/100),"bags");
 
-                  {/* Per-room material inventory */}
-                  {Object.entries(form.roomWork).map(([room, works]) => {
-                    const matEntries = (works||[]).filter(w=>w.brand&&w.product);
-                    if (!matEntries.length) return null;
-                    const installedCount = matEntries.filter(w=>{
-                      const k=`${room}__${w.id}`;
-                      return form.inventory?.[k]?.status==="Installed";
-                    }).length;
-                    return (
-                      <div key={room} className="glass" style={{ marginBottom:16, borderRadius:14 }}>
-                        {/* Room header */}
-                        <div style={{ background:"rgba(255,255,255,0.08)", padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", borderRadius:"14px 14px 0 0", borderBottom:"1px solid rgba(255,255,255,0.1)" }}>
-                          <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>🏠 {room}</span>
-                          <span style={{ color:installedCount===matEntries.length?C.teal:"#aaa", fontSize:10, letterSpacing:1 }}>
-                            {installedCount}/{matEntries.length} items installed
-                          </span>
-                        </div>
-                        {/* Column headers */}
-                        <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
-                          padding:"8px 14px", background:"rgba(255,255,255,0.08)",
-                          borderBottom:"1px solid rgba(255,255,255,0.1)",
-                          fontSize:9, fontWeight:700, letterSpacing:1.5,
-                          color:"rgba(255,255,255,0.5)", textTransform:"uppercase" }}>
-                          {["Category","Brand","Qty","Status","Dates","Notes"].map(h=><span key={h}>{h}</span>)}
-                        </div>
-                        {/* Material rows */}
-                        {matEntries.map((w, i) => {
-                          const invKey = `${room}__${w.id}`;
-                          const matType = w.matType||"plywood";
-                          const sel = { name: w.brand, qty: w.qty };
-                          const catalog = getCatalog(matType);
-                          const item = catalog.find(m=>m.name===w.brand);
-                          const sqft = w.height&&w.width ? parseFloat(w.height)*parseFloat(w.width) : 0;
-                          const displayQty = QTY_TYPES.has(w.type) ? (parseFloat(w.qty)||1)+" units" : sqft.toFixed(1)+" sqft";
-                          const lineTotal = w.price ? parseFloat(w.price) : (item&&sqft ? sqft*item.price : 0);
-                          const inv = form.inventory?.[invKey] || { status:"Pending" };
-                          const SINV = ["Pending","Ordered","Delivered","Installed"];
-                          const SC = {
-                            Pending:   { bg:"rgba(255,159,10,0.22)", c:"#FF9F0A" },
-                            Ordered:   { bg:"rgba(10,132,255,0.22)", c:"#0A84FF" },
-                            Delivered: { bg:"rgba(48,209,88,0.22)",  c:"#30D158" },
-                            Installed: { bg:"rgba(191,90,242,0.22)", c:"#BF5AF2" },
-                          };
-                          const sc = SC[inv.status||"Pending"];
-                          const setInv = (field, val) => setForm(f=>({
-                            ...f,
-                            inventory: {
-                              ...(f.inventory||{}),
-                              [invKey]: { ...(f.inventory?.[invKey]||{status:"Pending"}), [field]: val }
-                            }
-                          }));
-                          const cycleStatus = () => {
-                            const idx = SINV.indexOf(inv.status||"Pending");
-                            const next = SINV[(idx+1)%SINV.length];
-                            const nextIdx = SINV.indexOf(next);
-                            const now = new Date().toISOString().split("T")[0];
-                            setForm(f => {
-                              const current = f.inventory?.[invKey] || {status:"Pending"};
-                              const updated = { ...current, status: next };
-                              if (nextIdx < 1) { delete updated.orderedDate;   }
-                              if (nextIdx < 2) { delete updated.deliveredDate; }
-                              if (nextIdx < 3) { delete updated.installedDate; }
-                              if (next==="Ordered")   updated.orderedDate   = now;
-                              if (next==="Delivered") updated.deliveredDate = now;
-                              if (next==="Installed") updated.installedDate = now;
-                              const newInv = { ...(f.inventory||{}), [invKey]: updated };
-                              // Log inventory change to DB immediately
-                              const entry = makeEntry(
-                                "inventory",
-                                `Inventory: ${sel.name} (${room}) → ${next}`,
-                                { status: f.status, quotation: f.quotation, invStatus: next, material: sel.name, room }
-                              );
-                              const currentLog = f.auditLog||[];
-                              saveAuditEntry(f.id, currentLog, entry).then(newLog => {
-                                if (newLog) {
-                                  setForm(prev => ({ ...prev, auditLog: newLog }));
-                                  // Also update customers list so detail view shows updated log
-                                  setCustomers(prev => prev.map(c =>
-                                    c.id===f.id ? { ...c, auditLog: newLog, inventory: { ...(c.inventory||{}), [invKey]: {...(f.inventory?.[invKey]||{}), status: next } } } : c
-                                  ));
-                                }
-                              });
-                              return { ...f, inventory: newInv };
-                            });
-                          };
-                          return (
-                            <div key={invKey} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1.2fr 2fr",
-                              padding:"10px 14px",
-                              background:i%2===0?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.02)",
-                              borderTop:"1px solid rgba(255,255,255,0.08)",
-                              alignItems:"center", gap:8 }}>
-                              <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", fontWeight:600, textTransform:"uppercase", letterSpacing:1 }}>{w.product}</div>
-                              <div style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{w.brand||"—"} <span style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>{w.type}</span></div>
-                              <div style={{ fontSize:12, color:"rgba(255,255,255,0.5)" }}>{displayQty}</div>
-                              {/* Clickable status */}
-                              <div onClick={cycleStatus} title="Click to update status"
-                                style={{ ...sc, padding:"5px 8px", borderRadius:2, fontSize:10,
-                                  fontWeight:700, letterSpacing:1, cursor:"pointer",
-                                  textTransform:"uppercase", textAlign:"center", userSelect:"none",
-                                  transition:"all 0.15s" }}>
-                                {inv.status||"Pending"}
-                              </div>
-                              {/* Auto-stamped dates */}
-                              <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", lineHeight:1.8 }}>
-                                {inv.orderedDate   && <div>📦 {inv.orderedDate}</div>}
-                                {inv.deliveredDate && <div>🚚 {inv.deliveredDate}</div>}
-                                {inv.installedDate && <div>✅ {inv.installedDate}</div>}
-                              </div>
-                              {/* Notes */}
-                              <input className="glass-input" style={{padding:"5px 10px",fontSize:11}}
-                                value={inv.notes||""}
-                                onChange={e=>setInv("notes", e.target.value)}
-                                placeholder="Supplier, PO#, remarks…"/>
+                const updateInv2=(key,field,val)=>{
+                  setForm(f=>({...f,inventory:{...(f.inventory||{}),[key]:{...(f.inventory?.[key]||{}),[field]:val}}}));
+                };
+                const cycleStatus2=(key)=>{
+                  const stages=["Pending","Ordered","Delivered","Installed"];
+                  const cur=form.inventory?.[key]?.status||"Pending";
+                  updateInv2(key,"status",stages[(stages.indexOf(cur)+1)%stages.length]);
+                };
+
+                const STATUSES2=["Pending","Ordered","Delivered","Installed"];
+                const counts2={Pending:0,Ordered:0,Delivered:0,Installed:0};
+                pItems2.forEach(p=>{const s=form.inventory?.[p.key]?.status||"Pending";counts2[s]++;});
+
+                const SS2={
+                  Pending:  {bg:"rgba(255,159,10,0.2)",c:"#FF9F0A"},
+                  Ordered:  {bg:"rgba(10,132,255,0.2)", c:"#0A84FF"},
+                  Delivered:{bg:"rgba(48,209,88,0.2)",  c:"#30D158"},
+                  Installed:{bg:"rgba(191,90,242,0.2)", c:"#BF5AF2"},
+                };
+                const CC2={
+                  Plywood:"#0A84FF",Laminate:"#30D158","Edge Banding":"#FF9F0A",
+                  Hardware:"#BF5AF2",Glass:"#64D2FF",Ceiling:"#FF453A",
+                  Tiles:"#FF9F0A",Granite:"#8E8E93",Accessories:"#FF453A",
+                  Electrical:"#FFD60A",Consumables:"#636366",
+                };
+                const cats2=[...new Set(pItems2.map(p=>p.cat))];
+
+                return (
+                  <div>
+                    {/* Summary */}
+                    <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+                      {STATUSES2.map(s=>{
+                        const sc=SS2[s];
+                        return (
+                          <div key={s} style={{flex:1,minWidth:80,textAlign:"center",
+                            padding:"10px 8px",background:sc.bg,borderRadius:10,
+                            border:`1px solid ${sc.c}44`}}>
+                            <div style={{fontSize:22,fontWeight:900,color:sc.c}}>{counts2[s]}</div>
+                            <div style={{fontSize:9,fontWeight:700,color:sc.c,letterSpacing:1,
+                              textTransform:"uppercase"}}>{s}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Progress bar */}
+                    <div style={{height:5,background:"rgba(255,255,255,0.08)",borderRadius:3,
+                      overflow:"hidden",display:"flex",marginBottom:20}}>
+                      {[["Installed","#BF5AF2"],["Delivered","#30D158"],
+                        ["Ordered","#0A84FF"],["Pending","#FF9F0A"]].map(([s,col])=>(
+                        counts2[s]>0&&<div key={s} style={{flex:counts2[s],background:col}}/>
+                      ))}
+                    </div>
+
+                    {cats2.map(cat=>{
+                      const catColor=CC2[cat]||C.teal;
+                      const catItems=pItems2.filter(p=>p.cat===cat);
+                      const done=catItems.filter(p=>["Delivered","Installed"].includes(
+                        form.inventory?.[p.key]?.status||"Pending")).length;
+                      return (
+                        <div key={cat} className="glass" style={{marginBottom:14,borderRadius:14}}>
+                          <div style={{padding:"10px 16px",display:"flex",
+                            justifyContent:"space-between",alignItems:"center",
+                            borderRadius:"14px 14px 0 0",
+                            borderBottom:"1px solid rgba(255,255,255,0.1)",
+                            background:"rgba(255,255,255,0.06)"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:8,height:8,borderRadius:"50%",background:catColor}}/>
+                              <span style={{fontWeight:800,fontSize:13,color:"#fff",letterSpacing:1}}>{cat}</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-
-                  {/* Overall progress summary */}
-                  {(() => {
-                    const allKeys = Object.entries(form.roomWork||{}).flatMap(([room,works])=>
-                      (works||[]).filter(w=>w.brand&&w.product).map(w=>`${room}__${w.id}`)
-                    );
-                    const counts = {Pending:0,Ordered:0,Delivered:0,Installed:0};
-                    allKeys.forEach(k=>{ const s=form.inventory?.[k]?.status||"Pending"; counts[s]=(counts[s]||0)+1; });
-                    const total = allKeys.length;
-                    return total>0?(
-                      <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:3, padding:"16px 20px", border:"1px solid rgba(255,255,255,0.12)", marginTop:8 }}>
-                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", marginBottom:10 }}>Overall Progress</div>
-                        <div style={{ display:"flex", height:8, borderRadius:4, overflow:"hidden", marginBottom:12, background:C.line }}>
-                          {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#FF9F0A"]].map(([s,col])=>(
-                            counts[s]>0 ? <div key={s} style={{ flex:counts[s], background:col }}/> : null
-                          ))}
+                            <span style={{fontSize:10,
+                              color:done===catItems.length?C.teal:"rgba(255,255,255,0.4)",
+                              letterSpacing:1}}>{done}/{catItems.length} done</span>
+                          </div>
+                          {/* Col headers */}
+                          <div style={{display:"grid",
+                            gridTemplateColumns:"2.5fr 0.6fr 0.7fr 0.9fr 1.2fr 1.1fr 1.1fr 2fr",
+                            padding:"5px 14px",background:"rgba(255,255,255,0.04)",
+                            fontSize:9,fontWeight:700,letterSpacing:1.5,
+                            color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>
+                            {["Material","Qty","Unit","Status","Vendor","Order Date","Delivery","Notes"].map(h=>(
+                              <span key={h}>{h}</span>
+                            ))}
+                          </div>
+                          {catItems.map((p,i)=>{
+                            const inv2=form.inventory?.[p.key]||{};
+                            const status2=inv2.status||"Pending";
+                            const sc=SS2[status2];
+                            return (
+                              <div key={p.key} style={{display:"grid",
+                                gridTemplateColumns:"2.5fr 0.6fr 0.7fr 0.9fr 1.2fr 1.1fr 1.1fr 2fr",
+                                padding:"9px 14px",alignItems:"center",
+                                background:i%2===0?"transparent":"rgba(255,255,255,0.02)",
+                                borderTop:"1px solid rgba(255,255,255,0.05)"}}>
+                                <div style={{fontWeight:600,color:"rgba(255,255,255,0.9)",fontSize:12}}>{p.mat}</div>
+                                <div style={{fontWeight:900,color:catColor,fontSize:15}}>{p.qty}</div>
+                                <div style={{fontSize:10,color:"rgba(255,255,255,0.45)",fontWeight:600}}>{p.unit}</div>
+                                <div onClick={()=>cycleStatus2(p.key)}
+                                  style={{cursor:"pointer",background:sc.bg,color:sc.c,
+                                    padding:"4px 6px",borderRadius:6,fontSize:9,
+                                    fontWeight:800,letterSpacing:0.5,textTransform:"uppercase",
+                                    textAlign:"center",userSelect:"none"}}>
+                                  {status2}
+                                </div>
+                                <input value={inv2.vendor||""}
+                                  onChange={e=>updateInv2(p.key,"vendor",e.target.value)}
+                                  placeholder="Vendor…"
+                                  style={{...S.input,fontSize:11,padding:"4px 8px",
+                                    background:"rgba(255,255,255,0.06)"}}/>
+                                <input type="date" value={inv2.orderedDate||""}
+                                  onChange={e=>updateInv2(p.key,"orderedDate",e.target.value)}
+                                  style={{...S.input,fontSize:10,padding:"4px 5px",
+                                    background:"rgba(255,255,255,0.06)"}}/>
+                                <input type="date" value={inv2.deliveredDate||""}
+                                  onChange={e=>updateInv2(p.key,"deliveredDate",e.target.value)}
+                                  style={{...S.input,fontSize:10,padding:"4px 5px",
+                                    background:"rgba(255,255,255,0.06)"}}/>
+                                <input value={inv2.notes||""}
+                                  onChange={e=>updateInv2(p.key,"notes",e.target.value)}
+                                  placeholder="Supplier, PO#, remarks…"
+                                  style={{...S.input,fontSize:11,padding:"4px 8px",
+                                    background:"rgba(255,255,255,0.06)"}}/>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div style={{ display:"flex", gap:16, fontSize:12, flexWrap:"wrap" }}>
-                          {[["Pending","#92400E","rgba(255,159,10,0.15)"],["Ordered","#1E40AF","rgba(10,132,255,0.15)"],["Delivered","#065F46","rgba(48,209,88,0.12)"],["Installed","#4C1D95","rgba(191,90,242,0.15)"]].map(([s,c,bg])=>(
-                            <div key={s}><span style={{ background:bg, color:c, padding:"2px 8px", borderRadius:2, fontSize:10, fontWeight:700 }}>{counts[s]}</span> <span style={{ color:"rgba(255,255,255,0.5)" }}>{s}</span></div>
-                          ))}
-                          <div style={{ marginLeft:"auto", fontWeight:700, color:"rgba(255,255,255,0.92)" }}>{counts.Installed}/{total} Complete</div>
-                        </div>
-                      </div>
-                    ):null;
-                  })()}
-                </>
-              )}
+                      );
+                    })}
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.3)",
+                      marginTop:8,textAlign:"center"}}>
+                      Tap STATUS to cycle: Pending → Ordered → Delivered → Installed
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
-
-          {/* ── NOTES ── */}
           {activeTab==="notes" && (
             <div>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>Scope of Work & Notes</div>
