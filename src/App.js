@@ -3369,69 +3369,240 @@ High Rise Interiors, Hyderabad`
 
           {/* Materials Order List & Specifications */}
           {(()=>{
-            const SHEET_SZ = { plywood:32, ceiling:32, laminate:32, glass:20, tiles:9 };
-            const matList = [];
+            // ── Smart material calculator from room work ──────────────────
+            // Reads actual items in Rooms & Dimensions and computes ALL vendor materials
+
+            const allWorkItems = [];
             (selected.rooms||[]).forEach(room=>{
               (selected.roomWork?.[room]||[]).forEach(w=>{
-                if(!w.brand||!w.matType) return;
-                const sqft=(w.height&&w.width)
-                  ?parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1):0;
-                const ex=matList.find(m=>m.matType===w.matType&&m.brand===w.brand);
-                if(!ex) matList.push({matType:w.matType,brand:w.brand,rooms:[room],totalSqft:sqft});
-                else{ if(!ex.rooms.includes(room))ex.rooms.push(room); ex.totalSqft=(ex.totalSqft||0)+sqft; }
+                if(w.product) allWorkItems.push({...w, room});
               });
             });
-            if(!matList.length) return null;
+
+            if(!allWorkItems.length) return null;
+
+            // Counters
+            let plywood18=0, plywood12=0, plywood6=0;
+            let laminate=0, edgeBanding=0;
+            let hingesSoft=0, channelsSm=0, channelsMed=0, channelsLg=0;
+            let handles=0, locks=0;
+            let gypsumBoard=0, gypsumAngle=0, gypsumScrews=0;
+            let glassSqft=0;
+            let tileSqft=0;
+            let graniteSqft=0;
+            let rollerShutters=0;
+            let lights=0;
+            let paintSqft=0;
+
+            allWorkItems.forEach(w=>{
+              const type  = (w.type||"").toLowerCase();
+              const prod  = (w.product||"").toLowerCase();
+              const h     = parseFloat(w.height)||0;
+              const wd    = parseFloat(w.width)||0;
+              const qty   = parseFloat(w.qty)||1;
+              const sqft  = h*wd*qty;
+              const spec  = selected.roomDetails?.[w.room]||{};
+
+              // ── CARPENTRY (Box, Frame, Kitchen, Wardrobe types) ────────
+              if(["box","frame","kitchen","wardrobe"].some(t=>type.includes(t)) && sqft>0){
+                // 18mm for structural panels (sides, top, bottom, shelves)
+                // Rule: 1 sq ft of carpentry ≈ 2.2 sq ft of 18mm plywood (front+back+sides)
+                plywood18 += sqft * 2.2;
+                // 6mm for backing boards
+                plywood6  += sqft * 0.8;
+                // Laminate: both sides + 10% waste
+                laminate  += sqft * 2.2 * 1.1;
+                // Edge banding: perimeter of each panel ≈ 0.4 running metres per sq ft
+                edgeBanding += sqft * 0.4;
+              }
+
+              // ── PROFILE / GLASS DOORS ─────────────────────────────────
+              if(type.includes("profile") || type.includes("glass door")){
+                glassSqft += sqft*qty;
+                // Each door needs 4 hinges or 1 channel set
+                const doorCount = qty||1;
+                if(type.includes("sliding")) channelsLg += doorCount;
+                else hingesSoft += doorCount*4;
+              }
+
+              // ── DRAWERS ───────────────────────────────────────────────
+              if(type.includes("drawer")){
+                const drawerQty = qty||1;
+                if(prod.includes("small") || wd<18) channelsSm += drawerQty;
+                else if(prod.includes("medium") || wd<24) channelsMed += drawerQty;
+                else channelsLg += drawerQty;
+                // 12mm plywood for drawer box
+                plywood12 += drawerQty * 3; // 3 panels per drawer
+                edgeBanding += drawerQty * 2;
+              }
+
+              // ── CEILING ───────────────────────────────────────────────
+              if(type.includes("ceiling") || type.includes("pvc ceiling")){
+                gypsumBoard += sqft * qty;
+                gypsumAngle += Math.sqrt(sqft) * 4 * qty; // perimeter in ft
+                gypsumScrews += sqft * qty * 8; // ~8 screws per sq ft
+              }
+
+              // ── MIRROR ────────────────────────────────────────────────
+              if(type.includes("mirror")){
+                glassSqft += sqft>0 ? sqft*qty : 6*qty; // default 6 sqft if no dims
+              }
+
+              // ── GLASS (other) ─────────────────────────────────────────
+              if(type.includes("glass") && !type.includes("profile") && !type.includes("mirror")){
+                glassSqft += sqft*qty;
+              }
+
+              // ── TILES ─────────────────────────────────────────────────
+              if(type.includes("tile")){ tileSqft += sqft*qty; }
+
+              // ── GRANITE ───────────────────────────────────────────────
+              if(type.includes("granite") || type.includes("stone")){
+                graniteSqft += sqft>0 ? sqft*qty : 7*qty;
+              }
+
+              // ── ROLLER SHUTTER ────────────────────────────────────────
+              if(type.includes("roller shutter")){ rollerShutters += qty; }
+
+              // ── LIGHTS ────────────────────────────────────────────────
+              if(type.includes("light") || type.includes("lights")){ lights += qty; }
+
+              // ── PAINT (Service type) ──────────────────────────────────
+              if(type.includes("paint") || prod.includes("paint")){
+                paintSqft += sqft>0 ? sqft*qty : 100*qty;
+              }
+            });
+
+            // ── Convert to sheets (1 sheet = 32 sq ft, 8×4 ft) ─────────
+            const toSheets = (sqft) => Math.ceil(sqft/32);
+            const toLamSheets = (sqft) => Math.ceil(sqft/32);
+
+            // ── Build vendor list ────────────────────────────────────────
+            const matRows = [];
+            const add = (category, material, qty, unit, note) => {
+              if(!qty||qty<=0) return;
+              matRows.push({category, material, qty, unit, note});
+            };
+
+            // Plywood
+            if(plywood18>0) add("Plywood","18mm BWP Marine Plywood",toSheets(plywood18),"sheets",
+              `${plywood18.toFixed(0)} sq ft ÷ 32. Add 10% cutting waste → order ${Math.ceil(toSheets(plywood18)*1.1)} sheets`);
+            if(plywood12>0) add("Plywood","12mm Plywood (drawer boxes)",toSheets(plywood12),"sheets",
+              `${plywood12.toFixed(0)} sq ft. For drawer construction`);
+            if(plywood6>0)  add("Plywood","6mm Plywood (back panels)",toSheets(plywood6),"sheets",
+              `${plywood6.toFixed(0)} sq ft. Wardrobe/cabinet backing`);
+
+            // Laminate
+            if(laminate>0) add("Laminate","Laminate Sheets (as per spec)",toLamSheets(laminate),"sheets",
+              `${laminate.toFixed(0)} sq ft incl. both sides + 10% waste`);
+
+            // Edge Banding
+            if(edgeBanding>0) add("Edge Banding","PVC Edge Banding (22mm)",Math.ceil(edgeBanding),"metres",
+              `Estimated from carpentry perimeters`);
+
+            // Hardware - Hinges
+            if(hingesSoft>0) add("Hardware","Soft-Close Hinges",hingesSoft,"nos",
+              `4 per door. Includes door hinges`);
+
+            // Hardware - Channels
+            if(channelsSm>0) add("Hardware","Drawer Channels — Small (14–16 inch)",channelsSm,"pairs",
+              `For small drawers`);
+            if(channelsMed>0) add("Hardware","Drawer Channels — Medium (18–20 inch)",channelsMed,"pairs",
+              `For medium drawers`);
+            if(channelsLg>0) add("Hardware","Drawer/Sliding Channels — Large",channelsLg,"sets",
+              `For large drawers or sliding doors`);
+
+            // Handles - estimate 1 per door/drawer
+            const totalDoors = Math.round((hingesSoft/4)+(channelsSm+channelsMed+channelsLg));
+            if(totalDoors>0) add("Hardware","Cabinet Handles / Knobs",totalDoors,"nos",
+              `1 per door or drawer`);
+
+            // Glass
+            if(glassSqft>0) add("Glass","Glass Panels (as per spec)",glassSqft.toFixed(1),"sq ft",
+              `${Math.ceil(glassSqft/20)} standard panes (20 sq ft each)`);
+
+            // Ceiling
+            if(gypsumBoard>0){
+              add("Ceiling","Gypsum Board (12.5mm)",toSheets(gypsumBoard),"sheets",
+                `${gypsumBoard.toFixed(0)} sq ft ceiling area ÷ 32`);
+              add("Ceiling","GI Angle / Channel (ceiling frame)",Math.ceil(gypsumAngle/10),"bundles",
+                `~${gypsumAngle.toFixed(0)} running ft of framing`);
+              add("Ceiling","Drywall Screws",Math.ceil(gypsumScrews/200),"boxes",
+                `~${Math.round(gypsumScrews)} screws (200 per box)`);
+            }
+
+            // Tiles
+            if(tileSqft>0) add("Tiles","Tiles (as per spec)",Math.ceil(tileSqft*1.1),"sq ft",
+              `${tileSqft.toFixed(0)} sq ft + 10% breakage`);
+
+            // Granite
+            if(graniteSqft>0) add("Granite","Granite / Stone Slab",graniteSqft.toFixed(1),"sq ft",
+              `Platform & wall cladding`);
+
+            // Roller Shutters
+            if(rollerShutters>0) add("Accessories","Roller Shutter Unit",rollerShutters,"nos","Complete unit with motor if applicable");
+
+            // Lights
+            if(lights>0) add("Electrical","LED Lights / Fixtures",lights,"nos","As per spec — verify wattage with electrician");
+
+            // Paint
+            if(paintSqft>0) add("Paint","Paint (walls/ceiling)",Math.ceil(paintSqft/100),"cans",
+              `1 can ≈ 100 sq ft. ${paintSqft.toFixed(0)} sq ft total`);
+
+            // Consumables (always needed)
+            add("Consumables","Wood Screws & Fasteners",1,"lot","Assorted sizes for carpentry");
+            add("Consumables","Wood Filler / Putty",1,"lot","For finishing edges and gaps");
+            add("Consumables","Adhesive / Fevicol",Math.ceil((plywood18+plywood12+plywood6)/300),"kg tins","1 tin per ~300 sq ft of lamination");
+            if(gypsumBoard>0) add("Consumables","Joint Compound & Tape",Math.ceil(gypsumBoard/100),"bags","For ceiling finishing");
+
+            // Group by category
+            const categories = [...new Set(matRows.map(r=>r.category))];
+
             return (
               <>
-              <div style={IR.sec}>Materials Order List &amp; Specifications</div>
-              <div style={{ overflowX:"auto",marginBottom:8 }}>
-                <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
-                  <thead>
-                    <tr style={{ background:"#0F1923" }}>
-                      {["#","Category","Brand / Material","Total Qty","Sheets Required","Used In"].map(h=>(
-                        <th key={h} style={{ padding:"8px 12px",color:"#fff",fontWeight:700,
-                          fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {matList.map((m,i)=>{
-                      const sheetSz = SHEET_SZ[m.matType]||0;
-                      const sqft = m.totalSqft||0;
-                      const sheets = sheetSz>0&&sqft>0 ? Math.ceil(sqft/sheetSz) : 0;
-                      return (
-                        <tr key={i} style={{ background:i%2===0?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.02)",
-                          borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
-                          <td style={{ padding:"8px 12px",color:"rgba(255,255,255,0.4)",fontSize:11 }}>{i+1}</td>
-                          <td style={{ padding:"8px 12px" }}>
-                            <span style={{ background:"rgba(10,132,255,0.2)",color:C.teal,
-                              padding:"2px 8px",borderRadius:3,fontSize:10,fontWeight:700,
-                              textTransform:"uppercase",letterSpacing:1 }}>{m.matType}</span>
-                          </td>
-                          <td style={{ padding:"8px 12px",fontWeight:700,color:"rgba(255,255,255,0.9)" }}>{m.brand}</td>
-                          <td style={{ padding:"8px 12px",color:"rgba(255,255,255,0.7)",fontWeight:600 }}>
-                            {sqft>0?`${sqft.toFixed(1)} sq ft`:"—"}
-                          </td>
-                          <td style={{ padding:"8px 12px" }}>
-                            {sheets>0?(
-                              <div>
-                                <span style={{ fontWeight:800,color:C.teal,fontSize:14 }}>{sheets}</span>
-                                <span style={{ color:"rgba(255,255,255,0.4)",fontSize:10,marginLeft:6 }}>
-                                  sheets × {sheetSz} sq ft
-                                </span>
-                              </div>
-                            ):"—"}
-                          </td>
-                          <td style={{ padding:"8px 12px",color:"rgba(255,255,255,0.5)",fontSize:11 }}>
-                            {m.rooms.join(", ")}
-                          </td>
+                <div style={IR.sec}>Materials Order List &amp; Specifications</div>
+                <div style={{ fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:12 }}>
+                  Auto-calculated from Rooms &amp; Dimensions data. Share with vendors for procurement.
+                </div>
+                {categories.map(cat=>(
+                  <div key={cat} style={{ marginBottom:16 }}>
+                    <div style={{ fontSize:10,fontWeight:700,color:C.teal,letterSpacing:2,
+                      textTransform:"uppercase",padding:"6px 12px",
+                      background:"rgba(10,132,255,0.08)",
+                      borderLeft:`3px solid ${C.teal}`,marginBottom:4 }}>{cat}</div>
+                    <table style={{ width:"100%",borderCollapse:"collapse" }}>
+                      <thead>
+                        <tr style={{ background:"rgba(255,255,255,0.04)" }}>
+                          {["Material / Item","Quantity","Unit","Note for Vendor"].map(h=>(
+                            <th key={h} style={{ padding:"7px 12px",color:"rgba(255,255,255,0.4)",
+                              fontWeight:700,fontSize:9,letterSpacing:1,textTransform:"uppercase",
+                              textAlign:"left",borderBottom:"1px solid rgba(255,255,255,0.08)" }}>{h}</th>
+                          ))}
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody>
+                        {matRows.filter(r=>r.category===cat).map((r,i)=>(
+                          <tr key={i} style={{ borderBottom:"1px solid rgba(255,255,255,0.05)",
+                            background:i%2===0?"transparent":"rgba(255,255,255,0.02)" }}>
+                            <td style={{ padding:"8px 12px",fontWeight:600,
+                              color:"rgba(255,255,255,0.85)",fontSize:12 }}>{r.material}</td>
+                            <td style={{ padding:"8px 12px",textAlign:"center" }}>
+                              <span style={{ fontWeight:900,fontSize:16,color:C.teal }}>{r.qty}</span>
+                            </td>
+                            <td style={{ padding:"8px 12px",color:"rgba(255,255,255,0.5)",
+                              fontSize:11,fontWeight:600 }}>{r.unit}</td>
+                            <td style={{ padding:"8px 12px",color:"rgba(255,255,255,0.4)",
+                              fontSize:11,fontStyle:"italic" }}>{r.note||"—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+                <div style={{ fontSize:11,color:"rgba(255,159,10,0.7)",marginTop:8,
+                  padding:"8px 12px",border:"1px solid rgba(255,159,10,0.2)",borderRadius:4 }}>
+                  ⚠️ Practical tip: Order 10% extra on all plywood and laminate sheets to account for cutting losses, grain matching and on-site adjustments.
+                </div>
               </>
             );
           })()}
