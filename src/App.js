@@ -1401,13 +1401,19 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
     });
 
     // Materials list
+    const SHEET_SQ_FT = { plywood:32, ceiling:32, laminate:32, glass:20, tiles:9 };
     const matList = [];
     allRoomsP.forEach(room => {
       (selected.roomWork?.[room]||[]).forEach(w => {
         if (!w.brand || !w.matType) return;
         const ex = matList.find(m => m.matType === w.matType && m.brand === w.brand);
-        if (!ex) matList.push({ matType: w.matType, brand: w.brand, rooms: [room] });
-        else if (!ex.rooms.includes(room)) ex.rooms.push(room);
+        const sqft = (w.height && w.width)
+          ? parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1) : 0;
+        if (!ex) matList.push({ matType:w.matType, brand:w.brand, rooms:[room], totalSqft:sqft });
+        else {
+          if (!ex.rooms.includes(room)) ex.rooms.push(room);
+          ex.totalSqft = (ex.totalSqft||0) + sqft;
+        }
       });
     });
 
@@ -1818,15 +1824,19 @@ ${!includeAddOn&&rawAddOnP>0?`
             4. Materials Order List &amp; Specifications
           </div>
           {(()=>{
+            const SHEET_SQ_FT_CR = { plywood:32, ceiling:32, laminate:32, glass:20, tiles:9 };
             const matList=[];
-            // Only include rooms in current scope (respects includeAddOn toggle)
             const matRooms = includeAddOn ? allRoomsP : allRoomsP.filter(r=>!ADD_ON_ROOMS_P.has(r));
             matRooms.forEach(room=>{
               (selected.roomWork?.[room]||[]).forEach(w=>{
                 if(!w.brand||!w.matType)return;
+                const sqft=(w.height&&w.width)?parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1):0;
                 const ex=matList.find(m=>m.matType===w.matType&&m.brand===w.brand);
-                if(!ex)matList.push({matType:w.matType,brand:w.brand,rooms:[room]});
-                else if(!ex.rooms.includes(room))ex.rooms.push(room);
+                if(!ex)matList.push({matType:w.matType,brand:w.brand,rooms:[room],totalSqft:sqft});
+                else{
+                  if(!ex.rooms.includes(room))ex.rooms.push(room);
+                  ex.totalSqft=(ex.totalSqft||0)+sqft;
+                }
               });
             });
             return matList.length>0?(
@@ -1837,14 +1847,26 @@ ${!includeAddOn&&rawAddOnP>0?`
                       fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#1e3a5f" }}>{h}</th>
                   ))}
                 </tr></thead>
-                <tbody>{matList.map((m,i)=>(
+                <tbody>{matList.map((m,i)=>{
+                  const sheetSz = SHEET_SQ_FT_CR[m.matType]||0;
+                  const sqft = m.totalSqft||0;
+                  const sheets = sheetSz>0&&sqft>0 ? Math.ceil(sqft/sheetSz) : 0;
+                  return (
                   <tr key={i} style={{ background:i%2===0?"#fff":"#f8fafc",borderBottom:"1px solid #f3f4f6" }}>
                     <td style={{ padding:"7px 12px",color:"#6b7280" }}>{i+1}</td>
-                    <td style={{ padding:"7px 12px",fontWeight:700,textTransform:"capitalize" }}>{m.matType}</td>
+                    <td style={{ padding:"7px 12px" }}>
+                      <span style={{ background:"#1e3a5f",color:"#fff",padding:"2px 8px",
+                        borderRadius:3,fontSize:10,fontWeight:700,textTransform:"uppercase" }}>
+                        {m.matType}
+                      </span>
+                    </td>
                     <td style={{ padding:"7px 12px",fontWeight:600 }}>{m.brand}</td>
+                    <td style={{ padding:"7px 12px",color:"#374151",fontWeight:600 }}>
+                      {sqft>0?`${sqft.toFixed(1)} sq ft`:"—"}
+                    </td>
                     <td style={{ padding:"7px 12px",color:"#6b7280",fontSize:11 }}>{m.rooms.join(", ")}</td>
-                  </tr>
-                ))}</tbody>
+                  </tr>);
+                })}</tbody>
               </table>
             ):<div style={{ color:"#6b7280",fontSize:13 }}>No material specs set.</div>;
           })()}
@@ -3344,6 +3366,75 @@ High Rise Interiors, Hyderabad`
               })}
             </>
           )}
+
+          {/* Materials Order List & Specifications */}
+          {(()=>{
+            const SHEET_SZ = { plywood:32, ceiling:32, laminate:32, glass:20, tiles:9 };
+            const matList = [];
+            (selected.rooms||[]).forEach(room=>{
+              (selected.roomWork?.[room]||[]).forEach(w=>{
+                if(!w.brand||!w.matType) return;
+                const sqft=(w.height&&w.width)
+                  ?parseFloat(w.height)*parseFloat(w.width)*(parseFloat(w.qty)||1):0;
+                const ex=matList.find(m=>m.matType===w.matType&&m.brand===w.brand);
+                if(!ex) matList.push({matType:w.matType,brand:w.brand,rooms:[room],totalSqft:sqft});
+                else{ if(!ex.rooms.includes(room))ex.rooms.push(room); ex.totalSqft=(ex.totalSqft||0)+sqft; }
+              });
+            });
+            if(!matList.length) return null;
+            return (
+              <>
+              <div style={IR.sec}>Materials Order List &amp; Specifications</div>
+              <div style={{ overflowX:"auto",marginBottom:8 }}>
+                <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                  <thead>
+                    <tr style={{ background:"#0F1923" }}>
+                      {["#","Category","Brand / Material","Total Qty","Sheets Required","Used In"].map(h=>(
+                        <th key={h} style={{ padding:"8px 12px",color:"#fff",fontWeight:700,
+                          fontSize:10,letterSpacing:1,textTransform:"uppercase",textAlign:"left" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matList.map((m,i)=>{
+                      const sheetSz = SHEET_SZ[m.matType]||0;
+                      const sqft = m.totalSqft||0;
+                      const sheets = sheetSz>0&&sqft>0 ? Math.ceil(sqft/sheetSz) : 0;
+                      return (
+                        <tr key={i} style={{ background:i%2===0?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.02)",
+                          borderBottom:"1px solid rgba(255,255,255,0.06)" }}>
+                          <td style={{ padding:"8px 12px",color:"rgba(255,255,255,0.4)",fontSize:11 }}>{i+1}</td>
+                          <td style={{ padding:"8px 12px" }}>
+                            <span style={{ background:"rgba(10,132,255,0.2)",color:C.teal,
+                              padding:"2px 8px",borderRadius:3,fontSize:10,fontWeight:700,
+                              textTransform:"uppercase",letterSpacing:1 }}>{m.matType}</span>
+                          </td>
+                          <td style={{ padding:"8px 12px",fontWeight:700,color:"rgba(255,255,255,0.9)" }}>{m.brand}</td>
+                          <td style={{ padding:"8px 12px",color:"rgba(255,255,255,0.7)",fontWeight:600 }}>
+                            {sqft>0?`${sqft.toFixed(1)} sq ft`:"—"}
+                          </td>
+                          <td style={{ padding:"8px 12px" }}>
+                            {sheets>0?(
+                              <div>
+                                <span style={{ fontWeight:800,color:C.teal,fontSize:14 }}>{sheets}</span>
+                                <span style={{ color:"rgba(255,255,255,0.4)",fontSize:10,marginLeft:6 }}>
+                                  sheets × {sheetSz} sq ft
+                                </span>
+                              </div>
+                            ):"—"}
+                          </td>
+                          <td style={{ padding:"8px 12px",color:"rgba(255,255,255,0.5)",fontSize:11 }}>
+                            {m.rooms.join(", ")}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              </>
+            );
+          })()}
 
           {/* Notes */}
           {selected.notes && (
