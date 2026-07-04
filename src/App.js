@@ -3292,80 +3292,288 @@ High Rise Interiors, Hyderabad`
             </>
           )}
 
-          {/* Inventory Status Table */}
-          {selected.inventory && Object.keys(selected.inventory).length > 0 && (
-            <>          
-          <div style={IR.sec}>Material Inventory Status</div>
-              {/* Progress summary */}
-              {(() => {
-                const allKeys = Object.keys(selected.inventory);
-                const counts = { Pending:0, Ordered:0, Delivered:0, Installed:0 };
-                allKeys.forEach(k => { const s=selected.inventory[k]?.status||"Pending"; counts[s]=(counts[s]||0)+1; });
-                const total = allKeys.length;
-                return (
-                  <div style={{ display:"flex", gap:12, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
-                    <div style={{ flex:1, height:6, borderRadius:3, overflow:"hidden", background:C.line, display:"flex" }}>
-                      {[["Installed","#8B5CF6"],["Delivered","#10B981"],["Ordered","#3B82F6"],["Pending","#FF9F0A"]].map(([s,col])=>(
-                        counts[s]>0 && <div key={s} style={{ flex:counts[s], background:col }}/>
-                      ))}
-                    </div>
-                    {[["Pending","#92400E","rgba(255,159,10,0.15)"],["Ordered","#1E40AF","rgba(10,132,255,0.15)"],["Delivered","#065F46","rgba(48,209,88,0.12)"],["Installed","#4C1D95","rgba(191,90,242,0.15)"]].map(([s,c,bg])=>(
-                      <span key={s} style={{ background:bg, color:c, padding:"2px 10px", borderRadius:2, fontSize:10, fontWeight:700 }}>{counts[s]} {s}</span>
-                    ))}
-                    <span style={{ fontSize:11, color:"#6b7280" }}>{counts.Installed}/{total} complete</span>
-                  </div>
-                );
-              })()}
-              {/* Group by room */}
-              {Object.entries(selected.roomMaterials||{}).map(([room, mats]) => {
-                const matEntries = Object.entries(mats).filter(([,v])=>v?.name);
-                if (!matEntries.length) return null;
-                const roomItems = matEntries.map(([matType, sel]) => ({
-                  matType, sel,
-                  inv: selected.inventory?.[`${room}__${sel.name}`] || { status:"Pending" }
-                }));
-                return (
-                  <div key={room} style={{ marginBottom:16, border:"1px solid #e5e7eb", borderRadius:3, overflow:"hidden" }}>
-                    <div style={{ background:"#060812", padding:"8px 14px", display:"flex", justifyContent:"space-between" }}>
-                      <span style={{ color:"#fff", fontWeight:700, fontSize:12 }}>🏠 {room}</span>
-                      <span style={{ color:C.teal, fontSize:10, letterSpacing:1 }}>
-                        {roomItems.filter(({inv})=>inv.status==="Installed").length}/{roomItems.length} installed
-                      </span>
-                    </div>
-                    <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr 2fr", padding:"6px 14px",
-                      background:"#2A3A4A", fontSize:9, fontWeight:700, letterSpacing:1.5, color:"#aaa", textTransform:"uppercase" }}>
-                      {["Category","Brand","Qty","Status","Ordered","Delivered","Notes"].map(h=><span key={h}>{h}</span>)}
-                    </div>
-                    {roomItems.map(({matType, sel, inv}, i) => {
-                      const item = getCatalog(matType).find(m=>m.name===sel.name);
-                      const sc = {
-                        Pending:   { bg:"rgba(255,159,10,0.15)", c:"#92400E" },
-                        Ordered:   { bg:"rgba(10,132,255,0.15)", c:"#1E40AF" },
-                        Delivered: { bg:"rgba(48,209,88,0.12)", c:"#065F46" },
-                        Installed: { bg:"rgba(191,90,242,0.15)", c:"#4C1D95" },
-                      }[inv.status||"Pending"];
+          {/* Procurement Inventory */}
+          {(()=>{
+            // ── Build procurement list from smart material calculator ────
+            const allItems = [];
+            (selected.rooms||[]).forEach(room=>{
+              (selected.roomWork?.[room]||[]).forEach(w=>{
+                if(w.product) allItems.push({...w, room});
+              });
+            });
+            if(!allItems.length) return null;
+
+            // Compute material quantities (same logic as Materials Order List)
+            const plywoodByGrade={}, laminateByType={}, hardwareByBrand={};
+            let plywood12=0,plywood6=0,edgeBanding=0;
+            let channelsSm=0,channelsMed=0,channelsLg=0,totalDoors=0;
+            let gypsumBoard=0,gypsumAngle=0,gypsumScrews=0;
+            let glassSqft=0,tileSqft=0,graniteSqft=0,lights=0,rollerShutters=0;
+
+            allItems.forEach(w=>{
+              const type=(w.type||"").toLowerCase(),prod=(w.product||"").toLowerCase();
+              const h=parseFloat(w.height)||0,wd=parseFloat(w.width)||0,qty=parseFloat(w.qty)||1;
+              const sqft=h*wd*qty;
+              const spec=selected.roomDetails?.[w.room]||{};
+              const grade=spec.plywoodGrade||"Standard Plywood";
+              const lamType=spec.laminateType||"Standard Laminate";
+              const hwBrand=spec.hardware||"Standard Hardware";
+
+              if(["box","frame","kitchen","wardrobe"].some(t=>type.includes(t))&&sqft>0){
+                const st=sqft*2.2;
+                plywoodByGrade[grade]=(plywoodByGrade[grade]||0)+st;
+                laminateByType[lamType]=(laminateByType[lamType]||0)+st*1.1;
+                plywood6+=sqft*0.8; edgeBanding+=sqft*0.4;
+              }
+              if(type.includes("profile")||type.includes("glass door")){
+                glassSqft+=sqft*qty; totalDoors+=qty;
+                if(type.includes("sliding")) channelsLg+=qty;
+                else { hardwareByBrand[hwBrand]=(hardwareByBrand[hwBrand]||0)+qty*4; }
+              }
+              if(type.includes("drawer")){
+                const dq=qty;
+                if(prod.includes("small")||wd<18) channelsSm+=dq;
+                else if(prod.includes("medium")||wd<24) channelsMed+=dq;
+                else channelsLg+=dq;
+                plywood12+=dq*3; edgeBanding+=dq*2;
+                hardwareByBrand[hwBrand]=(hardwareByBrand[hwBrand]||0)+dq;
+              }
+              if(type.includes("ceiling")||type.includes("pvc ceiling")){
+                gypsumBoard+=sqft*qty; gypsumAngle+=Math.sqrt(sqft)*4*qty; gypsumScrews+=sqft*qty*8;
+              }
+              if(type.includes("mirror")) glassSqft+=sqft>0?sqft*qty:6*qty;
+              if(type.includes("glass")&&!type.includes("profile")&&!type.includes("mirror")) glassSqft+=sqft*qty;
+              if(type.includes("tile")) tileSqft+=sqft*qty;
+              if(type.includes("granite")||type.includes("stone")) graniteSqft+=sqft>0?sqft*qty:7*qty;
+              if(type.includes("roller shutter")) rollerShutters+=qty;
+              if(type.includes("light")||type.includes("lights")) lights+=qty;
+            });
+
+            const toS=(sqft)=>Math.ceil(sqft/32);
+
+            // Build procurement items list
+            const procItems = [];
+            const addItem = (cat, material, qty, unit) => {
+              if(!qty||qty<=0) return;
+              const key = `inv__${cat}__${material}`;
+              const inv = selected.inventory?.[key] || {};
+              procItems.push({ key, cat, material, qty, unit, inv });
+            };
+
+            Object.entries(plywoodByGrade).forEach(([grade,sqft])=>{
+              addItem("Plywood",`16mm ${grade}`,toS(sqft),"sheets");
+            });
+            if(plywood12>0) addItem("Plywood","12mm Plywood — Drawer Boxes",toS(plywood12),"sheets");
+            if(plywood6>0)  addItem("Plywood","6mm Plywood — Back Panels",toS(plywood6),"sheets");
+
+            Object.entries(laminateByType).forEach(([lt,sqft])=>{
+              addItem("Laminate",lt,toS(sqft),"sheets");
+            });
+
+            if(edgeBanding>0) addItem("Edge Banding","PVC Edge Banding 22mm",Math.ceil(edgeBanding),"metres");
+
+            Object.entries(hardwareByBrand).forEach(([brand,cnt])=>{
+              addItem("Hardware",`Hinges — ${brand}`,cnt,"nos");
+            });
+            if(channelsSm>0)  addItem("Hardware","Drawer Channels Small",channelsSm,"pairs");
+            if(channelsMed>0) addItem("Hardware","Drawer Channels Medium",channelsMed,"pairs");
+            if(channelsLg>0)  addItem("Hardware","Channels Large/Sliding",channelsLg,"sets");
+            const handles=Math.round(totalDoors+(channelsSm+channelsMed+channelsLg));
+            if(handles>0) addItem("Hardware","Cabinet Handles / Knobs",handles,"nos");
+
+            if(glassSqft>0) addItem("Glass","Glass Panels",glassSqft.toFixed(1),"sq ft");
+            if(gypsumBoard>0){
+              addItem("Ceiling","Gypsum Board 12.5mm",toS(gypsumBoard),"sheets");
+              addItem("Ceiling","GI Angle + Channel",Math.ceil(gypsumAngle/10),"bundles");
+              addItem("Ceiling","Drywall Screws",Math.ceil(gypsumScrews/200),"boxes");
+            }
+            if(tileSqft>0)     addItem("Tiles","Tiles",Math.ceil(tileSqft*1.1),"sq ft");
+            if(graniteSqft>0)  addItem("Granite","Granite / Stone",graniteSqft.toFixed(1),"sq ft");
+            if(rollerShutters>0) addItem("Accessories","Roller Shutter",rollerShutters,"nos");
+            if(lights>0)       addItem("Electrical","LED Lights",lights,"nos");
+            addItem("Consumables","Fevicol / Adhesive",Math.ceil((Object.values(plywoodByGrade).reduce((a,b)=>a+b,0)+plywood12+plywood6)/300)||1,"kg tins");
+            addItem("Consumables","Wood Screws & Fasteners",1,"lot");
+            addItem("Consumables","Wood Filler / Putty",1,"lot");
+            if(gypsumBoard>0) addItem("Consumables","Joint Compound & Tape",Math.ceil(gypsumBoard/100),"bags");
+
+            const updateInv = async (key, field, value) => {
+              const newInv = {
+                ...(selected.inventory||{}),
+                [key]: { ...(selected.inventory?.[key]||{}), [field]: value }
+              };
+              // Optimistic UI update
+              setCustomers(prev=>prev.map(c=>c.id===selected.id?{...c,inventory:newInv}:c));
+              // Persist to Supabase
+              try {
+                const tok = JSON.parse(localStorage.getItem("crm_session")||"{}").token;
+                await fetch(`https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${selected.id}`,{
+                  method:"PATCH",
+                  headers:{"Content-Type":"application/json",
+                    "apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY",
+                    "Authorization":`Bearer ${tok}`,"Prefer":"return=minimal"},
+                  body:JSON.stringify({inventory:JSON.stringify(newInv)})
+                });
+              } catch(e){ console.error("Inventory save error",e); }
+            };
+
+            // Status stats
+            const statuses = ["Pending","Ordered","Delivered","Installed"];
+            const counts = {};
+            statuses.forEach(s=>counts[s]=0);
+            procItems.forEach(p=>{ const s=p.inv.status||"Pending"; counts[s]=(counts[s]||0)+1; });
+            const total = procItems.length;
+
+            const STATUS_COLOR = {
+              Pending:   { bg:"#fef3c7", text:"#92400e", dot:"#f59e0b" },
+              Ordered:   { bg:"#dbeafe", text:"#1e40af", dot:"#3b82f6" },
+              Delivered: { bg:"#dcfce7", text:"#166534", dot:"#22c55e" },
+              Installed: { bg:"#f3e8ff", text:"#6b21a8", dot:"#a855f7" },
+            };
+            const CAT_DARK = {
+              Plywood:"#1e3a5f", Laminate:"#14532d", "Edge Banding":"#78350f",
+              Hardware:"#3b0764", Glass:"#164e63", Ceiling:"#7f1d1d",
+              Tiles:"#78350f", Granite:"#374151", Accessories:"#7f1d1d",
+              Electrical:"#713f12", Consumables:"#1f2937",
+            };
+
+            const cats = [...new Set(procItems.map(p=>p.cat))];
+
+            return (
+              <div>
+                <div style={IR.sec}>Procurement Inventory</div>
+
+                {/* Summary progress bar */}
+                <div style={{ marginBottom:20, padding:"14px 18px",
+                  background:"rgba(255,255,255,0.04)", borderRadius:8,
+                  border:"1px solid rgba(255,255,255,0.1)" }}>
+                  <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+                    {statuses.map(s=>{
+                      const sc=STATUS_COLOR[s];
                       return (
-                        <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1fr 1fr 1fr 1fr 2fr",
-                          padding:"9px 14px", background:i%2===0?"#ffffff":"#f8f9fa", borderTop:`1px solid ${C.line}`, alignItems:"center" }}>
-                          <div style={IR.td(i)}><span style={IR.tag(C.teal)}>{MATERIAL_LABELS[matType]}</span></div>
-                          <div style={{ ...IR.td(i), fontWeight:600 }}>{sel.name}</div>
-                          <div style={IR.td(i)}>{sel.qty} {item?.unit||""}</div>
-                          <div style={{ padding:"9px 14px" }}>
-                            <span style={{ ...sc, padding:"3px 8px", borderRadius:2, fontSize:9, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>
-                              {inv.status||"Pending"}
-                            </span>
-                          </div>
-                          <div style={{ ...IR.td(i), fontSize:10, color:"#6b7280" }}>{inv.orderedDate||"—"}</div>
-                          <div style={{ ...IR.td(i), fontSize:10, color:"#6b7280" }}>{inv.deliveredDate||"—"}</div>
-                          <div style={{ ...IR.td(i), fontSize:11, color:"#6b7280" }}>{inv.notes||""}</div>
+                        <div key={s} style={{ flex:1, textAlign:"center", padding:"8px 4px",
+                          background:sc.bg+"33", borderRadius:6, border:`1px solid ${sc.dot}44` }}>
+                          <div style={{ fontSize:22, fontWeight:900, color:sc.dot }}>{counts[s]||0}</div>
+                          <div style={{ fontSize:9, fontWeight:700, color:sc.text,
+                            letterSpacing:1, textTransform:"uppercase" }}>{s}</div>
                         </div>
                       );
                     })}
                   </div>
-                );
-              })}
-            </>
-          )}
+                  {/* Progress bar */}
+                  <div style={{ height:8, background:"rgba(255,255,255,0.08)", borderRadius:4,
+                    overflow:"hidden", display:"flex" }}>
+                    {[["Installed","#a855f7"],["Delivered","#22c55e"],["Ordered","#3b82f6"],["Pending","#f59e0b"]].map(([s,col])=>(
+                      counts[s]>0&&<div key={s} style={{ flex:counts[s], background:col }}/>
+                    ))}
+                  </div>
+                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:6, textAlign:"right" }}>
+                    {counts.Installed+counts.Delivered} of {total} items procured
+                  </div>
+                </div>
+
+                {/* Table by category */}
+                {cats.map(cat=>{
+                  const dark = CAT_DARK[cat]||"#1e3a5f";
+                  const catItems = procItems.filter(p=>p.cat===cat);
+                  const catDone = catItems.filter(p=>(p.inv.status==="Installed"||p.inv.status==="Delivered")).length;
+                  return (
+                    <div key={cat} style={{ marginBottom:20, border:"1px solid rgba(255,255,255,0.1)",
+                      borderRadius:8, overflow:"hidden" }}>
+                      {/* Category header */}
+                      <div style={{ background:dark, padding:"9px 16px",
+                        display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <span style={{ fontWeight:800, fontSize:11, color:"#fff",
+                          letterSpacing:2, textTransform:"uppercase" }}>{cat}</span>
+                        <span style={{ fontSize:10, color:"rgba(255,255,255,0.6)" }}>
+                          {catDone}/{catItems.length} done
+                        </span>
+                      </div>
+                      {/* Column headers */}
+                      <div style={{ display:"grid",
+                        gridTemplateColumns:"2.5fr 0.8fr 0.8fr 1fr 1fr 1fr 1fr 1.5fr",
+                        padding:"6px 14px", background:"rgba(255,255,255,0.06)",
+                        fontSize:9, fontWeight:700, letterSpacing:1.5,
+                        color:"rgba(255,255,255,0.5)", textTransform:"uppercase" }}>
+                        {["Material","Qty","Unit","Status","Vendor","Order Date","Delivery Date","Notes"].map(h=>(
+                          <span key={h}>{h}</span>
+                        ))}
+                      </div>
+                      {/* Items */}
+                      {catItems.map((p,i)=>{
+                        const sc = STATUS_COLOR[p.inv.status||"Pending"];
+                        return (
+                          <div key={p.key} style={{ display:"grid",
+                            gridTemplateColumns:"2.5fr 0.8fr 0.8fr 1fr 1fr 1fr 1fr 1.5fr",
+                            padding:"8px 14px", alignItems:"center",
+                            background:i%2===0?"rgba(255,255,255,0.02)":"transparent",
+                            borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+                            {/* Material name */}
+                            <div style={{ fontWeight:600, color:"rgba(255,255,255,0.9)", fontSize:12 }}>
+                              {p.material}
+                            </div>
+                            {/* Qty */}
+                            <div style={{ fontWeight:800, color:C.teal, fontSize:14 }}>{p.qty}</div>
+                            {/* Unit */}
+                            <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>{p.unit}</div>
+                            {/* Status dropdown */}
+                            <div>
+                              <select
+                                value={p.inv.status||"Pending"}
+                                onChange={e=>updateInv(p.key,"status",e.target.value)}
+                                style={{ fontSize:10, fontWeight:700, padding:"3px 6px",
+                                  borderRadius:4, border:"none", cursor:"pointer",
+                                  background:sc.bg, color:sc.text,
+                                  outline:"none", width:"100%" }}>
+                                {statuses.map(s=><option key={s} value={s}>{s}</option>)}
+                              </select>
+                            </div>
+                            {/* Vendor */}
+                            <input
+                              value={p.inv.vendor||""}
+                              onChange={e=>updateInv(p.key,"vendor",e.target.value)}
+                              placeholder="Vendor name"
+                              style={{ fontSize:11, padding:"3px 6px", borderRadius:4,
+                                border:"1px solid rgba(255,255,255,0.1)",
+                                background:"rgba(255,255,255,0.06)",
+                                color:"rgba(255,255,255,0.8)",
+                                outline:"none", width:"100%" }}/>
+                            {/* Order Date */}
+                            <input type="date"
+                              value={p.inv.orderedDate||""}
+                              onChange={e=>updateInv(p.key,"orderedDate",e.target.value)}
+                              style={{ fontSize:10, padding:"3px 6px", borderRadius:4,
+                                border:"1px solid rgba(255,255,255,0.1)",
+                                background:"rgba(255,255,255,0.06)",
+                                color:"rgba(255,255,255,0.7)",
+                                outline:"none", width:"100%" }}/>
+                            {/* Delivery Date */}
+                            <input type="date"
+                              value={p.inv.deliveredDate||""}
+                              onChange={e=>updateInv(p.key,"deliveredDate",e.target.value)}
+                              style={{ fontSize:10, padding:"3px 6px", borderRadius:4,
+                                border:"1px solid rgba(255,255,255,0.1)",
+                                background:"rgba(255,255,255,0.06)",
+                                color:"rgba(255,255,255,0.7)",
+                                outline:"none", width:"100%" }}/>
+                            {/* Notes */}
+                            <input
+                              value={p.inv.notes||""}
+                              onChange={e=>updateInv(p.key,"notes",e.target.value)}
+                              placeholder="Notes…"
+                              style={{ fontSize:11, padding:"3px 6px", borderRadius:4,
+                                border:"1px solid rgba(255,255,255,0.1)",
+                                background:"rgba(255,255,255,0.06)",
+                                color:"rgba(255,255,255,0.7)",
+                                outline:"none", width:"100%" }}/>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Materials Order List & Specifications */}
           {(()=>{
