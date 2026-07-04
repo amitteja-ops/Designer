@@ -4091,7 +4091,7 @@ if (view==="vendor" && selected) {
       <div style={S.main}>
         {/* Tabs */}
         <div style={{ display:"flex",gap:6,marginBottom:24,flexWrap:"wrap" }}>
-          {[["personal","👤 Client"],["rooms","🏠 Rooms & Materials"],["quotation","💰 Quotation"],["notes","📝 Notes"],["inventory","📦 Inventory"],["plan","📅 Project Plan"]].map(([k,l])=>(
+          {[["personal","👤 Client"],["rooms","🏠 Rooms & Materials"],["quotation","💰 Quotation"],["notes","📝 Notes"],["inventory","📦 Inventory"],["margin","📊 Gross Margin"],["plan","📅 Project Plan"]].map(([k,l])=>(
             <button key={k} style={S.tab(activeTab===k)} onClick={()=>setActiveTab(k)}>{l}</button>
           ))}
         </div>
@@ -5553,6 +5553,318 @@ Dimension rules:
           )}
 
           {/* ── PROJECT PLAN TAB ── */}
+          {activeTab==="margin" && (
+            <div>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:2,
+                color:"rgba(255,255,255,0.55)",textTransform:"uppercase",
+                borderBottom:"1px solid rgba(255,255,255,0.1)",
+                paddingBottom:8,marginBottom:16}}>Gross Margin Calculator</div>
+
+              {(()=>{
+                // ── Hyderabad vendor database (Manikonda / Hitec City area) ──
+                const VENDORS = {
+                  plywood: [
+                    {name:"Sai Timber Mart — Manikonda",    pricePerSheet:1800, note:"Century/Greenply stockist"},
+                    {name:"Sri Venkateshwara Plywoods — Kondapur", pricePerSheet:1750, note:"BWP grade available"},
+                    {name:"Bhavani Timber — Gachibowli",    pricePerSheet:1900, note:"Premium brands"},
+                    {name:"National Ply & Hardware — KPHB",  pricePerSheet:1650, note:"Bulk discount available"},
+                    {name:"Laxmi Timber — Miyapur",          pricePerSheet:1700, note:"MR & BWP grade"},
+                  ],
+                  laminate: [
+                    {name:"Archidply Dealer — Manikonda",    pricePerSheet:850,  note:"Archidply/Merino"},
+                    {name:"Greenlam Studio — Jubilee Hills",  pricePerSheet:950,  note:"Greenlam/Royale"},
+                    {name:"Formica Centre — Banjara Hills",   pricePerSheet:1100, note:"Formica/Merino premium"},
+                    {name:"Sri Sai Laminates — Kondapur",    pricePerSheet:780,  note:"Economy range"},
+                    {name:"Century Laminates — Kukatpally",  pricePerSheet:900,  note:"Century brand"},
+                  ],
+                  hardware: [
+                    {name:"Hettich Dealer — Manikonda",      pricePerSet:180,    note:"Hettich soft-close"},
+                    {name:"Hafele Showroom — Jubilee Hills",  pricePerSet:250,    note:"Hafele premium"},
+                    {name:"Nimmi Hardware — Gachibowli",     pricePerSet:120,    note:"Economy hinges"},
+                    {name:"Ebco Dealer — Kondapur",          pricePerSet:160,    note:"Ebco channels"},
+                    {name:"Sleek Hardware — KPHB",           pricePerSet:140,    note:"Mid-range"},
+                  ],
+                  glass: [
+                    {name:"Saint Gobain — Manikonda",        pricePerSqft:85,    note:"Saint Gobain 4mm"},
+                    {name:"Asahi Glass — Gachibowli",        pricePerSqft:95,    note:"Premium clear glass"},
+                    {name:"Modi Glass — Kondapur",           pricePerSqft:75,    note:"Economy range"},
+                    {name:"Shree Glass — Kukatpally",        pricePerSqft:80,    note:"Standard 4mm/6mm"},
+                  ],
+                  ceiling: [
+                    {name:"Saint Gobain Gyproc — Manikonda", pricePerSheet:480,  note:"Gyproc 12.5mm"},
+                    {name:"USG Boral — Kondapur",            pricePerSheet:520,  note:"Premium gypsum"},
+                    {name:"Birla Aerocon — Gachibowli",     pricePerSheet:450,  note:"Aerocon boards"},
+                    {name:"India Gypsum — KPHB",            pricePerSheet:420,  note:"Economy"},
+                  ],
+                  edgeBanding: [
+                    {name:"Rehau Dealer — Manikonda",        pricePerMetre:18,   note:"Rehau PVC"},
+                    {name:"Flexi Roll — Kondapur",           pricePerMetre:12,   note:"Economy PVC"},
+                    {name:"Veneer Edge — Gachibowli",        pricePerMetre:22,   note:"Veneer matching"},
+                  ],
+                  tiles: [
+                    {name:"Kajaria — Manikonda",             pricePerSqft:55,    note:"Kajaria brand"},
+                    {name:"Somany — Kondapur",               pricePerSqft:65,    note:"Somany premium"},
+                    {name:"Orient Bell — Gachibowli",        pricePerSqft:45,    note:"Economy"},
+                    {name:"Johnson Tiles — KPHB",            pricePerSqft:50,    note:"Mid-range"},
+                  ],
+                  granite: [
+                    {name:"Sri Sai Granites — Manikonda",    pricePerSqft:95,    note:"Black/Brown granite"},
+                    {name:"KS Granites — Gachibowli",        pricePerSqft:120,   note:"Premium varieties"},
+                    {name:"Raj Granites — Kondapur",         pricePerSqft:85,    note:"Economy"},
+                  ],
+                  lights: [
+                    {name:"Philips Dealer — Manikonda",      pricePerUnit:180,   note:"Philips LED"},
+                    {name:"Syska — Gachibowli",             pricePerUnit:150,   note:"Syska LED"},
+                    {name:"Havells — Kondapur",             pricePerUnit:220,   note:"Havells premium"},
+                    {name:"Orient — KPHB",                  pricePerUnit:130,   note:"Economy"},
+                  ],
+                  consumables: [
+                    {name:"Fevicol Depot — Manikonda",       pricePerUnit:350,   note:"Fevicol SH 5kg"},
+                    {name:"Asian Paints Dealer — Kondapur",  pricePerUnit:380,   note:"Dr Fixit + Fevicol"},
+                  ],
+                };
+
+                // ── Compute material quantities (same as inventory tab) ──
+                const allItems3=[];
+                (form.rooms||[]).forEach(room=>{
+                  (form.roomWork?.[room]||[]).forEach(w=>{if(w.product) allItems3.push({...w,room});});
+                });
+                const pg3={},lt3={},hb3={};
+                let p12b=0,p6b=0,eb3=0,cSm3=0,cMed3=0,cLg3=0,tD3=0;
+                let gyp3=0,gl3=0,ti3=0,gr3=0,li3=0;
+                allItems3.forEach(w=>{
+                  const tp=(w.type||"").toLowerCase(),pr=(w.product||"").toLowerCase();
+                  const h=parseFloat(w.height)||0,wd=parseFloat(w.width)||0,qty=parseFloat(w.qty)||1,sqft=h*wd*qty;
+                  const sp=form.roomDetails?.[w.room]||{};
+                  const grade=sp.plywoodGrade||w.brand||"Standard Plywood";
+                  const lamT=sp.laminateType||"Standard Laminate";
+                  const hwB=sp.hardware||w.brand||"Standard Hardware";
+                  if(["box","frame","kitchen","wardrobe"].some(t=>tp.includes(t))&&sqft>0){
+                    const st=sqft*2.2; pg3[grade]=(pg3[grade]||0)+st;
+                    lt3[lamT]=(lt3[lamT]||0)+st*1.1; p6b+=sqft*0.8; eb3+=sqft*0.4;
+                  }
+                  if(tp.includes("profile")||tp.includes("glass door")){gl3+=sqft*qty;tD3+=qty;if(!tp.includes("sliding"))hb3[hwB]=(hb3[hwB]||0)+qty*4;else cLg3+=qty;}
+                  if(tp.includes("drawer")){if(pr.includes("small")||wd<18)cSm3+=qty;else if(pr.includes("medium")||wd<24)cMed3+=qty;else cLg3+=qty;p12b+=qty*3;eb3+=qty*2;hb3[hwB]=(hb3[hwB]||0)+qty;}
+                  if(tp.includes("ceiling")||tp.includes("pvc ceiling")){gyp3+=sqft*qty;}
+                  if(tp.includes("mirror")) gl3+=sqft>0?sqft*qty:6*qty;
+                  if(tp.includes("glass")&&!tp.includes("profile")&&!tp.includes("mirror")) gl3+=sqft*qty;
+                  if(tp.includes("tile")) ti3+=sqft*qty;
+                  if(tp.includes("granite")||tp.includes("stone")) gr3+=sqft>0?sqft*qty:7*qty;
+                  if(tp.includes("light")||tp.includes("lights")) li3+=qty;
+                });
+                const toS3=s=>Math.ceil(s/32);
+                const totPly3=Object.values(pg3).reduce((a,b)=>a+b,0)+p12b+p6b;
+                const totalSheets3=toS3(totPly3);
+                const totalLamSheets=toS3(Object.values(lt3).reduce((a,b)=>a+b,0));
+                const totalHw3=Object.values(hb3).reduce((a,b)=>a+b,0)+(cSm3+cMed3+cLg3)+Math.round(tD3+(cSm3+cMed3+cLg3));
+                const totalGypSheets=toS3(gyp3);
+                const totalEb3=Math.ceil(eb3);
+                const totalGl3=parseFloat(gl3.toFixed(1));
+                const totalTi3=Math.ceil(ti3*1.1);
+                const totalGr3=parseFloat(gr3.toFixed(1));
+                const totalLi3=li3;
+                const totConsumUnits=Math.ceil(totPly3/300)||1;
+
+                // ── Material rows ──────────────────────────────────────
+                const matRows3 = [
+                  {id:"plywood",    label:"Plywood (all grades)",     qty:totalSheets3,   unit:"sheets",  vendorKey:"plywood",    priceKey:"pricePerSheet"},
+                  {id:"laminate",   label:"Laminate Sheets",           qty:totalLamSheets, unit:"sheets",  vendorKey:"laminate",   priceKey:"pricePerSheet"},
+                  {id:"edgeBanding",label:"PVC Edge Banding",          qty:totalEb3,       unit:"metres",  vendorKey:"edgeBanding",priceKey:"pricePerMetre"},
+                  {id:"hardware",   label:"Hardware (hinges+channels+handles)", qty:totalHw3, unit:"sets",vendorKey:"hardware",  priceKey:"pricePerSet"},
+                  {id:"glass",      label:"Glass Panels",              qty:totalGl3,       unit:"sq ft",   vendorKey:"glass",      priceKey:"pricePerSqft"},
+                  {id:"ceiling",    label:"Gypsum / Ceiling Boards",   qty:totalGypSheets, unit:"sheets",  vendorKey:"ceiling",    priceKey:"pricePerSheet"},
+                  {id:"tiles",      label:"Tiles",                     qty:totalTi3,       unit:"sq ft",   vendorKey:"tiles",      priceKey:"pricePerSqft"},
+                  {id:"granite",    label:"Granite / Stone",           qty:totalGr3,       unit:"sq ft",   vendorKey:"granite",    priceKey:"pricePerSqft"},
+                  {id:"lights",     label:"LED Lights / Fixtures",     qty:totalLi3,       unit:"nos",     vendorKey:"lights",     priceKey:"pricePerUnit"},
+                  {id:"consumables",label:"Adhesive & Consumables",    qty:totConsumUnits, unit:"kg tins", vendorKey:"consumables",priceKey:"pricePerUnit"},
+                ].filter(r=>r.qty>0);
+
+                // ── Vendor selections from form.marginVendors ─────────
+                const vendorSels = form.marginVendors||{};
+                const setVendor=(id,idx)=>{
+                  setForm(f=>({...f,marginVendors:{...(f.marginVendors||{}),[id]:idx}}));
+                };
+
+                // ── Compute costs ──────────────────────────────────────
+                let totalMaterialCost=0;
+                const rowsWithCost = matRows3.map(r=>{
+                  const vendors=VENDORS[r.vendorKey]||[];
+                  const selIdx=vendorSels[r.id]??0;
+                  const vendor=vendors[selIdx]||vendors[0];
+                  const unitPrice=vendor?vendor[r.priceKey]||0:0;
+                  const cost=r.qty*unitPrice;
+                  totalMaterialCost+=cost;
+                  return {...r,vendors,selIdx,vendor,unitPrice,cost};
+                });
+
+                const clientQuote=parseFloat(form.revisedQuotation||form.quotation)||0;
+                const grossProfit=clientQuote-totalMaterialCost;
+                const grossMarginPct=clientQuote>0?((grossProfit/clientQuote)*100).toFixed(1):0;
+                const lp=form.labourPct!=null?form.labourPct:50;
+                const labourCost=Math.round(totalMaterialCost*(lp/100));
+                const netProfit=grossProfit-labourCost;
+                const netMarginPct=clientQuote>0?((netProfit/clientQuote)*100).toFixed(1):0;
+
+                const fmt3=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+                const pctColor=pct=>pct>30?'#30D158':pct>15?'#FF9F0A':'#FF453A';
+
+                return (
+                  <div>
+                    {/* Summary cards */}
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
+                      {[
+                        ["Client Quotation",fmt3(clientQuote),"#0A84FF",clientQuote>0?"Final agreed amount":"Set in Quotation tab"],
+                        ["Material Cost",fmt3(totalMaterialCost),"#FF9F0A","From selected vendors below"],
+                        ["Labour Cost",fmt3(labourCost),C.teal,`${lp}% of material cost`],
+                      ].map(([label,val,col,sub])=>(
+                        <div key={label} className="glass" style={{padding:"14px 16px",borderRadius:12}}>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.45)",letterSpacing:1,
+                            textTransform:"uppercase",marginBottom:6}}>{label}</div>
+                          <div style={{fontSize:20,fontWeight:900,color:col}}>{val}</div>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",marginTop:4}}>{sub}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Margin display */}
+                    <div className="glass" style={{padding:"16px 20px",borderRadius:12,marginBottom:20,
+                      border:`1px solid ${pctColor(parseFloat(grossMarginPct))}44`}}>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+                        <div>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.45)",letterSpacing:1,
+                            textTransform:"uppercase",marginBottom:4}}>Gross Profit (before labour)</div>
+                          <div style={{fontSize:26,fontWeight:900,
+                            color:pctColor(parseFloat(grossMarginPct))}}>
+                            {fmt3(grossProfit)}
+                          </div>
+                          <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",marginTop:4}}>
+                            Margin: <strong style={{color:pctColor(parseFloat(grossMarginPct))}}>
+                              {grossMarginPct}%
+                            </strong>
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.45)",letterSpacing:1,
+                            textTransform:"uppercase",marginBottom:4}}>Net Profit (after labour)</div>
+                          <div style={{fontSize:26,fontWeight:900,
+                            color:pctColor(parseFloat(netMarginPct))}}>
+                            {fmt3(netProfit)}
+                          </div>
+                          <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",marginTop:4}}>
+                            Net Margin: <strong style={{color:pctColor(parseFloat(netMarginPct))}}>
+                              {netMarginPct}%
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      {clientQuote>0&&(
+                        <div style={{marginTop:14}}>
+                          <div style={{height:8,background:"rgba(255,255,255,0.08)",
+                            borderRadius:4,overflow:"hidden",display:"flex"}}>
+                            <div style={{width:`${Math.min(100,(totalMaterialCost/clientQuote)*100)}%`,
+                              background:"#FF9F0A",transition:"width 0.3s"}}/>
+                            <div style={{width:`${Math.min(100,(labourCost/clientQuote)*100)}%`,
+                              background:C.teal,transition:"width 0.3s"}}/>
+                          </div>
+                          <div style={{display:"flex",gap:16,marginTop:6,fontSize:10,
+                            color:"rgba(255,255,255,0.4)"}}>
+                            <span>🟠 Materials: {clientQuote>0?((totalMaterialCost/clientQuote)*100).toFixed(0):0}%</span>
+                            <span>🔵 Labour: {clientQuote>0?((labourCost/clientQuote)*100).toFixed(0):0}%</span>
+                            <span style={{color:pctColor(parseFloat(netMarginPct))}}>
+                              ● Net Margin: {netMarginPct}%
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Material rows table */}
+                    <div className="glass" style={{borderRadius:12,overflow:"hidden"}}>
+                      <div style={{display:"grid",
+                        gridTemplateColumns:"2fr 0.6fr 0.6fr 2.5fr 1fr 1fr",
+                        padding:"7px 14px",background:"rgba(255,255,255,0.06)",
+                        fontSize:9,fontWeight:700,letterSpacing:1.5,
+                        color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>
+                        {["Material","Qty","Unit","Vendor (select for best price)","Unit Price","Total Cost"].map(h=>(
+                          <span key={h}>{h}</span>
+                        ))}
+                      </div>
+
+                      {rowsWithCost.map((r,i)=>(
+                        <div key={r.id} style={{display:"grid",
+                          gridTemplateColumns:"2fr 0.6fr 0.6fr 2.5fr 1fr 1fr",
+                          padding:"11px 14px",alignItems:"center",
+                          background:i%2===0?"transparent":"rgba(255,255,255,0.02)",
+                          borderTop:"1px solid rgba(255,255,255,0.05)"}}>
+
+                          {/* Material */}
+                          <div style={{fontWeight:700,color:"rgba(255,255,255,0.9)",fontSize:12}}>
+                            {r.label}
+                          </div>
+
+                          {/* Qty */}
+                          <div style={{fontWeight:800,color:C.teal,fontSize:14}}>{r.qty}</div>
+
+                          {/* Unit */}
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.4)",fontWeight:600}}>{r.unit}</div>
+
+                          {/* Vendor dropdown */}
+                          <div>
+                            <select
+                              value={r.selIdx}
+                              onChange={e=>setVendor(r.id,parseInt(e.target.value))}
+                              style={{width:"100%",padding:"5px 8px",
+                                background:"rgba(255,255,255,0.1)",
+                                color:"rgba(255,255,255,0.9)",
+                                border:"1px solid rgba(255,255,255,0.15)",
+                                borderRadius:8,fontSize:11,outline:"none",cursor:"pointer"}}>
+                              {r.vendors.map((v,vi)=>(
+                                <option key={vi} value={vi}>
+                                  {v.name} — ₹{v[r.priceKey]}/{r.unit.replace('sheets','sheet').replace('metres','m').replace('sets','set').replace('nos','pc').replace('sq ft','sqft').replace('kg tins','tin')} ({v.note})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Unit price */}
+                          <div style={{fontWeight:700,color:"#FF9F0A",fontSize:13}}>
+                            ₹{(r.unitPrice||0).toLocaleString('en-IN')}
+                          </div>
+
+                          {/* Total cost */}
+                          <div style={{fontWeight:900,color:"rgba(255,255,255,0.9)",fontSize:13}}>
+                            {fmt3(r.cost)}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Totals row */}
+                      <div style={{display:"grid",
+                        gridTemplateColumns:"2fr 0.6fr 0.6fr 2.5fr 1fr 1fr",
+                        padding:"12px 14px",
+                        borderTop:"2px solid rgba(255,255,255,0.15)",
+                        background:"rgba(255,255,255,0.06)"}}>
+                        <div style={{fontWeight:800,color:"#fff",fontSize:13,
+                          gridColumn:"1/5"}}>Total Material Cost</div>
+                        <div/>
+                        <div style={{fontWeight:900,color:"#FF9F0A",fontSize:16}}>
+                          {fmt3(totalMaterialCost)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",
+                      marginTop:12,textAlign:"center",lineHeight:1.8}}>
+                      💡 Vendor prices are indicative rates for Hyderabad (Manikonda/Hitec City area) as of 2025.<br/>
+                      Confirm with vendors before finalising. Change vendor selection above to see price impact.
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {activeTab==="plan" && (
             <div>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:16}}>
