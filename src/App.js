@@ -1333,12 +1333,27 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
     ? Math.round(finalQuoteP * (addOnWithLabourP / totalWithLabourP))
     : 0;
   const interiorQuoteP  = finalQuoteP - addOnQuoteP;
-  const effectiveQuoteP = includeAddOn ? finalQuoteP : interiorQuoteP;
+  // Apply rebate to get the true client-facing final amount
+  const rebateAmtP      = (() => {
+    const rv = parseFloat(selected.rebateValue||0);
+    if (!rv) return 0;
+    return selected.rebateType === "percent"
+      ? Math.round((includeAddOn ? finalQuoteP : interiorQuoteP) * rv / 100)
+      : rv;
+  })();
+  const couponAmtP      = selected.couponApplied
+    ? Math.round(((includeAddOn?finalQuoteP:interiorQuoteP) - rebateAmtP) * 0.05) : 0;
+  const effectiveQuoteP = (includeAddOn ? finalQuoteP : interiorQuoteP) - rebateAmtP - couponAmtP;
   // Per-room: always use with-labour amount, proportional to effectiveQuote
+  // roomAmtP: proportional room cost from pre-rebate base, then scale to final
+  const preRebateP = (includeAddOn ? finalQuoteP : interiorQuoteP);
   const roomAmtP = (room) => {
     const roomWithLabour = calcRoomWithLabour(room);
     const denom = includeAddOn ? totalWithLabourP : interiorWithLabourP;
-    return denom > 0 ? Math.round(effectiveQuoteP * (roomWithLabour / denom)) : 0;
+    if (denom <= 0) return 0;
+    // Scale proportionally from pre-rebate, then apply rebate proportion
+    const roomProportion = roomWithLabour / denom;
+    return Math.round(effectiveQuoteP * roomProportion);
   };
 
   const generatePrintHTML = () => {
@@ -1918,8 +1933,8 @@ ${!includeAddOn&&rawAddOnP>0?`
           {(()=>{
             const iRooms=allRoomsP.filter(r=>!ADD_ON_ROOMS_P.has(r)&&calcRoomP(r)>0);
             const aRooms=allRoomsP.filter(r=> ADD_ON_ROOMS_P.has(r)&&calcRoomP(r)>0);
-            // Use with-labour totals directly
-            const iAmt = includeAddOn ? interiorQuoteP : effectiveQuoteP;
+            // Section totals: pre-rebate proportional amounts
+            const iAmt = includeAddOn ? (finalQuoteP - addOnQuoteP) : preRebateP;
             const aAmt = includeAddOn ? addOnQuoteP : 0;
             return (<div>
               {iRooms.length>0&&(<div style={{ marginBottom:4 }}>
@@ -1986,6 +2001,13 @@ ${!includeAddOn&&rawAddOnP>0?`
             <span style={{ fontWeight:600 }}>Final Quotation</span>
             <span style={{ fontWeight:800,fontSize:15,color:"#1e3a5f" }}>{fmtN(effectiveQuoteP)}</span>
           </div>
+          {rebateAmtP>0&&couponAmtP>0&&(
+            <div style={{ display:"flex",justifyContent:"space-between",padding:"9px 0",
+              borderBottom:"1px solid #f3f4f6",fontSize:13 }}>
+              <span style={{ fontWeight:600,color:"#166534" }}>Coupon (5%)</span>
+              <span style={{ fontWeight:700,color:"#166534" }}>- {fmtN(couponAmtP)}</span>
+            </div>
+          )}
           {!includeAddOn&&addOnQuoteP>0&&(
             <div style={{ padding:"8px 12px",borderLeft:"3px solid #92400e",marginTop:8,
               color:"#92400e",fontSize:12 }}>
