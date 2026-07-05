@@ -5565,64 +5565,126 @@ Dimension rules:
               {(()=>{
                 // ── Hyderabad vendor database (Manikonda / Hitec City area) ──
                 const VENDORS = {
+                  // ── PLYWOOD & BOARDS ──────────────────────────────
                   plywood: [
-                    {name:"Sai Timber Mart — Manikonda",    pricePerSheet:1800, note:"Century/Greenply stockist"},
-                    {name:"Sri Venkateshwara Plywoods — Kondapur", pricePerSheet:1750, note:"BWP grade available"},
-                    {name:"Bhavani Timber — Gachibowli",    pricePerSheet:1900, note:"Premium brands"},
-                    {name:"National Ply & Hardware — KPHB",  pricePerSheet:1650, note:"Bulk discount available"},
-                    {name:"Laxmi Timber — Miyapur",          pricePerSheet:1700, note:"MR & BWP grade"},
+                    {name:"Sai Timber Mart — Manikonda",       pricePerSheet:1800, note:"Century/Greenply BWP"},
+                    {name:"Sri Venkateshwara Ply — Kondapur",  pricePerSheet:1750, note:"BWP/BWR available"},
+                    {name:"Bhavani Timber — Gachibowli",       pricePerSheet:1900, note:"Premium brands"},
+                    {name:"National Ply & Hardware — KPHB",    pricePerSheet:1650, note:"Bulk discount"},
+                    {name:"Laxmi Timber — Miyapur",            pricePerSheet:1700, note:"MR & BWP grade"},
                   ],
+                  // ── LAMINATE & PANELS ─────────────────────────────
                   laminate: [
-                    {name:"Archidply Dealer — Manikonda",    pricePerSheet:850,  note:"Archidply/Merino"},
-                    {name:"Greenlam Studio — Jubilee Hills",  pricePerSheet:950,  note:"Greenlam/Royale"},
-                    {name:"Formica Centre — Banjara Hills",   pricePerSheet:1100, note:"Formica/Merino premium"},
-                    {name:"Sri Sai Laminates — Kondapur",    pricePerSheet:780,  note:"Economy range"},
-                    {name:"Century Laminates — Kukatpally",  pricePerSheet:900,  note:"Century brand"},
+                    {name:"Archidply Dealer — Manikonda",      pricePerSheet:850,  note:"Archidply/Merino 1mm"},
+                    {name:"Greenlam Studio — Jubilee Hills",   pricePerSheet:950,  note:"Greenlam 0.8mm–1mm"},
+                    {name:"Formica Centre — Banjara Hills",    pricePerSheet:1100, note:"Formica premium"},
+                    {name:"Sri Sai Laminates — Kondapur",      pricePerSheet:780,  note:"Economy 0.8mm"},
+                    {name:"Century Laminates — Kukatpally",    pricePerSheet:900,  note:"Century brand"},
                   ],
-                  hardware: [
-                    {name:"Hettich Dealer — Manikonda",      pricePerSet:180,    note:"Hettich soft-close"},
-                    {name:"Hafele Showroom — Jubilee Hills",  pricePerSet:250,    note:"Hafele premium"},
-                    {name:"Nimmi Hardware — Gachibowli",     pricePerSet:120,    note:"Economy hinges"},
-                    {name:"Ebco Dealer — Kondapur",          pricePerSet:160,    note:"Ebco channels"},
-                    {name:"Sleek Hardware — KPHB",           pricePerSet:140,    note:"Mid-range"},
-                  ],
-                  glass: [
-                    {name:"Saint Gobain — Manikonda",        pricePerSqft:85,    note:"Saint Gobain 4mm"},
-                    {name:"Asahi Glass — Gachibowli",        pricePerSqft:95,    note:"Premium clear glass"},
-                    {name:"Modi Glass — Kondapur",           pricePerSqft:75,    note:"Economy range"},
-                    {name:"Shree Glass — Kukatpally",        pricePerSqft:80,    note:"Standard 4mm/6mm"},
-                  ],
-                  ceiling: [
-                    {name:"Saint Gobain Gyproc — Manikonda", pricePerSheet:480,  note:"Gyproc 12.5mm"},
-                    {name:"USG Boral — Kondapur",            pricePerSheet:520,  note:"Premium gypsum"},
-                    {name:"Birla Aerocon — Gachibowli",     pricePerSheet:450,  note:"Aerocon boards"},
-                    {name:"India Gypsum — KPHB",            pricePerSheet:420,  note:"Economy"},
-                  ],
+                  // ── EDGE BANDING ──────────────────────────────────
                   edgeBanding: [
-                    {name:"Rehau Dealer — Manikonda",        pricePerMetre:18,   note:"Rehau PVC"},
-                    {name:"Flexi Roll — Kondapur",           pricePerMetre:12,   note:"Economy PVC"},
-                    {name:"Veneer Edge — Gachibowli",        pricePerMetre:22,   note:"Veneer matching"},
+                    {name:"Rehau Dealer — Manikonda",          pricePerMetre:18,   note:"Rehau 22mm PVC 0.8–2mm"},
+                    {name:"Flexi Roll — Kondapur",             pricePerMetre:12,   note:"Economy PVC 22/45mm"},
+                    {name:"Veneer Edge — Gachibowli",          pricePerMetre:25,   note:"Oak/Walnut/Teak veneer"},
+                    {name:"ABS Edge — KPHB",                   pricePerMetre:20,   note:"White/Black/Solid colours"},
                   ],
-                  tiles: [
-                    {name:"Kajaria — Manikonda",             pricePerSqft:55,    note:"Kajaria brand"},
-                    {name:"Somany — Kondapur",               pricePerSqft:65,    note:"Somany premium"},
-                    {name:"Orient Bell — Gachibowli",        pricePerSqft:45,    note:"Economy"},
-                    {name:"Johnson Tiles — KPHB",            pricePerSqft:50,    note:"Mid-range"},
+                  // ── HARDWARE — HINGES ─────────────────────────────
+                  hardware: [
+                    {name:"Hettich Dealer — Manikonda",        pricePerSet:180,    note:"Soft-close 95°/110°/165°"},
+                    {name:"Hafele Showroom — Jubilee Hills",   pricePerSet:250,    note:"Hafele clip-on/glass hinge"},
+                    {name:"Nimmi Hardware — Gachibowli",       pricePerSet:120,    note:"Economy soft-close"},
+                    {name:"Ebco Dealer — Kondapur",            pricePerSet:160,    note:"Ebco tandem/telescopic"},
+                    {name:"Sleek Hardware — KPHB",             pricePerSet:140,    note:"Mid-range all types"},
                   ],
+                  // ── HARDWARE — DRAWER SYSTEMS ─────────────────────
+                  drawerSystems: [
+                    {name:"Hettich — Manikonda",               pricePerSet:650,    note:"Tandem Box / Slim drawer"},
+                    {name:"Hafele — Jubilee Hills",            pricePerSet:850,    note:"Matrix Box premium"},
+                    {name:"Ebco — Kondapur",                   pricePerSet:450,    note:"Telescopic 12\"–18\""},
+                    {name:"Grass — Banjara Hills",             pricePerSet:950,    note:"Nova Pro premium"},
+                    {name:"Economy Channel — KPHB",            pricePerSet:280,    note:"Basic telescopic"},
+                  ],
+                  // ── HARDWARE — HANDLES ────────────────────────────
+                  handles: [
+                    {name:"Ebco Handles — Kondapur",           pricePerUnit:85,    note:"G-Profile / J-Profile"},
+                    {name:"Hafele — Jubilee Hills",            pricePerUnit:150,   note:"SS/Aluminium premium"},
+                    {name:"Dorset — Manikonda",                pricePerUnit:65,    note:"Economy knobs/profiles"},
+                    {name:"Sugatsune — Gachibowli",            pricePerUnit:220,   note:"Designer handles"},
+                  ],
+                  // ── HARDWARE — LIFT SYSTEMS ───────────────────────
+                  liftSystems: [
+                    {name:"Hettich — Manikonda",               pricePerSet:2800,   note:"Aventos HK / Gas Stay"},
+                    {name:"Hafele — Jubilee Hills",            pricePerSet:3200,   note:"Lift-up premium"},
+                    {name:"Ebco — Kondapur",                   pricePerSet:1800,   note:"Economy lift"},
+                  ],
+                  // ── WARDROBE ACCESSORIES ──────────────────────────
+                  wardrobeAcc: [
+                    {name:"Hafele — Jubilee Hills",            pricePerUnit:1200,  note:"Hanging rod/trouser/tie rack"},
+                    {name:"Hettich — Manikonda",               pricePerUnit:950,   note:"Shoe rack/jewellery tray"},
+                    {name:"Ebco — Kondapur",                   pricePerUnit:650,   note:"Economy accessories"},
+                    {name:"Karran — KPHB",                     pricePerUnit:800,   note:"Laundry basket/organizers"},
+                  ],
+                  // ── KITCHEN ACCESSORIES ───────────────────────────
+                  kitchenAcc: [
+                    {name:"Ebco Kitchen — Kondapur",           pricePerUnit:1800,  note:"Baskets/pantry/magic corner"},
+                    {name:"Hafele Kitchen — Jubilee Hills",    pricePerUnit:2500,  note:"Premium corner carousel"},
+                    {name:"Sleek Kitchen — KPHB",              pricePerUnit:1400,  note:"Mid-range accessories"},
+                    {name:"Carysil — Manikonda",               pricePerUnit:3500,  note:"Sink + faucet combo"},
+                  ],
+                  // ── FALSE CEILING ─────────────────────────────────
+                  ceiling: [
+                    {name:"Saint Gobain Gyproc — Manikonda",   pricePerSheet:480,  note:"12.5mm standard/MR board"},
+                    {name:"USG Boral — Kondapur",              pricePerSheet:520,  note:"Premium moisture resistant"},
+                    {name:"Birla Aerocon — Gachibowli",        pricePerSheet:450,  note:"Aerocon lightweight"},
+                    {name:"India Gypsum — KPHB",               pricePerSheet:420,  note:"Economy"},
+                  ],
+                  // ── CEILING FRAMEWORK ─────────────────────────────
+                  ceilingFrame: [
+                    {name:"GI Frame Supplier — Manikonda",     pricePerMetre:45,   note:"GI channel/perimeter/tee"},
+                    {name:"Steel Frame — Kondapur",            pricePerMetre:40,   note:"Intermediate channel"},
+                    {name:"Speedwall — Gachibowli",            pricePerMetre:50,   note:"Premium GI sections"},
+                  ],
+                  // ── ELECTRICAL ────────────────────────────────────
+                  electrical: [
+                    {name:"Philips Dealer — Manikonda",        pricePerUnit:180,   note:"LED downlight/COB/strip"},
+                    {name:"Syska — Gachibowli",               pricePerUnit:150,   note:"LED driver/profile"},
+                    {name:"Havells — Kondapur",               pricePerUnit:220,   note:"Switches/sockets/MCB"},
+                    {name:"Orient — KPHB",                    pricePerUnit:130,   note:"Economy lights"},
+                    {name:"Schneider Electric — Jubilee Hills",pricePerUnit:280,   note:"Premium DB/MCB"},
+                  ],
+                  // ── PLUMBING ──────────────────────────────────────
+                  plumbing: [
+                    {name:"Carysil — Manikonda",               pricePerUnit:2800,  note:"Sink + faucet premium"},
+                    {name:"Hindware — Kondapur",               pricePerUnit:2200,  note:"Sink/faucet mid-range"},
+                    {name:"Parryware — Gachibowli",            pricePerUnit:1800,  note:"Economy kitchen sink"},
+                    {name:"Ashirvad Pipes — KPHB",             pricePerUnit:180,   note:"CPVC/PVC pipe per metre"},
+                  ],
+                  // ── STONE & GRANITE ───────────────────────────────
                   granite: [
-                    {name:"Sri Sai Granites — Manikonda",    pricePerSqft:95,    note:"Black/Brown granite"},
-                    {name:"KS Granites — Gachibowli",        pricePerSqft:120,   note:"Premium varieties"},
-                    {name:"Raj Granites — Kondapur",         pricePerSqft:85,    note:"Economy"},
+                    {name:"Sri Sai Granites — Manikonda",      pricePerSqft:95,    note:"Black/Steel Grey granite"},
+                    {name:"KS Granites — Gachibowli",          pricePerSqft:120,   note:"Quartz White/Grey premium"},
+                    {name:"Raj Granites — Kondapur",           pricePerSqft:85,    note:"Economy granite"},
+                    {name:"Marble World — Jubilee Hills",      pricePerSqft:150,   note:"Marble/Nano White"},
                   ],
-                  lights: [
-                    {name:"Philips Dealer — Manikonda",      pricePerUnit:180,   note:"Philips LED"},
-                    {name:"Syska — Gachibowli",             pricePerUnit:150,   note:"Syska LED"},
-                    {name:"Havells — Kondapur",             pricePerUnit:220,   note:"Havells premium"},
-                    {name:"Orient — KPHB",                  pricePerUnit:130,   note:"Economy"},
+                  // ── GLASS ────────────────────────────────────────
+                  glass: [
+                    {name:"Saint Gobain — Manikonda",          pricePerSqft:85,    note:"4mm clear/5–6mm toughened"},
+                    {name:"Asahi Glass — Gachibowli",          pricePerSqft:95,    note:"Bronze/frosted/fluted"},
+                    {name:"Modi Glass — Kondapur",             pricePerSqft:75,    note:"Economy clear/mirror"},
+                    {name:"Shree Glass — Kukatpally",          pricePerSqft:80,    note:"Standard 4mm/6mm mirror"},
                   ],
+                  // ── PAINT ─────────────────────────────────────────
+                  paint: [
+                    {name:"Asian Paints — Manikonda",          pricePerUnit:1800,  note:"Primer/emulsion/putty set"},
+                    {name:"Berger — Kondapur",                 pricePerUnit:1700,  note:"Silk/easy clean emulsion"},
+                    {name:"Dulux — Gachibowli",               pricePerUnit:2000,  note:"Premium texture/enamel"},
+                    {name:"Indigo — KPHB",                    pricePerUnit:1500,  note:"Economy range"},
+                  ],
+                  // ── CONSUMABLES ───────────────────────────────────
                   consumables: [
-                    {name:"Fevicol Depot — Manikonda",       pricePerUnit:350,   note:"Fevicol SH 5kg"},
-                    {name:"Asian Paints Dealer — Kondapur",  pricePerUnit:380,   note:"Dr Fixit + Fevicol"},
+                    {name:"Fevicol Depot — Manikonda",         pricePerUnit:350,   note:"Fevicol Marine 5kg"},
+                    {name:"Asian Paints Depot — Kondapur",     pricePerUnit:380,   note:"Silicone/PU foam/wood filler"},
+                    {name:"Hardware Hub — Gachibowli",         pricePerUnit:150,   note:"Screws/sandpaper/tape"},
                   ],
                 };
 
@@ -5668,17 +5730,42 @@ Dimension rules:
                 const totConsumUnits=Math.ceil(totPly3/300)||1;
 
                 // ── Material rows ──────────────────────────────────────
+                // Derived qty estimates for new categories
+                const totalHinges3   = Math.round(totalHw3 * 0.4);  // ~40% of hardware = hinges
+                const totalDrawers3  = Math.round(totalHw3 * 0.35); // ~35% = drawer systems
+                const totalHandles3  = Math.round(totalHw3 * 0.25); // ~25% = handles
+                const totalGypFrame3 = totalGypSheets>0 ? Math.ceil(gyp3*0.6) : 0; // GI frame metres
+                const totalPaintUnit = Math.ceil((gyp3+ti3)/100)||0; // 1 can per 100 sqft
+
                 const matRows3 = [
-                  {id:"plywood",    label:"Plywood (all grades)",     qty:totalSheets3,   unit:"sheets",  vendorKey:"plywood",    priceKey:"pricePerSheet"},
-                  {id:"laminate",   label:"Laminate Sheets",           qty:totalLamSheets, unit:"sheets",  vendorKey:"laminate",   priceKey:"pricePerSheet"},
-                  {id:"edgeBanding",label:"PVC Edge Banding",          qty:totalEb3,       unit:"metres",  vendorKey:"edgeBanding",priceKey:"pricePerMetre"},
-                  {id:"hardware",   label:"Hardware (hinges+channels+handles)", qty:totalHw3, unit:"sets",vendorKey:"hardware",  priceKey:"pricePerSet"},
-                  {id:"glass",      label:"Glass Panels",              qty:totalGl3,       unit:"sq ft",   vendorKey:"glass",      priceKey:"pricePerSqft"},
-                  {id:"ceiling",    label:"Gypsum / Ceiling Boards",   qty:totalGypSheets, unit:"sheets",  vendorKey:"ceiling",    priceKey:"pricePerSheet"},
-                  {id:"tiles",      label:"Tiles",                     qty:totalTi3,       unit:"sq ft",   vendorKey:"tiles",      priceKey:"pricePerSqft"},
-                  {id:"granite",    label:"Granite / Stone",           qty:totalGr3,       unit:"sq ft",   vendorKey:"granite",    priceKey:"pricePerSqft"},
-                  {id:"lights",     label:"LED Lights / Fixtures",     qty:totalLi3,       unit:"nos",     vendorKey:"lights",     priceKey:"pricePerUnit"},
-                  {id:"consumables",label:"Adhesive & Consumables",    qty:totConsumUnits, unit:"kg tins", vendorKey:"consumables",priceKey:"pricePerUnit"},
+                  // Plywood & Boards
+                  {id:"plywood",      label:"Plywood (16mm BWP/BWR)",          qty:totalSheets3,    unit:"sheets",  vendorKey:"plywood",      priceKey:"pricePerSheet"},
+                  // Laminate & Panels
+                  {id:"laminate",     label:"Laminate Sheets (0.8–1mm)",        qty:totalLamSheets,  unit:"sheets",  vendorKey:"laminate",     priceKey:"pricePerSheet"},
+                  // Edge Banding
+                  {id:"edgeBanding",  label:"Edge Banding (22mm/45mm PVC)",     qty:totalEb3,        unit:"metres",  vendorKey:"edgeBanding",  priceKey:"pricePerMetre"},
+                  // Hardware — Hinges
+                  {id:"hardware",     label:"Hinges (soft-close 95°/110°/165°)",qty:totalHinges3,    unit:"sets",    vendorKey:"hardware",     priceKey:"pricePerSet"},
+                  // Hardware — Drawer Systems
+                  {id:"drawerSystems",label:"Drawer Systems (telescopic/tandem)",qty:totalDrawers3,  unit:"sets",    vendorKey:"drawerSystems",priceKey:"pricePerSet"},
+                  // Hardware — Handles
+                  {id:"handles",      label:"Handles (G/J profile, SS, knobs)", qty:totalHandles3,   unit:"nos",     vendorKey:"handles",      priceKey:"pricePerUnit"},
+                  // Glass
+                  {id:"glass",        label:"Glass (4mm clear/toughened/frosted)",qty:totalGl3,      unit:"sq ft",   vendorKey:"glass",        priceKey:"pricePerSqft"},
+                  // Ceiling boards
+                  {id:"ceiling",      label:"Gypsum Board (12.5mm standard/MR)",qty:totalGypSheets,  unit:"sheets",  vendorKey:"ceiling",      priceKey:"pricePerSheet"},
+                  // Ceiling frame
+                  {id:"ceilingFrame", label:"GI Frame & Channels (ceiling)",    qty:totalGypFrame3,  unit:"metres",  vendorKey:"ceilingFrame", priceKey:"pricePerMetre"},
+                  // Stone & Granite
+                  {id:"granite",      label:"Stone/Granite/Quartz (platform)",  qty:totalGr3,        unit:"sq ft",   vendorKey:"granite",      priceKey:"pricePerSqft"},
+                  // Tiles
+                  {id:"tiles",        label:"Tiles (floor/wall)",               qty:totalTi3,        unit:"sq ft",   vendorKey:"tiles",        priceKey:"pricePerSqft"},
+                  // Paint
+                  {id:"paint",        label:"Paint (putty/primer/emulsion)",    qty:totalPaintUnit,  unit:"sets",    vendorKey:"paint",        priceKey:"pricePerUnit"},
+                  // Electrical
+                  {id:"electrical",   label:"Electrical (lights/switches/wire)",qty:totalLi3||1,     unit:"nos",     vendorKey:"electrical",   priceKey:"pricePerUnit"},
+                  // Consumables
+                  {id:"consumables",  label:"Consumables (Fevicol/screws/foam)",qty:totConsumUnits,  unit:"kg tins", vendorKey:"consumables",  priceKey:"pricePerUnit"},
                 ].filter(r=>r.qty>0);
 
                 // ── Vendor selections from form.marginVendors ─────────
