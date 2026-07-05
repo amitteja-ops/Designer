@@ -1738,6 +1738,17 @@ ${!includeAddOn&&rawAddOnP>0?`
               w.document.write(html); w.document.close(); w.focus();
               setTimeout(()=>w.print(),800);
             }}>🖨 Print / Save PDF</button>
+          <button style={{ fontSize:11,padding:"7px 14px",fontWeight:600,cursor:"pointer",
+              background:"rgba(255,255,255,0.1)",color:"#374151",
+              border:"1px solid #d1d5db",borderRadius:8,fontFamily:"inherit" }}
+            onClick={()=>{
+              const qid=`HRI-Q-${String(selected.id).slice(-4).padStart(4,'0')}-${new Date().getFullYear()}`;
+              const subject=encodeURIComponent(`Interior Design Proposal — ${selected.name} | ${qid}`);
+              const body=encodeURIComponent(
+                `Dear ${selected.name},\n\nThank you for choosing High Rise Interiors.\n\nPlease find your interior design proposal attached.\n\nQuotation ID: ${qid}\nFinal Quotation: ${selected.revisedQuotation||selected.quotation?'₹'+Number(selected.revisedQuotation||selected.quotation).toLocaleString('en-IN'):'TBD'}\n\nPlease review and revert with your confirmation.\n\nWarm regards,\nHigh Rise Interiors\n+91-6304980890`
+              );
+              window.open(`mailto:${selected.email||''}?subject=${subject}&body=${body}`);
+            }}>✉ Email Client</button>
         </div>
       </div>
 
@@ -1842,7 +1853,7 @@ ${!includeAddOn&&rawAddOnP>0?`
             return matList.length>0?(
               <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
                 <thead><tr style={{ borderBottom:"2px solid #1e3a5f" }}>
-                  {["#","Category","Brand / Material","Qty","Rooms"].map(h=>(
+                  {["#","Category","Brand / Material","Rooms"].map(h=>(
                     <th key={h} style={{ padding:"7px 12px",textAlign:"left",fontSize:10,
                       fontWeight:700,letterSpacing:1,textTransform:"uppercase",color:"#1e3a5f" }}>{h}</th>
                   ))}
@@ -1861,16 +1872,7 @@ ${!includeAddOn&&rawAddOnP>0?`
                       </span>
                     </td>
                     <td style={{ padding:"7px 12px",fontWeight:600 }}>{m.brand}</td>
-                    <td style={{ padding:"7px 12px" }}>
-                      {sqft>0?(
-                        <div>
-                          <div style={{ fontWeight:700 }}>{sqft.toFixed(1)} sq ft</div>
-                          {sheets>0&&<div style={{ fontSize:10,color:"#6b7280",marginTop:2 }}>
-                            {sheets} sheets ({sheetSz} sq ft each)
-                          </div>}
-                        </div>
-                      ):"—"}
-                    </td>
+
                     <td style={{ padding:"7px 12px",color:"#6b7280",fontSize:11 }}>{m.rooms.join(", ")}</td>
                   </tr>);
                 })}</tbody>
