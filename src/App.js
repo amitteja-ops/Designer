@@ -5698,12 +5698,30 @@ Dimension rules:
                 });
 
                 const clientQuote=parseFloat(form.revisedQuotation||form.quotation)||0;
-                const grossProfit=clientQuote-totalMaterialCost;
-                const grossMarginPct=clientQuote>0?((grossProfit/clientQuote)*100).toFixed(1):0;
-                const lp=form.labourPct!=null?form.labourPct:50;
-                const labourCost=Math.round(totalMaterialCost*(lp/100));
-                const netProfit=grossProfit-labourCost;
-                const netMarginPct=clientQuote>0?((netProfit/clientQuote)*100).toFixed(1):0;
+                                // ── Service / Labour line items ───────────────────
+                const DEFAULT_SERVICES = [
+                  {id:"carpenter",  label:"Carpenter Labour",                 default:160000},
+                  {id:"electrician",label:"Electrician Labour",               default:30000},
+                  {id:"plumbing",   label:"Plumbing Labour",                  default:20000},
+                  {id:"painter",    label:"Painter / Polish Touch-up",         default:25000},
+                  {id:"ceiling",    label:"False Ceiling Labour",              default:28000},
+                  {id:"glass",      label:"Glass Installation Labour",         default:10000},
+                  {id:"tileGranite",label:"Tile & Granite Labour",             default:12000},
+                  {id:"cleaning",   label:"Deep Cleaning (Before Handover)",   default:8000},
+                  {id:"transport",  label:"Transportation & Loading",          default:22000},
+                  {id:"supervision",label:"Site Supervision / Project Mgmt",   default:25000},
+                  {id:"consumables",label:"Consumables & Miscellaneous",       default:20000},
+                  {id:"contingency",label:"Contingency",                       default:50000},
+                ];
+                const svcCosts  = form.serviceCosts||{};
+                const getSvc    = (id,def) => parseFloat(svcCosts[id]??def)||0;
+                const setSvc    = (id,val) => setForm(f=>({...f,serviceCosts:{...(f.serviceCosts||{}),[id]:val}}));
+                const totalServiceCost = DEFAULT_SERVICES.reduce((t,s)=>t+getSvc(s.id,s.default),0);
+                const totalCost = totalMaterialCost + totalServiceCost;
+                const netProfit = clientQuote - totalCost;
+                const netMarginPct = clientQuote>0?((netProfit/clientQuote)*100).toFixed(1):0;
+                const grossMarginPct = clientQuote>0?(((clientQuote-totalMaterialCost)/clientQuote)*100).toFixed(1):0;
+                const grossProfit = clientQuote - totalMaterialCost;
 
                 const fmt3=n=>'₹'+Math.round(n).toLocaleString('en-IN');
                 const pctColor=pct=>pct>30?'#30D158':pct>15?'#FF9F0A':'#FF453A';
@@ -5711,11 +5729,12 @@ Dimension rules:
                 return (
                   <div>
                     {/* Summary cards */}
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
                       {[
                         ["Client Quotation",fmt3(clientQuote),"#0A84FF",clientQuote>0?"Final agreed amount":"Set in Quotation tab"],
-                        ["Material Cost",fmt3(totalMaterialCost),"#FF9F0A","From selected vendors below"],
-                        ["Labour Cost",fmt3(labourCost),C.teal,`${lp}% of material cost`],
+                        ["Materials Cost",fmt3(totalMaterialCost),"#FF9F0A","From selected vendors below"],
+                        ["Services & Labour",fmt3(totalServiceCost),C.teal,"See breakdown below"],
+                        ["Total Project Cost",fmt3(totalCost),"#BF5AF2","Materials + all services"],
                       ].map(([label,val,col,sub])=>(
                         <div key={label} className="glass" style={{padding:"14px 16px",borderRadius:12}}>
                           <div style={{fontSize:10,color:"rgba(255,255,255,0.45)",letterSpacing:1,
@@ -5729,31 +5748,41 @@ Dimension rules:
                     {/* Margin display */}
                     <div className="glass" style={{padding:"16px 20px",borderRadius:12,marginBottom:20,
                       border:`1px solid ${pctColor(parseFloat(grossMarginPct))}44`}}>
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16}}>
                         <div>
                           <div style={{fontSize:10,color:"rgba(255,255,255,0.45)",letterSpacing:1,
-                            textTransform:"uppercase",marginBottom:4}}>Gross Profit (before labour)</div>
-                          <div style={{fontSize:26,fontWeight:900,
+                            textTransform:"uppercase",marginBottom:4}}>Gross Margin (materials only)</div>
+                          <div style={{fontSize:22,fontWeight:900,
                             color:pctColor(parseFloat(grossMarginPct))}}>
                             {fmt3(grossProfit)}
                           </div>
                           <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",marginTop:4}}>
-                            Margin: <strong style={{color:pctColor(parseFloat(grossMarginPct))}}>
+                            <strong style={{color:pctColor(parseFloat(grossMarginPct))}}>
                               {grossMarginPct}%
-                            </strong>
+                            </strong> of quotation
                           </div>
                         </div>
                         <div>
                           <div style={{fontSize:10,color:"rgba(255,255,255,0.45)",letterSpacing:1,
-                            textTransform:"uppercase",marginBottom:4}}>Net Profit (after labour)</div>
-                          <div style={{fontSize:26,fontWeight:900,
+                            textTransform:"uppercase",marginBottom:4}}>Net Profit (after all costs)</div>
+                          <div style={{fontSize:22,fontWeight:900,
                             color:pctColor(parseFloat(netMarginPct))}}>
                             {fmt3(netProfit)}
                           </div>
                           <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",marginTop:4}}>
-                            Net Margin: <strong style={{color:pctColor(parseFloat(netMarginPct))}}>
+                            <strong style={{color:pctColor(parseFloat(netMarginPct))}}>
                               {netMarginPct}%
-                            </strong>
+                            </strong> net margin
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{fontSize:10,color:"rgba(255,255,255,0.45)",letterSpacing:1,
+                            textTransform:"uppercase",marginBottom:4}}>Total Project Cost</div>
+                          <div style={{fontSize:22,fontWeight:900,color:"#BF5AF2"}}>
+                            {fmt3(totalCost)}
+                          </div>
+                          <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",marginTop:4}}>
+                            Materials + services
                           </div>
                         </div>
                       </div>
@@ -5764,13 +5793,13 @@ Dimension rules:
                             borderRadius:4,overflow:"hidden",display:"flex"}}>
                             <div style={{width:`${Math.min(100,(totalMaterialCost/clientQuote)*100)}%`,
                               background:"#FF9F0A",transition:"width 0.3s"}}/>
-                            <div style={{width:`${Math.min(100,(labourCost/clientQuote)*100)}%`,
-                              background:C.teal,transition:"width 0.3s"}}/>
+                            <div style={{width:`${Math.min(100,(totalServiceCost/clientQuote)*100)}%`,
+                              background:"#BF5AF2",transition:"width 0.3s"}}/>
                           </div>
                           <div style={{display:"flex",gap:16,marginTop:6,fontSize:10,
                             color:"rgba(255,255,255,0.4)"}}>
                             <span>🟠 Materials: {clientQuote>0?((totalMaterialCost/clientQuote)*100).toFixed(0):0}%</span>
-                            <span>🔵 Labour: {clientQuote>0?((labourCost/clientQuote)*100).toFixed(0):0}%</span>
+                            <span>🟣 Services: {clientQuote>0?((totalServiceCost/clientQuote)*100).toFixed(0):0}%</span>
                             <span style={{color:pctColor(parseFloat(netMarginPct))}}>
                               ● Net Margin: {netMarginPct}%
                             </span>
@@ -5851,6 +5880,54 @@ Dimension rules:
                         <div style={{fontWeight:900,color:"#FF9F0A",fontSize:16}}>
                           {fmt3(totalMaterialCost)}
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Services & Labour Table */}
+                    <div className="glass" style={{borderRadius:12,overflow:"hidden",marginTop:14}}>
+                      <div style={{padding:"10px 16px",background:"rgba(191,90,242,0.15)",
+                        borderBottom:"1px solid rgba(255,255,255,0.08)",
+                        display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <span style={{fontWeight:800,fontSize:13,color:"#BF5AF2",letterSpacing:1}}>
+                          🔧 Services & Labour Costs
+                        </span>
+                        <span style={{fontSize:11,color:"rgba(255,255,255,0.4)"}}>
+                          Edit amounts as needed
+                        </span>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"3fr 1.5fr",
+                        padding:"5px 14px",background:"rgba(255,255,255,0.04)",
+                        fontSize:9,fontWeight:700,letterSpacing:1.5,
+                        color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>
+                        <span>Service / Work</span>
+                        <span>Estimated Cost (₹)</span>
+                      </div>
+                      {DEFAULT_SERVICES.map((svc,i)=>(
+                        <div key={svc.id} style={{display:"grid",gridTemplateColumns:"3fr 1.5fr",
+                          padding:"9px 14px",alignItems:"center",
+                          background:i%2===0?"transparent":"rgba(255,255,255,0.02)",
+                          borderTop:"1px solid rgba(255,255,255,0.05)"}}>
+                          <div style={{fontWeight:600,color:"rgba(255,255,255,0.85)",fontSize:12}}>
+                            {svc.label}
+                          </div>
+                          <input
+                            type="number"
+                            value={getSvc(svc.id,svc.default)}
+                            onChange={e=>setSvc(svc.id,e.target.value)}
+                            style={{...S.input,fontSize:13,fontWeight:700,padding:"5px 10px",
+                              background:"rgba(255,255,255,0.06)",color:"#BF5AF2",
+                              textAlign:"right"}}/>
+                        </div>
+                      ))}
+                      <div style={{display:"grid",gridTemplateColumns:"3fr 1.5fr",
+                        padding:"11px 14px",borderTop:"2px solid rgba(255,255,255,0.15)",
+                        background:"rgba(255,255,255,0.06)"}}>
+                        <span style={{fontWeight:800,color:"#fff",fontSize:13}}>
+                          Total Service & Labour Cost
+                        </span>
+                        <span style={{fontWeight:900,color:"#BF5AF2",fontSize:16,textAlign:"right"}}>
+                          {fmt3(totalServiceCost)}
+                        </span>
                       </div>
                     </div>
 
