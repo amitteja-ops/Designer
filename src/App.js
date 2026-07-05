@@ -5701,23 +5701,29 @@ Dimension rules:
 
                 const clientQuote=parseFloat(form.revisedQuotation||form.quotation)||0;
                                 // ── Service / Labour line items ───────────────────
+                // ── Smart computed defaults (per-project, editable per customer) ──
+                const projectMonths = Math.max(1, Math.round((parseInt(form.timeline)||120)/30));
+                const ceilingLabourDefault = Math.round(gyp3 * 50); // ₹50/sqft
+                const supervisionDefault   = projectMonths * 25000;  // ₹25,000/month × months
+
                 const DEFAULT_SERVICES = [
-                  {id:"carpenter",  label:"Carpenter Labour",                 default:160000},
-                  {id:"electrician",label:"Electrician Labour",               default:30000},
-                  {id:"plumbing",   label:"Plumbing Labour",                  default:20000},
-                  {id:"painter",    label:"Painter / Polish Touch-up",         default:25000},
-                  {id:"ceiling",    label:"False Ceiling Labour",              default:28000},
-                  {id:"glass",      label:"Glass Installation Labour",         default:10000},
-                  {id:"tileGranite",label:"Tile & Granite Labour",             default:12000},
-                  {id:"cleaning",   label:"Deep Cleaning (Before Handover)",   default:8000},
-                  {id:"transport",  label:"Transportation & Loading",          default:22000},
-                  {id:"supervision",label:"Site Supervision / Project Mgmt",   default:25000},
-                  {id:"consumables",label:"Consumables & Miscellaneous",       default:20000},
-                  {id:"contingency",label:"Contingency",                       default:50000},
+                  {id:"carpenter",  label:"Carpenter Labour",                          default:300000},
+                  {id:"electrician",label:"Electrician Labour",                        default:55000},
+                  {id:"plumbing",   label:"Plumbing Labour",                           default:20000},
+                  {id:"painter",    label:"Painter / Polish Touch-up",                  default:25000},
+                  {id:"ceiling",    label:`False Ceiling Labour (${gyp3.toFixed(0)} sqft × ₹50)`,   default:ceilingLabourDefault||28000},
+                  {id:"glass",      label:"Glass Installation Labour",                  default:100000},
+                  {id:"tileGranite",label:"Tile & Granite Labour",                     default:12000},
+                  {id:"cleaning",   label:"Deep Cleaning (Before Handover)",            default:8000},
+                  {id:"transport",  label:"Transportation & Loading",                   default:100000},
+                  {id:"supervision",label:`Site Supervision (${projectMonths} months × ₹25,000)`,default:supervisionDefault},
+                  {id:"consumables",label:"Consumables & Miscellaneous",                default:20000},
+                  {id:"contingency",label:"Contingency",                                default:50000},
                 ];
+                // getSvc: use customer-saved override if exists, else computed default
                 const svcCosts  = form.serviceCosts||{};
-                const getSvc    = (id,def) => parseFloat(svcCosts[id]??def)||0;
-                const setSvc    = (id,val) => setForm(f=>({...f,serviceCosts:{...(f.serviceCosts||{}),[id]:val}}));
+                const getSvc    = (id,def) => svcCosts.hasOwnProperty(id) ? (parseFloat(svcCosts[id])||0) : def;
+                const setSvc    = (id,val) => setForm(f=>({...f,serviceCosts:{...(f.serviceCosts||{}),[id]:parseFloat(val)||0}}));
                 const totalServiceCost = DEFAULT_SERVICES.reduce((t,s)=>t+getSvc(s.id,s.default),0);
                 const totalCost = totalMaterialCost + totalServiceCost;
                 const netProfit = clientQuote - totalCost;
@@ -5897,30 +5903,59 @@ Dimension rules:
                           Edit amounts as needed
                         </span>
                       </div>
-                      <div style={{display:"grid",gridTemplateColumns:"3fr 1.5fr",
+                      <div style={{display:"grid",gridTemplateColumns:"3fr 1.5fr 0.6fr",
                         padding:"5px 14px",background:"rgba(255,255,255,0.04)",
                         fontSize:9,fontWeight:700,letterSpacing:1.5,
                         color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>
                         <span>Service / Work</span>
                         <span>Estimated Cost (₹)</span>
+                        <span style={{textAlign:"center"}}>Reset</span>
                       </div>
-                      {DEFAULT_SERVICES.map((svc,i)=>(
-                        <div key={svc.id} style={{display:"grid",gridTemplateColumns:"3fr 1.5fr",
+                      {DEFAULT_SERVICES.map((svc,i)=>{
+                        const isOverridden = svcCosts.hasOwnProperty(svc.id);
+                        const displayVal   = getSvc(svc.id, svc.default);
+                        return (
+                        <div key={svc.id} style={{display:"grid",
+                          gridTemplateColumns:"3fr 1.5fr 0.6fr",
                           padding:"9px 14px",alignItems:"center",
                           background:i%2===0?"transparent":"rgba(255,255,255,0.02)",
                           borderTop:"1px solid rgba(255,255,255,0.05)"}}>
-                          <div style={{fontWeight:600,color:"rgba(255,255,255,0.85)",fontSize:12}}>
-                            {svc.label}
+                          <div>
+                            <div style={{fontWeight:600,color:"rgba(255,255,255,0.85)",fontSize:12}}>
+                              {svc.label}
+                            </div>
+                            {isOverridden&&(
+                              <div style={{fontSize:9,color:"rgba(255,159,10,0.7)",marginTop:2}}>
+                                ✏ Modified · default ₹{svc.default.toLocaleString('en-IN')}
+                              </div>
+                            )}
                           </div>
                           <input
                             type="number"
-                            value={getSvc(svc.id,svc.default)}
+                            value={displayVal}
                             onChange={e=>setSvc(svc.id,e.target.value)}
                             style={{...S.input,fontSize:13,fontWeight:700,padding:"5px 10px",
-                              background:"rgba(255,255,255,0.06)",color:"#BF5AF2",
+                              background:isOverridden?"rgba(255,159,10,0.08)":"rgba(255,255,255,0.06)",
+                              color:isOverridden?"#FF9F0A":"#BF5AF2",
+                              border:isOverridden?"1px solid rgba(255,159,10,0.3)":"1px solid rgba(255,255,255,0.1)",
                               textAlign:"right"}}/>
+                          {/* Reset to default */}
+                          <div style={{textAlign:"center"}}>
+                            {isOverridden&&(
+                              <span onClick={()=>{
+                                setForm(f=>{
+                                  const s={...(f.serviceCosts||{})};
+                                  delete s[svc.id];
+                                  return {...f,serviceCosts:s};
+                                });
+                              }} style={{cursor:"pointer",fontSize:9,color:"rgba(255,255,255,0.3)",
+                                padding:"2px 6px",border:"1px solid rgba(255,255,255,0.1)",
+                                borderRadius:4}}>↺ reset</span>
+                            )}
+                          </div>
                         </div>
-                      ))}
+                        );
+                      })}
                       <div style={{display:"grid",gridTemplateColumns:"3fr 1.5fr",
                         padding:"11px 14px",borderTop:"2px solid rgba(255,255,255,0.15)",
                         background:"rgba(255,255,255,0.06)"}}>
