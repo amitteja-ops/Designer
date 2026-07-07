@@ -5769,21 +5769,44 @@ Dimension rules:
                 ].filter(r=>r.qty>0);
 
                 // ── Vendor selections from form.marginVendors ─────────
-                const vendorSels = form.marginVendors||{};
-                const setVendor=(id,idx)=>{
-                  setForm(f=>({...f,marginVendors:{...(f.marginVendors||{}),[id]:idx}}));
+                const vendorSels  = form.marginVendors||{};
+                const manualCosts = form.marginActual||{};
+                const setVendor   = (id,idx) => setForm(f=>({...f,marginVendors:{...(f.marginVendors||{}),[id]:idx}}));
+                const setActual   = (id,val)  => setForm(f=>({...f,marginActual:{...(f.marginActual||{}),[id]:val===''?null:parseFloat(val)||0}}));
+                const clearActual = (id)      => setForm(f=>{const a={...(f.marginActual||{})};delete a[id];return{...f,marginActual:a};});
+
+                // ── Room-derived cost per material (from dimensions data) ─
+                // These are the "actual" costs based on what's in rooms & dims
+                const roomDerivedCost = {
+                  plywood:      Math.round(totPly3 * 2.2 * 56),  // ~₹56/sqft for 16mm BWP
+                  laminate:     Math.round(Object.values(lt3).reduce((a,b)=>a+b,0) * 28), // ~₹28/sqft
+                  edgeBanding:  Math.round(eb3 * 18),             // ₹18/metre
+                  hardware:     Math.round(totalHinges3 * 165),   // avg hinge cost
+                  drawerSystems:Math.round(totalDrawers3 * 550),
+                  handles:      Math.round(totalHandles3 * 95),
+                  glass:        Math.round(gl3 * 85),             // ₹85/sqft
+                  ceiling:      Math.round(totalGypSheets * 480), // ₹480/sheet
+                  ceilingFrame: Math.round(totalGypFrame3 * 45),  // ₹45/metre
+                  granite:      Math.round(gr3 * 95),
+                  tiles:        Math.round(ti3 * 55),
+                  paint:        Math.round(totalPaintUnit * 1800),
+                  electrical:   Math.round((totalLi3||1) * 180),
+                  consumables:  Math.round(totConsumUnits * 350),
                 };
 
-                // ── Compute costs ──────────────────────────────────────
+                // ── Final cost: manual override > room-derived > vendor price ─
                 let totalMaterialCost=0;
                 const rowsWithCost = matRows3.map(r=>{
-                  const vendors=VENDORS[r.vendorKey]||[];
-                  const selIdx=vendorSels[r.id]??0;
-                  const vendor=vendors[selIdx]||vendors[0];
-                  const unitPrice=vendor?vendor[r.priceKey]||0:0;
-                  const cost=r.qty*unitPrice;
-                  totalMaterialCost+=cost;
-                  return {...r,vendors,selIdx,vendor,unitPrice,cost};
+                  const vendors   = VENDORS[r.vendorKey]||[];
+                  const selIdx    = vendorSels[r.id]??0;
+                  const vendor    = vendors[selIdx]||vendors[0];
+                  const vendorUnitPrice = vendor?vendor[r.priceKey]||0:0;
+                  const vendorCost      = r.qty * vendorUnitPrice;
+                  const roomCost        = roomDerivedCost[r.id]||vendorCost;
+                  const hasManual       = manualCosts.hasOwnProperty(r.id) && manualCosts[r.id]!==null;
+                  const finalCost       = hasManual ? (manualCosts[r.id]||0) : roomCost;
+                  totalMaterialCost += finalCost;
+                  return {...r,vendors,selIdx,vendor,vendorUnitPrice,vendorCost,roomCost,finalCost,hasManual};
                 });
 
                 const clientQuote=parseFloat(form.revisedQuotation||form.quotation)||0;
@@ -5906,18 +5929,18 @@ Dimension rules:
                     {/* Material rows table */}
                     <div className="glass" style={{borderRadius:12,overflow:"hidden"}}>
                       <div style={{display:"grid",
-                        gridTemplateColumns:"2fr 0.6fr 0.6fr 2.5fr 1fr 1fr",
+                        gridTemplateColumns:"1.8fr 0.5fr 0.5fr 2fr 0.9fr 1fr 1.2fr",
                         padding:"7px 14px",background:"rgba(255,255,255,0.06)",
                         fontSize:9,fontWeight:700,letterSpacing:1.5,
                         color:"rgba(255,255,255,0.4)",textTransform:"uppercase"}}>
-                        {["Material","Qty","Unit","Vendor (select for best price)","Unit Price","Total Cost"].map(h=>(
+                        {["Material","Qty","Unit","Vendor (reference price)","Vendor Total","Room-Derived Cost","Actual Cost (editable)"].map(h=>(
                           <span key={h}>{h}</span>
                         ))}
                       </div>
 
                       {rowsWithCost.map((r,i)=>(
                         <div key={r.id} style={{display:"grid",
-                          gridTemplateColumns:"2fr 0.6fr 0.6fr 2.5fr 1fr 1fr",
+                          gridTemplateColumns:"1.8fr 0.5fr 0.5fr 2fr 0.9fr 1fr 1.2fr",
                           padding:"11px 14px",alignItems:"center",
                           background:i%2===0?"transparent":"rgba(255,255,255,0.02)",
                           borderTop:"1px solid rgba(255,255,255,0.05)"}}>
@@ -5951,21 +5974,46 @@ Dimension rules:
                             </select>
                           </div>
 
-                          {/* Unit price */}
-                          <div style={{fontWeight:700,color:"#FF9F0A",fontSize:13}}>
-                            ₹{(r.unitPrice||0).toLocaleString('en-IN')}
+                          {/* Vendor Total */}
+                          <div style={{fontWeight:600,color:"rgba(255,255,255,0.4)",fontSize:12,
+                            textDecoration:"line-through"}}>
+                            {fmt3(r.vendorCost)}
                           </div>
 
-                          {/* Total cost */}
-                          <div style={{fontWeight:900,color:"rgba(255,255,255,0.9)",fontSize:13}}>
-                            {fmt3(r.cost)}
+                          {/* Room-Derived Cost */}
+                          <div style={{fontWeight:700,color:"#0A84FF",fontSize:12}}>
+                            {fmt3(r.roomCost)}
+                          </div>
+
+                          {/* Actual Cost — editable */}
+                          <div>
+                            <input
+                              type="number"
+                              value={r.hasManual ? manualCosts[r.id] : r.roomCost}
+                              onChange={e=>setActual(r.id, e.target.value)}
+                              style={{width:"100%",padding:"4px 8px",
+                                background:r.hasManual?"rgba(48,209,88,0.1)":"rgba(255,255,255,0.06)",
+                                border:r.hasManual?"1px solid rgba(48,209,88,0.4)":"1px solid rgba(255,255,255,0.12)",
+                                borderRadius:6,color:r.hasManual?"#30D158":"rgba(255,255,255,0.8)",
+                                fontSize:12,fontWeight:700,outline:"none"}}/>
+                            {r.hasManual&&(
+                              <div style={{display:"flex",justifyContent:"space-between",
+                                alignItems:"center",marginTop:2}}>
+                                <span style={{fontSize:9,color:"rgba(48,209,88,0.6)"}}>✏ Modified</span>
+                                <span onClick={()=>clearActual(r.id)}
+                                  style={{fontSize:9,color:"rgba(255,255,255,0.3)",cursor:"pointer",
+                                    padding:"1px 5px",border:"1px solid rgba(255,255,255,0.1)",borderRadius:3}}>
+                                  ↺ reset
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
 
                       {/* Totals row */}
                       <div style={{display:"grid",
-                        gridTemplateColumns:"2fr 0.6fr 0.6fr 2.5fr 1fr 1fr",
+                        gridTemplateColumns:"1.8fr 0.5fr 0.5fr 2fr 0.9fr 1fr 1.2fr",
                         padding:"12px 14px",
                         borderTop:"2px solid rgba(255,255,255,0.15)",
                         background:"rgba(255,255,255,0.06)"}}>
