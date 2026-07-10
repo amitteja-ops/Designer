@@ -4,6 +4,7 @@ import { sb, toRow, fromRow, TABLE } from "./supabase";
 
 // Default rooms — extended dynamically when floor plan is uploaded
 const DEFAULT_ROOMS = ["Drawing Room","Living Area","Dining","Master Bedroom","Children Bedroom","Guest Bedroom","Kitchen","Pooja","Entrance","Balcony","Bathroom","Study Room"];
+const SPECIAL_ROOMS = ["Others","Add On"]; // shown separately as optional
 // ROOMS is computed from form — see getRooms(form) helper below
 const getRooms = (form) => {
   const extra = (form.customRooms || []).filter(r => r && !DEFAULT_ROOMS.includes(r));
@@ -2317,6 +2318,8 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const pendingSync = offlineQ.length;
   const [view,         setView]         = useState("list");
   const [form,         setForm]         = useState(EMPTY);
+  const [activeRoom,   setActiveRoom]   = useState(null);
+  const [specCollapsed,setSpecCollapsed]= useState({});
   const [selectedId,   setSelectedId]   = useState(null);
   const [search,       setSearch]       = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -4399,18 +4402,66 @@ Dimension rules:
                 Select rooms → Add products → Type auto-fills → Enter H×W → Select material. Room defaults carry over.
               </div>
 
-              {/* Room selector */}
-              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:20}}>
-                {getRooms(form).map(r=>(<button key={r} style={S.pill(form.rooms.includes(r))} onClick={()=>toggleRoom(r)}>{r}</button>))}
+              {/* Room selector — standard rooms */}
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
+                {DEFAULT_ROOMS.map(r=>(
+                  <button key={r}
+                    style={{...S.pill(form.rooms.includes(r)),
+                      outline: activeRoom===r ? `2px solid ${C.teal}` : "none",
+                      outlineOffset:2}}
+                    onClick={()=>{
+                      if(!form.rooms.includes(r)) toggleRoom(r);
+                      setActiveRoom(prev=>prev===r?null:r);
+                    }}>{r}</button>
+                ))}
+              </div>
+              {/* Others & Add On — optional, with custom label */}
+              <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
+                <span style={{fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:1,
+                  textTransform:"uppercase",marginRight:4}}>Optional:</span>
+                {SPECIAL_ROOMS.map(r=>{
+                  const included = form.rooms.includes(r);
+                  const customKey = r==="Others"?"othersLabel":"addOnLabel";
+                  const customLabel = form[customKey]||r;
+                  return (
+                    <div key={r} style={{display:"flex",alignItems:"center",gap:4}}>
+                      <button
+                        style={{...S.pill(included),
+                          outline: included&&activeRoom===r ? `2px solid ${r==="Add On"?"#FF9F0A":C.teal}` : "none",
+                          outlineOffset:2,
+                          borderColor: r==="Add On"?"rgba(255,159,10,0.4)":undefined,
+                          color: included&&r==="Add On"?"#FF9F0A":undefined}}
+                        onClick={()=>{
+                          if(!included) toggleRoom(r);
+                          setActiveRoom(prev=>prev===r?null:r);
+                        }}>
+                        {included?"✓ ":""}{customLabel}
+                      </button>
+                      {included&&(
+                        <input
+                          value={form[customKey]||""}
+                          onChange={e=>setForm(f=>({...f,[customKey]:e.target.value}))}
+                          placeholder={`Rename "${r}"…`}
+                          style={{...S.input,fontSize:11,padding:"4px 10px",width:130,
+                            background:"rgba(255,255,255,0.06)"}}/>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {form.rooms.length===0 && (
                 <div style={{textAlign:"center",padding:"32px",background:"rgba(255,255,255,0.05)",borderRadius:12,color:"rgba(255,255,255,0.5)",fontSize:13}}>
-                  ☝️ Select rooms above to start adding products
+                  ☝️ Select a room above to start adding products
+                </div>
+              )}
+              {form.rooms.length>0 && !activeRoom && (
+                <div style={{textAlign:"center",padding:"24px",background:"rgba(255,255,255,0.04)",borderRadius:12,color:"rgba(255,255,255,0.4)",fontSize:13,border:"1px solid rgba(255,255,255,0.08)"}}>
+                  👆 Tap a room above to view and edit its products
                 </div>
               )}
 
-              {form.rooms.map(room=>{
+              {form.rooms.map(room=>{ if(activeRoom && activeRoom!==room) return null;
                 const works   = form.roomWork?.[room] || [];
                 const rd      = form.roomDetails?.[room] || {};
                 const roomSpec = rd;  // alias — used by calcItemPrice and roomDefaults
@@ -4487,6 +4538,7 @@ Dimension rules:
                     {/* ── Room Spec & Pricing Defaults ── */}
                     {(()=>{
                       const spec = form.roomDetails?.[room] || {};
+                      const isSpecCollapsed = specCollapsed[room]||false;
                       const SPEC_TO_MAT = {
                         plywoodGrade:{ matType:"plywood",  getBrand:(v)=>v },
                         laminateType:{ matType:"laminate", getBrand:(v)=>v },
@@ -4526,11 +4578,15 @@ Dimension rules:
                       return (
                         <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,
                           padding:"12px 14px",marginBottom:12,border:"1px solid rgba(255,255,255,0.08)"}}>
-                          <div style={{fontSize:9,fontWeight:700,letterSpacing:2,
-                            color:"rgba(255,255,255,0.4)",textTransform:"uppercase",marginBottom:10}}>
-                            🎨 Room Pricing Spec — applies to all items in this room
+                          <div onClick={()=>setSpecCollapsed(s=>({...s,[room]:!s[room]}))}
+                            style={{fontSize:9,fontWeight:700,letterSpacing:2,cursor:"pointer",
+                            color:"rgba(255,255,255,0.4)",textTransform:"uppercase",marginBottom:10,
+                            display:"flex",justifyContent:"space-between",alignItems:"center",
+                            userSelect:"none"}}>
+                            <span>🎨 Room Pricing Spec — applies to all items in this room</span>
+                            <span style={{fontSize:14}}>{(specCollapsed[room])?"▶ Show":"▼ Hide"}</span>
                           </div>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
+                          {!specCollapsed[room]&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
                             {/* Plywood Grade */}
                             <div>
                               <label style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",
@@ -4591,7 +4647,7 @@ Dimension rules:
                                 ))}
                               </select>
                             </div>
-                          </div>
+                          </div>}
                           {/* Live price preview */}
                           {works.length>0 && (()=>{
                             const roomTotal = works.reduce((t,w)=>t+calcItemPrice(w,roomSpec),0);
