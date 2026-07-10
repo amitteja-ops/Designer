@@ -1679,7 +1679,7 @@ ${!includeAddOn&&rawAddOnP>0?`
           ${works.map((w,i)=>{
             const sq=w.height&&w.width?w.height+'×'+w.width:'—';
             return `<tr style="background:${i%2===0?'#fff':'#fffbf0'}">
-              <td><b>${w.product}</b></td><td>${w.type}</td><td>${sq}</td>
+              <td><b>${w.product==="__custom__"?(w.customProduct||"Custom"):w.product}</b></td><td>${w.type}</td><td>${sq}</td>
               <td style="text-align:right">×${parseFloat(w.qty)||1}</td><td>${w.brand||'—'}</td>
             </tr>`;
           }).join('')}
@@ -1890,9 +1890,8 @@ ${!includeAddOn&&rawAddOnP>0?`
             color:C.teal,borderBottom:`2px solid ${C.teal}`,paddingBottom:6,marginBottom:14 }}>
             3. Scope of Work
           </div>
-          {(allRoomsP.filter(r=>includeAddOn||!ADD_ON_ROOMS_P.has(r))).map(r=>{
+          {(allRoomsP.filter(r=>(includeAddOn||!ADD_ON_ROOMS_P.has(r))&&(selected.roomWork?.[r]||[]).filter(w=>w.product).length>0)).map(r=>{
             const works=(selected.roomWork?.[r]||[]).filter(w=>w.product);
-            if(!works.length)return null;
             const isAddon=ADD_ON_ROOMS_P.has(r);
             const rAmt=roomAmtP(r);
             const hdrColor=isAddon?"#92400e":"#1e3a5f";
@@ -1918,7 +1917,7 @@ ${!includeAddOn&&rawAddOnP>0?`
                   padding:"6px 14px",borderBottom:"1px solid #f3f4f6",
                   background:wi%2===0?"#fff":"#f9fafb",alignItems:"center" }}>
                   <div>
-                    <div style={{ fontWeight:600,fontSize:12,color:"#0F1923" }}>{w.product}</div>
+                    <div style={{ fontWeight:600,fontSize:12,color:"#0F1923" }}>{w.product==="__custom__"?(w.customProduct||"Custom"):w.product}</div>
                     {w.notes&&<div style={{ fontSize:10,color:"#9ca3af" }}>{w.notes}</div>}
                   </div>
                   <div style={{ fontSize:11,color:"#6b7280" }}>{w.type}</div>
@@ -4404,52 +4403,77 @@ Dimension rules:
 
               {/* Room selector — standard rooms */}
               <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
-                {DEFAULT_ROOMS.map(r=>(
-                  <button key={r}
-                    style={{...S.pill(form.rooms.includes(r)),
-                      outline: activeRoom===r ? `2px solid ${C.teal}` : "none",
-                      outlineOffset:2}}
-                    onClick={()=>{
-                      if(!form.rooms.includes(r)) toggleRoom(r);
-                      setActiveRoom(prev=>prev===r?null:r);
-                    }}>{r}</button>
-                ))}
+                {DEFAULT_ROOMS.map(r=>{
+                  const isSelected = form.rooms.includes(r);
+                  const itemCount  = (form.roomWork?.[r]||[]).filter(w=>w.product).length;
+                  const isModified = isSelected && itemCount > 0;
+                  return (
+                    <button key={r}
+                      style={{
+                        ...S.pill(isSelected),
+                        outline: activeRoom===r ? `2px solid ${C.teal}` : "none",
+                        outlineOffset:2,
+                        // Modified = teal glow; selected but empty = grey; not selected = faint
+                        background: isModified
+                          ? "rgba(48,209,88,0.18)"
+                          : isSelected ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                        borderColor: isModified
+                          ? "rgba(48,209,88,0.6)"
+                          : isSelected ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.1)",
+                        color: isModified ? "#30D158" : isSelected ? "#fff" : "rgba(255,255,255,0.4)",
+                        fontWeight: isModified ? 700 : 400,
+                      }}
+                      onClick={()=>{
+                        if(!isSelected) toggleRoom(r);
+                        setActiveRoom(prev=>prev===r?null:r);
+                      }}>
+                      {r}{isModified ? ` (${itemCount})` : ""}
+                    </button>
+                  );
+                })}
               </div>
               {/* Others & Add On — optional, with custom label */}
               <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
                 <span style={{fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:1,
                   textTransform:"uppercase",marginRight:4}}>Optional:</span>
                 {SPECIAL_ROOMS.map(r=>{
-                  const included = form.rooms.includes(r);
-                  const customKey = r==="Others"?"othersLabel":"addOnLabel";
-                  const customLabel = form[customKey]||r;
+                  const included   = form.rooms.includes(r);
+                  const itemCount  = (form.roomWork?.[r]||[]).filter(w=>w.product).length;
+                  const isModified = included && itemCount > 0;
+                  const isAddonRoom= r==="Add On";
                   return (
-                    <div key={r} style={{display:"flex",alignItems:"center",gap:4}}>
-                      <button
-                        style={{...S.pill(included),
-                          outline: included&&activeRoom===r ? `2px solid ${r==="Add On"?"#FF9F0A":C.teal}` : "none",
-                          outlineOffset:2,
-                          borderColor: r==="Add On"?"rgba(255,159,10,0.4)":undefined,
-                          color: included&&r==="Add On"?"#FF9F0A":undefined}}
-                        onClick={()=>{
-                          if(!included) toggleRoom(r);
-                          setActiveRoom(prev=>prev===r?null:r);
-                        }}>
-                        {included?"✓ ":""}{customLabel}
-                      </button>
-                      {included&&(
-                        <input
-                          value={form[customKey]||""}
-                          onChange={e=>setForm(f=>({...f,[customKey]:e.target.value}))}
-                          placeholder={`Rename "${r}"…`}
-                          style={{...S.input,fontSize:11,padding:"4px 10px",width:130,
-                            background:"rgba(255,255,255,0.06)"}}/>
-                      )}
-                    </div>
+                    <button key={r}
+                      style={{
+                        ...S.pill(included),
+                        outline: included&&activeRoom===r ? `2px solid ${isAddonRoom?"#FF9F0A":"#30D158"}` : "none",
+                        outlineOffset:2,
+                        background: isModified
+                          ? isAddonRoom?"rgba(255,159,10,0.18)":"rgba(48,209,88,0.18)"
+                          : included ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)",
+                        borderColor: isModified
+                          ? isAddonRoom?"rgba(255,159,10,0.6)":"rgba(48,209,88,0.6)"
+                          : included ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.1)",
+                        color: isModified
+                          ? isAddonRoom?"#FF9F0A":"#30D158"
+                          : included ? "#fff" : "rgba(255,255,255,0.4)",
+                        fontWeight: isModified ? 700 : 400,
+                      }}
+                      onClick={()=>{
+                        if(!included) toggleRoom(r);
+                        setActiveRoom(prev=>prev===r?null:r);
+                      }}>
+                      {r}{isModified ? ` (${itemCount})` : ""}
+                    </button>
                   );
                 })}
               </div>
 
+              {/* Legend */}
+              <div style={{display:"flex",gap:16,marginBottom:12,fontSize:10,color:"rgba(255,255,255,0.35)"}}>
+                <span style={{color:"#30D158"}}>● Modified (has products)</span>
+                <span style={{color:"rgba(255,255,255,0.4)"}}>● Selected (empty)</span>
+                <span style={{color:"rgba(255,255,255,0.2)"}}>● Not selected</span>
+              </div>
               {form.rooms.length===0 && (
                 <div style={{textAlign:"center",padding:"32px",background:"rgba(255,255,255,0.05)",borderRadius:12,color:"rgba(255,255,255,0.5)",fontSize:13}}>
                   ☝️ Select a room above to start adding products
@@ -4701,7 +4725,19 @@ Dimension rules:
                                 updWork(w.id,"product",e.target.value,{type:p.type,matType:p.mats[0]||"",brand:defs[p.mats[0]||""]||"",allBrands:defs,price:""});
                               }}>
                               {getProductsForRoom(room).map(p=><option key={p.name} value={p.name}>{p.name}</option>)}
+                              <option value="__custom__">✏ Custom product…</option>
                             </select>
+                            {/* Free-text input when Custom is selected */}
+                            {w.product==="__custom__"&&(
+                              <input
+                                autoFocus
+                                value={w.customProduct||""}
+                                onChange={e=>updWork(w.id,"customProduct",e.target.value)}
+                                placeholder="Type product name…"
+                                style={{...S.input,fontSize:12,padding:"5px 10px",marginTop:4,
+                                  background:"rgba(255,255,255,0.08)",
+                                  border:"1px solid rgba(10,132,255,0.4)"}}/>
+                            )}
 
                             {/* Type (auto-filled, editable) */}
                             <select className="glass-input" style={{fontSize:11,padding:"4px 5px"}}
