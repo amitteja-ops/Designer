@@ -1333,17 +1333,19 @@ function ClientReport({ selected, setView, customers, setCustomers, showToast })
     ? Math.round(finalQuoteP * (addOnWithLabourP / totalWithLabourP))
     : 0;
   const interiorQuoteP  = finalQuoteP - addOnQuoteP;
-  // Apply rebate to get the true client-facing final amount
+  // selected.quotation is ALWAYS the final client price (rebate already applied by "Use This")
+  // rebateAmtP is only used for DISPLAY in Budget Summary — never subtracted again
   const rebateAmtP      = (() => {
     const rv = parseFloat(selected.rebateValue||0);
     if (!rv) return 0;
     return selected.rebateType === "percent"
-      ? Math.round((includeAddOn ? finalQuoteP : interiorQuoteP) * rv / 100)
+      ? Math.round((parseFloat(selected.previousQuotation)||0) * rv / 100)
       : rv;
   })();
   const couponAmtP      = selected.couponApplied
-    ? Math.round(((includeAddOn?finalQuoteP:interiorQuoteP) - rebateAmtP) * 0.05) : 0;
-  const effectiveQuoteP = (includeAddOn ? finalQuoteP : interiorQuoteP) - rebateAmtP - couponAmtP;
+    ? Math.round(((parseFloat(selected.previousQuotation)||0) - rebateAmtP) * 0.05) : 0;
+  // effectiveQuoteP = the saved quotation which already has rebate baked in
+  const effectiveQuoteP = includeAddOn ? finalQuoteP : interiorQuoteP;
   // Per-room: always use with-labour amount, proportional to effectiveQuote
   // roomAmtP: proportional room cost from pre-rebate base, then scale to final
   const preRebateP = (includeAddOn ? finalQuoteP : interiorQuoteP);
