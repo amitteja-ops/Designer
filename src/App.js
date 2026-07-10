@@ -4710,7 +4710,13 @@ Dimension rules:
 
                       return (
                         <div key={w.id} style={{marginBottom:8}}>
-                          <div style={{display:"grid",gridTemplateColumns:"2fr 1.2fr 72px 16px 72px 72px 56px 1.6fr 1.4fr 90px 36px",gap:6,alignItems:"center",background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"10px 10px"}}>
+                          {/* Custom product row: spans differently, notes shown below */}
+                          <div style={{display:"grid",
+                            gridTemplateColumns: w.product==="__custom__"
+                              ? "2fr 1.2fr 72px 16px 72px 72px 56px 1.6fr 0 110px 36px"
+                              : "2fr 1.2fr 72px 16px 72px 72px 56px 1.6fr 1.4fr 90px 36px",
+                            gap:6,alignItems:"center",background:"rgba(255,255,255,0.04)",
+                            borderRadius:10,padding:"10px 10px"}}>
                             {/* Product dropdown */}
                             <select className="glass-input" style={{fontSize:12,padding:"5px 6px"}}
                               value={w.product||""}
@@ -4726,18 +4732,16 @@ Dimension rules:
                               }}>
                               {getProductsForRoom(room).map(p=><option key={p.name} value={p.name}>{p.name}</option>)}
                               <option value="__custom__">✏ Custom product…</option>
+                                                            {/* Saved custom products for this room */}
+                              {((form.customRoomProducts||{})[room]||[]).length>0&&(
+                                <optgroup label="── Custom (saved) ──">
+                                  {((form.customRoomProducts||{})[room]||[]).map(cp=>(
+                                    <option key={cp} value={cp}>{cp}</option>
+                                  ))}
+                                </optgroup>
+                              )}
+                              <option value="__custom__">✏ Type new custom product…</option>
                             </select>
-                            {/* Free-text input when Custom is selected */}
-                            {w.product==="__custom__"&&(
-                              <input
-                                autoFocus
-                                value={w.customProduct||""}
-                                onChange={e=>updWork(w.id,"customProduct",e.target.value)}
-                                placeholder="Type product name…"
-                                style={{...S.input,fontSize:12,padding:"5px 10px",marginTop:4,
-                                  background:"rgba(255,255,255,0.08)",
-                                  border:"1px solid rgba(10,132,255,0.4)"}}/>
-                            )}
 
                             {/* Type (auto-filled, editable) */}
                             <select className="glass-input" style={{fontSize:11,padding:"4px 5px"}}
@@ -4813,11 +4817,14 @@ Dimension rules:
                               <div style={{fontSize:11,color:"rgba(255,255,255,0.3)",textAlign:"center"}}>—</div>
                             )}
 
-                            {/* Notes */}
-                            <input className="glass-input" style={{fontSize:11,padding:"5px 6px"}}
-                              placeholder="e.g. 10ft wall unit..."
-                              value={w.notes||""}
-                              onChange={e=>updWork(w.id,"notes",e.target.value)}/>
+                            {/* Notes — hidden in grid when custom (shown below) */}
+                            {w.product!=="__custom__"
+                              ? <input className="glass-input" style={{fontSize:11,padding:"5px 6px"}}
+                                  placeholder="e.g. 10ft wall unit..."
+                                  value={w.notes||""}
+                                  onChange={e=>updWork(w.id,"notes",e.target.value)}/>
+                              : <div/>
+                            }
 
                             {/* Price — auto-calc or manual override */}
                             <div style={{display:"flex",flexDirection:"column",gap:2}}>
@@ -4837,6 +4844,41 @@ Dimension rules:
                             <button onClick={()=>delWork(w.id)}
                               style={{background:"rgba(255,69,58,0.15)",border:"1px solid rgba(255,69,58,0.3)",borderRadius:8,color:"#FF453A",padding:"5px 8px",cursor:"pointer",fontFamily:"inherit",fontSize:12}}>✕</button>
                           </div>
+                          {/* Custom product: name input + notes below the grid */}
+                          {w.product==="__custom__"&&(
+                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,
+                              padding:"6px 10px 8px",
+                              background:"rgba(10,132,255,0.05)",
+                              borderRadius:"0 0 10px 10px",
+                              borderTop:"1px solid rgba(10,132,255,0.15)"}}>
+                              <input
+                                autoFocus
+                                value={w.customProduct||""}
+                                onChange={e=>updWork(w.id,"customProduct",e.target.value)}
+                                onBlur={e=>{
+                                  const name=e.target.value.trim();
+                                  if(!name) return;
+                                  setForm(f=>{
+                                    const existing=(f.customRoomProducts||{})[room]||[];
+                                    if(existing.includes(name)) return f;
+                                    return {...f,customRoomProducts:{
+                                      ...(f.customRoomProducts||{}),
+                                      [room]:[...existing,name]
+                                    }};
+                                  });
+                                }}
+                                placeholder="✏ Product name (e.g. Shoe Cabinet)…"
+                                style={{...S.input,fontSize:12,padding:"6px 10px",
+                                  background:"rgba(10,132,255,0.08)",
+                                  border:"1px solid rgba(10,132,255,0.3)",
+                                  color:"#64D2FF",fontWeight:600}}/>
+                              <input className="glass-input"
+                                style={{fontSize:11,padding:"6px 8px"}}
+                                placeholder="Notes…"
+                                value={w.notes||""}
+                                onChange={e=>updWork(w.id,"notes",e.target.value)}/>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
