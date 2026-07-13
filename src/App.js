@@ -1741,17 +1741,60 @@ ${!includeAddOn&&rawAddOnP>0?`
               w.document.write(html); w.document.close(); w.focus();
               setTimeout(()=>w.print(),800);
             }}>🖨 Print / Save PDF</button>
-          <button style={{ fontSize:11,padding:"7px 14px",fontWeight:600,cursor:"pointer",
-              background:"rgba(255,255,255,0.1)",color:"#374151",
-              border:"1px solid #d1d5db",borderRadius:8,fontFamily:"inherit" }}
-            onClick={()=>{
+          {(()=>{
+            const emailLog = selected.emailLog||[];
+            const emailCount = emailLog.length;
+            const lastEmail = emailLog[emailLog.length-1];
+            const sendEmail = async () => {
               const qid=`HRI-Q-${String(selected.id).slice(-4).padStart(4,'0')}-${new Date().getFullYear()}`;
+              const toAddr = selected.email||'';
               const subject=encodeURIComponent(`Interior Design Proposal — ${selected.name} | ${qid}`);
               const body=encodeURIComponent(
-                `Dear ${selected.name},\n\nThank you for choosing High Rise Interiors.\n\nPlease find your interior design proposal attached.\n\nQuotation ID: ${qid}\nFinal Quotation: ${selected.revisedQuotation||selected.quotation?'₹'+Number(selected.revisedQuotation||selected.quotation).toLocaleString('en-IN'):'TBD'}\n\nPlease review and revert with your confirmation.\n\nWarm regards,\nHigh Rise Interiors\n+91-6304980890`
+                `Dear ${selected.name},\n\nThank you for choosing High Rise Interiors.\n\nPlease find your interior design proposal attached.\n\nQuotation ID: ${qid}\nFinal Quotation: ${selected.revisedQuotation||selected.quotation?'₹'+Number(selected.revisedQuotation||selected.quotation).toLocaleString('en-IN'):'TBD'}\n\nPlease review and revert with your confirmation.\n\nWarm regards,\nHigh Rise Interiors\n+91-6304980890\ninfo@spatiasync.com`
               );
-              window.open(`mailto:${selected.email||''}?subject=${subject}&body=${body}`);
-            }}>✉ Email Client</button>
+              // Open Outlook/mail client
+              window.open(`mailto:${toAddr}?from=info@spatiasync.com&subject=${subject}&body=${body}`);
+              // Log the email send
+              const entry = {
+                type:"email_sent",
+                ts: new Date().toISOString(),
+                to: toAddr,
+                subject: `Interior Design Proposal — ${selected.name} | ${qid}`,
+                sentBy: "High Rise Interiors"
+              };
+              const newLog = [...emailLog, entry];
+              // Save to DB
+              try {
+                const tok = JSON.parse(localStorage.getItem("crm_session")||"{}").token;
+                await fetch(`https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${selected.id}`,{
+                  method:"PATCH",
+                  headers:{"Content-Type":"application/json",
+                    "apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY",
+                    "Authorization":`Bearer ${tok}`,"Prefer":"return=minimal"},
+                  body:JSON.stringify({email_log:JSON.stringify(newLog)})
+                });
+                setCustomers(prev=>prev.map(c=>c.id===selected.id?{...c,emailLog:newLog}:c));
+              } catch(e){ console.error("Email log save error",e); }
+            };
+            return (
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                <button style={{ fontSize:11,padding:"7px 14px",fontWeight:600,cursor:"pointer",
+                  background: emailCount>0?"rgba(10,132,255,0.15)":"rgba(255,255,255,0.1)",
+                  color: emailCount>0?"#0A84FF":"#374151",
+                  border:`1px solid ${emailCount>0?"rgba(10,132,255,0.4)":"#d1d5db"}`,
+                  borderRadius:8,fontFamily:"inherit"}}
+                  onClick={sendEmail}>
+                  ✉ {emailCount>0?`Resend Email (${emailCount} sent)`:"Email Client"}
+                </button>
+                {lastEmail&&(
+                  <div style={{fontSize:10,color:"rgba(255,255,255,0.4)",textAlign:"right"}}>
+                    Last sent: {new Date(lastEmail.ts).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}
+                    {" · "}{lastEmail.to}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

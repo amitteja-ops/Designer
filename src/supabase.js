@@ -152,6 +152,21 @@ export const toRow = (f) => {
                             )
                           )
                         : null,
+    email_log:          f.emailLog && f.emailLog.length > 0
+                          ? JSON.stringify(f.emailLog)
+                          : null,
+    service_costs:      f.serviceCosts && Object.keys(f.serviceCosts).length > 0
+                          ? JSON.stringify(f.serviceCosts)
+                          : null,
+    margin_vendors:     f.marginVendors && Object.keys(f.marginVendors).length > 0
+                          ? JSON.stringify(f.marginVendors)
+                          : null,
+    margin_actual:      f.marginActual && Object.keys(f.marginActual).length > 0
+                          ? JSON.stringify(f.marginActual)
+                          : null,
+    custom_room_products: f.customRoomProducts && Object.keys(f.customRoomProducts).length > 0
+                          ? JSON.stringify(f.customRoomProducts)
+                          : null,
   };
   return row;
 };
@@ -219,6 +234,21 @@ export const fromRow = (r) => {
     auditLog:           r.audit_log
                           ? (typeof r.audit_log      === "string" ? JSON.parse(r.audit_log)      : r.audit_log)
                           : [],
+    emailLog:           r.email_log
+                          ? (typeof r.email_log      === "string" ? JSON.parse(r.email_log)      : r.email_log)
+                          : [],
+    serviceCosts:       r.service_costs
+                          ? (typeof r.service_costs  === "string" ? JSON.parse(r.service_costs)  : r.service_costs)
+                          : {},
+    marginVendors:      r.margin_vendors
+                          ? (typeof r.margin_vendors === "string" ? JSON.parse(r.margin_vendors) : r.margin_vendors)
+                          : {},
+    marginActual:       r.margin_actual
+                          ? (typeof r.margin_actual  === "string" ? JSON.parse(r.margin_actual)  : r.margin_actual)
+                          : {},
+    customRoomProducts: r.custom_room_products
+                          ? (typeof r.custom_room_products === "string" ? JSON.parse(r.custom_room_products) : r.custom_room_products)
+                          : {},
   };
   return form;
 }
