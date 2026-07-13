@@ -4710,62 +4710,45 @@ Dimension rules:
 
                       return (
                         <div key={w.id} style={{marginBottom:8}}>
-                          {/* Custom product row: spans differently, notes shown below */}
-                          <div style={{display:"grid",
-                            gridTemplateColumns: w.product==="__custom__"
-                              ? "2fr 1.2fr 72px 16px 72px 72px 56px 1.6fr 0 110px 36px"
-                              : "2fr 1.2fr 72px 16px 72px 72px 56px 1.6fr 1.4fr 90px 36px",
-                            gap:6,alignItems:"center",background:"rgba(255,255,255,0.04)",
-                            borderRadius:10,padding:"10px 10px"}}>
-                            {/* Product dropdown */}
-                            <select className="glass-input" style={{fontSize:12,padding:"5px 6px"}}
-                              value={w.product||""}
-                              onChange={e=>{
-                                const p=getProductsForRoom(room).find(x=>x.name===e.target.value)||getProductsForRoom(room)[0]||ALL_PRODUCTS[0];
-                                // Auto-fill type; compute default brands
-                                const defs={};
-                                p.mats.forEach(mt=>{
-                                  if(roomDefaults[mt]){defs[mt]=roomDefaults[mt];}
-                                  else{const c=getCatalog(mt);if(c.length){const ch=[...c].sort((a,b)=>(a.price||0)-(b.price||0))[0];defs[mt]=ch.name;}}
-                                });
-                                updWork(w.id,"product",e.target.value,{type:p.type,matType:p.mats[0]||"",brand:defs[p.mats[0]||""]||"",allBrands:defs,price:""});
-                              }}>
-                              {getProductsForRoom(room).map(p=><option key={p.name} value={p.name}>{p.name}</option>)}
-                              <option value="__custom__">✏ Custom product…</option>
-                                                            {/* Saved custom products for this room */}
-                              {((form.customRoomProducts||{})[room]||[]).length>0&&(
-                                <optgroup label="── Custom (saved) ──">
-                                  {((form.customRoomProducts||{})[room]||[]).map(cp=>(
-                                    <option key={cp} value={cp}>{cp}</option>
+                          {w.product==="__custom__" ? (
+                            /* ── CUSTOM PRODUCT ROW ── */
+                            <div style={{borderRadius:10,border:"1px solid rgba(10,132,255,0.25)",
+                              background:"rgba(10,132,255,0.05)",overflow:"hidden"}}>
+                              {/* Row 1: name | type | H x W | sqft | qty | price | delete */}
+                              <div style={{display:"grid",
+                                gridTemplateColumns:"2fr 1.1fr 72px 14px 72px 60px 56px 110px 36px",
+                                gap:6,alignItems:"center",padding:"8px 10px"}}>
+                                {/* Custom name input */}
+                                <input
+                                  value={w.customProduct||""}
+                                  onChange={e=>updWork(w.id,"customProduct",e.target.value)}
+                                  onBlur={e=>{
+                                    const name=e.target.value.trim();
+                                    if(!name) return;
+                                    setForm(f=>{
+                                      const existing=(f.customRoomProducts||{})[room]||[];
+                                      if(existing.includes(name)) return f;
+                                      return {...f,customRoomProducts:{
+                                        ...(f.customRoomProducts||{}),
+                                        [room]:[...existing,name]
+                                      }};
+                                    });
+                                  }}
+                                  placeholder="✏ Product name…"
+                                  style={{...S.input,fontSize:12,padding:"5px 10px",
+                                    background:"rgba(10,132,255,0.1)",
+                                    border:"1px solid rgba(10,132,255,0.35)",
+                                    color:"#64D2FF",fontWeight:600}}/>
+                                {/* Type */}
+                                <select className="glass-input" style={{fontSize:11,padding:"4px 5px"}}
+                                  value={w.type||""}
+                                  onChange={e=>updWork(w.id,"type",e.target.value)}>
+                                  <option value="">-- Type</option>
+                                  {Object.keys(WORK_TYPE_PRICES).map(t=>(
+                                    <option key={t} value={t}>{t}</option>
                                   ))}
-                                </optgroup>
-                              )}
-                              <option value="__custom__">✏ Type new custom product…</option>
-                            </select>
-
-                            {/* Type (auto-filled, editable) */}
-                            <select className="glass-input" style={{fontSize:11,padding:"4px 5px"}}
-                              value={w.type||""}
-                              onChange={e=>updWork(w.id,"type",e.target.value)}>
-                              <option value="">-- Type</option>
-                              {Object.keys(WORK_TYPE_PRICES).map(t=>(
-                                <option key={t} value={t}>{t}</option>
-                              ))}
-                            </select>
-
-                            {/* Height or Qty (qty-unit types use this wide field for their qty) */}
-                            {useQty?(
-                              <>
-                                <input className="glass-input" type="number" min="0"
-                                  style={{fontSize:12,padding:"5px 6px",textAlign:"center",gridColumn:"3/7"}}
-                                  placeholder="Qty" value={w.qty||""}
-                                  onChange={e=>updWork(w.id,"qty",e.target.value)}/>
-                                {/* Spacer for the dedicated Qty column below, since this type's
-                                    qty already feeds the wide field above */}
-                                <div/>
-                              </>
-                            ):(
-                              <>
+                                </select>
+                                {/* H x W */}
                                 <input className="glass-input" type="number" min="0" step="0.1"
                                   style={{fontSize:12,padding:"5px 6px",textAlign:"center"}}
                                   placeholder="H" value={w.height||""}
@@ -4775,108 +4758,195 @@ Dimension rules:
                                   style={{fontSize:12,padding:"5px 6px",textAlign:"center"}}
                                   placeholder="W" value={w.width||""}
                                   onChange={e=>updWork(w.id,"width",e.target.value)}/>
-                                {/* Sq ft */}
-                                <div style={{background:sqft?"rgba(10,132,255,0.15)":"rgba(255,255,255,0.04)",border:`1px solid ${sqft?"rgba(10,132,255,0.3)":"rgba(255,255,255,0.06)"}`,borderRadius:8,padding:"4px 6px",textAlign:"center"}}>
-                                  <div style={{fontSize:12,fontWeight:800,color:sqft?"#0A84FF":"rgba(255,255,255,0.2)"}}>{sqft?sqft.toFixed(1):"—"}</div>
+                                {/* sqft */}
+                                <div style={{background:sqft?"rgba(10,132,255,0.15)":"rgba(255,255,255,0.04)",
+                                  border:`1px solid ${sqft?"rgba(10,132,255,0.3)":"rgba(255,255,255,0.06)"}`,
+                                  borderRadius:8,padding:"4px 6px",textAlign:"center"}}>
+                                  <div style={{fontSize:12,fontWeight:800,color:sqft?"#0A84FF":"rgba(255,255,255,0.2)"}}>
+                                    {sqft?sqft.toFixed(1):"—"}
+                                  </div>
                                   <div style={{fontSize:8,color:"rgba(10,132,255,0.5)",fontWeight:600}}>sqft</div>
                                 </div>
-                                {/* Qty multiplier — applies on top of sq ft, defaults to 1 */}
+                                {/* Qty */}
                                 <input className="glass-input" type="number" min="1" step="1"
-                                  style={{fontSize:12,padding:"5px 4px",textAlign:"center",
-                                    color:(parseFloat(w.qty)||1)>1?"#FF9F0A":"rgba(255,255,255,0.7)"}}
+                                  style={{fontSize:12,padding:"5px 4px",textAlign:"center"}}
                                   placeholder="1" value={w.qty||""}
                                   onChange={e=>updWork(w.id,"qty",e.target.value)}/>
-                              </>
-                            )}
-
-                            {/* Material selector */}
-                            {prod.mats.length>0?(
-                              <div style={{display:"flex",flexDirection:"column",gap:3}}>
-                                {/* Mat type (if multiple) */}
-                                {prod.mats.length>1&&(
-                                  <select className="glass-input" style={{fontSize:10,padding:"3px 5px"}}
-                                    value={w.matType||""}
-                                    onChange={e=>{
-                                      const c=getCatalog(e.target.value);
-                                      const def=(w.allBrands||{})[e.target.value]||(c.length?[...c].sort((a,b)=>(a.price||0)-(b.price||0))[0].name:"");
-                                      updWork(w.id,"matType",e.target.value,{brand:def,price:""});
-                                    }}>
-                                    {prod.mats.map(mt=><option key={mt} value={mt}>{MATERIAL_LABELS[mt]||mt}</option>)}
-                                  </select>
-                                )}
-                                <select className="glass-input" style={{fontSize:11,padding:"5px 6px"}}
-                                  value={w.brand||""}
-                                  onChange={e=>updWork(w.id,"brand",e.target.value,{price:""})}>
-                                  <option value="">— select —</option>
-                                  {getCatalog(w.matType||prod.mats[0]||"plywood").map(m=>(
-                                    <option key={m.name} value={m.name}>{m.name}{m.price?` ₹${m.price}`:""}</option>
+                                {/* Price — manual, always visible */}
+                                <input className="glass-input" type="number" min="0"
+                                  style={{fontSize:12,padding:"5px 6px",textAlign:"right",
+                                    color:"rgba(255,159,10,0.9)",
+                                    background:"rgba(255,159,10,0.08)",
+                                    border:"1px solid rgba(255,159,10,0.25)"}}
+                                  placeholder="Price ₹"
+                                  value={w.price||""}
+                                  onChange={e=>updWork(w.id,"price",e.target.value)}/>
+                                {/* Delete */}
+                                <button onClick={()=>delWork(w.id)}
+                                  style={{background:"rgba(255,69,58,0.15)",border:"1px solid rgba(255,69,58,0.3)",
+                                    borderRadius:8,color:"#FF453A",padding:"5px 8px",
+                                    cursor:"pointer",fontFamily:"inherit",fontSize:12}}>✕</button>
+                              </div>
+                              {/* Row 2: notes spanning full width */}
+                              <div style={{padding:"0 10px 8px"}}>
+                                <input className="glass-input"
+                                  style={{fontSize:11,padding:"5px 10px",width:"100%"}}
+                                  placeholder="Notes (e.g. 10ft wall unit, finish details…)"
+                                  value={w.notes||""}
+                                  onChange={e=>updWork(w.id,"notes",e.target.value)}/>
+                              </div>
+                              {/* Dropdown to switch back */}
+                              <div style={{padding:"0 10px 8px",display:"flex",alignItems:"center",gap:8}}>
+                                <span style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Switch to standard:</span>
+                                <select className="glass-input" style={{fontSize:11,padding:"3px 8px",width:"auto"}}
+                                  value="__custom__"
+                                  onChange={e=>{
+                                    if(e.target.value==="__custom__") return;
+                                    const p=getProductsForRoom(room).find(x=>x.name===e.target.value)||ALL_PRODUCTS[0];
+                                    const defs={};
+                                    p.mats.forEach(mt=>{
+                                      const c=getCatalog(mt);
+                                      if(c.length) defs[mt]=[...c].sort((a,b)=>(a.price||0)-(b.price||0))[0].name;
+                                    });
+                                    updWork(w.id,"product",e.target.value,{type:p.type,matType:p.mats[0]||"",brand:defs[p.mats[0]||""]||"",allBrands:defs,price:"",customProduct:""});
+                                  }}>
+                                  <option value="__custom__">✏ Custom (current)</option>
+                                  {getProductsForRoom(room).map(p=>(
+                                    <option key={p.name} value={p.name}>{p.name}</option>
+                                  ))}
+                                  {((form.customRoomProducts||{})[room]||[]).map(cp=>(
+                                    <option key={cp} value={cp}>{cp}</option>
                                   ))}
                                 </select>
                               </div>
-                            ):(
-                              <div style={{fontSize:11,color:"rgba(255,255,255,0.3)",textAlign:"center"}}>—</div>
-                            )}
-
-                            {/* Notes — hidden in grid when custom (shown below) */}
-                            {w.product!=="__custom__"
-                              ? <input className="glass-input" style={{fontSize:11,padding:"5px 6px"}}
-                                  placeholder="e.g. 10ft wall unit..."
-                                  value={w.notes||""}
-                                  onChange={e=>updWork(w.id,"notes",e.target.value)}/>
-                              : <div/>
-                            }
-
-                            {/* Price — auto-calc or manual override */}
-                            <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                              <input className="glass-input" type="number" min="0"
-                                style={{fontSize:12,padding:"5px 6px",textAlign:"right",
-                                  color:w.price?"rgba(255,159,10,0.9)":"rgba(48,209,88,0.9)",
-                                  background:w.price?"rgba(255,159,10,0.1)":"rgba(48,209,88,0.06)"}}
-                                placeholder={autoPrice>0?`₹${autoPrice.toLocaleString("en-IN")}`:"Manual"}
-                                value={w.price||""}
-                                onChange={e=>updWork(w.id,"price",e.target.value)}/>
-                              {autoPrice>0&&!w.price&&(
-                                <div style={{fontSize:9,color:"rgba(48,209,88,0.5)",textAlign:"right"}}>auto ₹{item?.price}/{item?.unit||"sqft"}</div>
-                              )}
                             </div>
-
-                            {/* Delete */}
-                            <button onClick={()=>delWork(w.id)}
-                              style={{background:"rgba(255,69,58,0.15)",border:"1px solid rgba(255,69,58,0.3)",borderRadius:8,color:"#FF453A",padding:"5px 8px",cursor:"pointer",fontFamily:"inherit",fontSize:12}}>✕</button>
-                          </div>
-                          {/* Custom product: name input + notes below the grid */}
-                          {w.product==="__custom__"&&(
-                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,
-                              padding:"6px 10px 8px",
-                              background:"rgba(10,132,255,0.05)",
-                              borderRadius:"0 0 10px 10px",
-                              borderTop:"1px solid rgba(10,132,255,0.15)"}}>
-                              <input
-                                autoFocus
-                                value={w.customProduct||""}
-                                onChange={e=>updWork(w.id,"customProduct",e.target.value)}
-                                onBlur={e=>{
-                                  const name=e.target.value.trim();
-                                  if(!name) return;
-                                  setForm(f=>{
-                                    const existing=(f.customRoomProducts||{})[room]||[];
-                                    if(existing.includes(name)) return f;
-                                    return {...f,customRoomProducts:{
-                                      ...(f.customRoomProducts||{}),
-                                      [room]:[...existing,name]
-                                    }};
+                          ) : (
+                            /* ── STANDARD PRODUCT ROW ── */
+                            <div style={{display:"grid",
+                              gridTemplateColumns:"2fr 1.2fr 72px 16px 72px 72px 56px 1.6fr 1.4fr 90px 36px",
+                              gap:6,alignItems:"center",background:"rgba(255,255,255,0.04)",
+                              borderRadius:10,padding:"10px 10px"}}>
+                              {/* Product dropdown */}
+                              <select className="glass-input" style={{fontSize:12,padding:"5px 6px"}}
+                                value={w.product||""}
+                                onChange={e=>{
+                                  if(e.target.value==="__custom__"){
+                                    updWork(w.id,"product","__custom__",{customProduct:"",type:w.type||"",price:""});
+                                    return;
+                                  }
+                                  const p=getProductsForRoom(room).find(x=>x.name===e.target.value)||getProductsForRoom(room)[0]||ALL_PRODUCTS[0];
+                                  const defs={};
+                                  p.mats.forEach(mt=>{
+                                    if(roomDefaults[mt]){defs[mt]=roomDefaults[mt];}
+                                    else{const c=getCatalog(mt);if(c.length){const ch=[...c].sort((a,b)=>(a.price||0)-(b.price||0))[0];defs[mt]=ch.name;}}
                                   });
-                                }}
-                                placeholder="✏ Product name (e.g. Shoe Cabinet)…"
-                                style={{...S.input,fontSize:12,padding:"6px 10px",
-                                  background:"rgba(10,132,255,0.08)",
-                                  border:"1px solid rgba(10,132,255,0.3)",
-                                  color:"#64D2FF",fontWeight:600}}/>
-                              <input className="glass-input"
-                                style={{fontSize:11,padding:"6px 8px"}}
-                                placeholder="Notes…"
+                                  updWork(w.id,"product",e.target.value,{type:p.type,matType:p.mats[0]||"",brand:defs[p.mats[0]||""]||"",allBrands:defs,price:""});
+                                }}>
+                                {getProductsForRoom(room).map(p=><option key={p.name} value={p.name}>{p.name}</option>)}
+                                {((form.customRoomProducts||{})[room]||[]).length>0&&(
+                                  <optgroup label="── Saved Custom ──">
+                                    {((form.customRoomProducts||{})[room]||[]).map(cp=>(
+                                      <option key={cp} value={cp}>{cp}</option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                                <option value="__custom__">✏ Custom product…</option>
+                              </select>
+                              {/* Type */}
+                              <select className="glass-input" style={{fontSize:11,padding:"4px 5px"}}
+                                value={w.type||""}
+                                onChange={e=>updWork(w.id,"type",e.target.value)}>
+                                <option value="">-- Type</option>
+                                {Object.keys(WORK_TYPE_PRICES).map(t=>(
+                                  <option key={t} value={t}>{t}</option>
+                                ))}
+                              </select>
+                              {/* H x W / Qty */}
+                              {useQty?(
+                                <>
+                                  <input className="glass-input" type="number" min="0"
+                                    style={{fontSize:12,padding:"5px 6px",textAlign:"center",gridColumn:"3/7"}}
+                                    placeholder="Qty" value={w.qty||""}
+                                    onChange={e=>updWork(w.id,"qty",e.target.value)}/>
+                                  <div/>
+                                </>
+                              ):(
+                                <>
+                                  <input className="glass-input" type="number" min="0" step="0.1"
+                                    style={{fontSize:12,padding:"5px 6px",textAlign:"center"}}
+                                    placeholder="H" value={w.height||""}
+                                    onChange={e=>updWork(w.id,"height",e.target.value)}/>
+                                  <div style={{textAlign:"center",color:"rgba(255,255,255,0.25)",fontSize:14}}>×</div>
+                                  <input className="glass-input" type="number" min="0" step="0.1"
+                                    style={{fontSize:12,padding:"5px 6px",textAlign:"center"}}
+                                    placeholder="W" value={w.width||""}
+                                    onChange={e=>updWork(w.id,"width",e.target.value)}/>
+                                  <div style={{background:sqft?"rgba(10,132,255,0.15)":"rgba(255,255,255,0.04)",
+                                    border:`1px solid ${sqft?"rgba(10,132,255,0.3)":"rgba(255,255,255,0.06)"}`,
+                                    borderRadius:8,padding:"4px 6px",textAlign:"center"}}>
+                                    <div style={{fontSize:12,fontWeight:800,color:sqft?"#0A84FF":"rgba(255,255,255,0.2)"}}>
+                                      {sqft?sqft.toFixed(1):"—"}
+                                    </div>
+                                    <div style={{fontSize:8,color:"rgba(10,132,255,0.5)",fontWeight:600}}>sqft</div>
+                                  </div>
+                                  <input className="glass-input" type="number" min="1" step="1"
+                                    style={{fontSize:12,padding:"5px 4px",textAlign:"center",
+                                      color:(parseFloat(w.qty)||1)>1?"#FF9F0A":"rgba(255,255,255,0.7)"}}
+                                    placeholder="1" value={w.qty||""}
+                                    onChange={e=>updWork(w.id,"qty",e.target.value)}/>
+                                </>
+                              )}
+                              {/* Material */}
+                              {prod.mats.length>0?(
+                                <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                                  {prod.mats.length>1&&(
+                                    <select className="glass-input" style={{fontSize:10,padding:"3px 5px"}}
+                                      value={w.matType||""}
+                                      onChange={e=>{
+                                        const c=getCatalog(e.target.value);
+                                        const def=(w.allBrands||{})[e.target.value]||(c.length?[...c].sort((a,b)=>(a.price||0)-(b.price||0))[0].name:"");
+                                        updWork(w.id,"matType",e.target.value,{brand:def,price:""});
+                                      }}>
+                                      {prod.mats.map(mt=><option key={mt} value={mt}>{MATERIAL_LABELS[mt]||mt}</option>)}
+                                    </select>
+                                  )}
+                                  <select className="glass-input" style={{fontSize:11,padding:"5px 6px"}}
+                                    value={w.brand||""}
+                                    onChange={e=>updWork(w.id,"brand",e.target.value,{price:""})}>
+                                    <option value="">— select —</option>
+                                    {getCatalog(w.matType||prod.mats[0]||"plywood").map(m=>(
+                                      <option key={m.name} value={m.name}>{m.name}{m.price?` ₹${m.price}`:""}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              ):(
+                                <div style={{fontSize:11,color:"rgba(255,255,255,0.3)",textAlign:"center"}}>—</div>
+                              )}
+                              {/* Notes */}
+                              <input className="glass-input" style={{fontSize:11,padding:"5px 6px"}}
+                                placeholder="e.g. 10ft wall unit..."
                                 value={w.notes||""}
                                 onChange={e=>updWork(w.id,"notes",e.target.value)}/>
+                              {/* Price */}
+                              <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                                <input className="glass-input" type="number" min="0"
+                                  style={{fontSize:12,padding:"5px 6px",textAlign:"right",
+                                    color:w.price?"rgba(255,159,10,0.9)":"rgba(48,209,88,0.9)",
+                                    background:w.price?"rgba(255,159,10,0.1)":"rgba(48,209,88,0.06)"}}
+                                  placeholder={autoPrice>0?`₹${autoPrice.toLocaleString("en-IN")}`:"Manual"}
+                                  value={w.price||""}
+                                  onChange={e=>updWork(w.id,"price",e.target.value)}/>
+                                {autoPrice>0&&!w.price&&(
+                                  <div style={{fontSize:9,color:"rgba(48,209,88,0.5)",textAlign:"right"}}>
+                                    auto ₹{item?.price}/{item?.unit||"sqft"}
+                                  </div>
+                                )}
+                              </div>
+                              {/* Delete */}
+                              <button onClick={()=>delWork(w.id)}
+                                style={{background:"rgba(255,69,58,0.15)",border:"1px solid rgba(255,69,58,0.3)",
+                                  borderRadius:8,color:"#FF453A",padding:"5px 8px",
+                                  cursor:"pointer",fontFamily:"inherit",fontSize:12}}>✕</button>
                             </div>
                           )}
                         </div>
