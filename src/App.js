@@ -4134,6 +4134,59 @@ if (view==="vendor" && selected) {
             <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>{setSelectedId(form.id);setView("invoice")}}>🧾 Invoice</button>
           </>}
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={()=>setView("list")}>Cancel</button>
+
+          {/* ── Send Welcome Email button ── */}
+          {form.id&&(()=>{
+            const emailLog = form.emailLog||[];
+            const count    = emailLog.length;
+            const last     = emailLog[emailLog.length-1];
+            const doSend   = () => {
+              const c = {...form, id: form.id};
+              sendWelcomeEmail(c);
+              // Log to emailLog
+              const entry = {
+                type:"welcome_email",
+                ts: new Date().toISOString(),
+                to: form.email,
+                count: count+1
+              };
+              const newLog = [...emailLog, entry];
+              setForm(f=>({...f, emailLog: newLog}));
+              // Persist immediately
+              try {
+                const tok = JSON.parse(localStorage.getItem("crm_session")||"{}").token;
+                fetch(`https://utctflrqhjzxhzyuhsnn.supabase.co/rest/v1/customers?id=eq.${form.id}`,{
+                  method:"PATCH",
+                  headers:{"Content-Type":"application/json",
+                    "apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Y3RmbHJxaGp6eGh6eXVoc25uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Mzg0MzYsImV4cCI6MjA5NjMxNDQzNn0.9RC2YnbSnvtWN5EmyzSxuXvzpgV4a-A3YU6iwDBgKhY",
+                    "Authorization":`Bearer ${tok}`},
+                  body:JSON.stringify({email_log: JSON.stringify(newLog)})
+                });
+              } catch(e){}
+            };
+            return (
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                <button className="pill"
+                  onClick={doSend}
+                  style={{
+                    background: count>0?"rgba(10,132,255,0.2)":"rgba(255,255,255,0.08)",
+                    color: count>0?"#0A84FF":"rgba(255,255,255,0.75)",
+                    border:`1px solid ${count>0?"rgba(10,132,255,0.4)":"rgba(255,255,255,0.16)"}`,
+                    fontWeight: count>0?700:400,
+                    whiteSpace:"nowrap"
+                  }}>
+                  ✉ {count>0?`Resend Email (${count}×)`:"Send Welcome Email"}
+                </button>
+                {last&&(
+                  <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",textAlign:"center",whiteSpace:"nowrap"}}>
+                    Last: {new Date(last.ts).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}
+                    {" "}{new Date(last.ts).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           <button style={{ ...S.btn(),opacity:saving?0.7:1 }} onClick={saveCustomer} disabled={saving}>{saving?"Saving…":form.id?"Update Client":"Save Client"}</button>
         </div>
       </div>
