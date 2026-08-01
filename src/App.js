@@ -5559,72 +5559,334 @@ Dimension rules:
               </div>
 
               {/* Payment Schedule */}
-              {form.quotation && (
+              {form.quotation && (()=>{
+                const schedule = buildPaymentSchedule(parseInt(form.timeline)||120, form.quotation);
+                const qid = `HRI-INV-${String(form.id||"XXXX").slice(-4).padStart(4,"0")}`;
+                const fmt = n=>"₹"+Math.round(n).toLocaleString("en-IN");
+
+                // Compute cumulative carry-forward balance
+                let carryForward = 0;
+                const rows = schedule.map((p,i)=>{
+                  const pk       = `payment_${i}`;
+                  const track    = (form.paymentTracking||{})[pk]||{};
+                  const planAmt  = p.amount||0;
+                  const dueAmt   = planAmt + carryForward;         // planned + any previous shortfall
+                  const recvdAmt = parseFloat(track.actualAmount||track.amount||0);
+                  const balance  = dueAmt - recvdAmt;             // +ve = still owed, -ve = overpaid
+                  carryForward   = balance > 0 ? balance : 0;     // carry shortfall to next milestone
+                  return {...p, pk, track, planAmt, dueAmt, recvdAmt, balance,
+                    isPaid: track.paid||false,
+                    paidDate: track.date||"", note: track.note||""};
+                });
+
+                const totalPlan   = schedule.reduce((t,p)=>t+(p.amount||0),0);
+                const totalRecvd  = rows.reduce((t,r)=>t+r.recvdAmt,0);
+                const totalOutst  = Math.max(0, totalPlan - totalRecvd);
+
+                // Invoice generator
+                const sendInvoice = (r,idx)=>{
+                  const invNo = `${qid}-${String(idx+1).padStart(2,"0")}`;
+                  const d = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+                  const dueDate = new Date(); dueDate.setDate(dueDate.getDate()+3);
+                  const dueDateStr = dueDate.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+                  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+                  <title>Invoice ${invNo}</title>
+                  <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;padding:40px}
+                  .hdr{display:flex;justify-content:space-between;border-bottom:3px solid #1e3a5f;padding-bottom:16px;margin-bottom:24px}
+                  .title{font-size:24px;font-weight:900;color:#1e3a5f}
+                  table{width:100%;border-collapse:collapse;margin:16px 0}
+                  th{background:#1e3a5f;color:#fff;padding:10px 14px;text-align:left;font-size:11px;letter-spacing:1px}
+                  td{padding:10px 14px;border-bottom:1px solid #e5e7eb;font-size:13px}
+                  .total{font-weight:900;font-size:16px;color:#1e3a5f}
+                  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+                  @media print{@page{margin:12mm}}</style></head><body>
+                  <div class="hdr">
+                    <div><div class="title">HIGH RISE INTERIORS</div>
+                    <div style="font-size:11px;color:#6b7280;letter-spacing:2px;margin-top:4px">INVOICE</div></div>
+                    <div style="text-align:right">
+                      <div style="font-size:13px;font-weight:700">${invNo}</div>
+                      <div style="font-size:11px;color:#6b7280">Date: ${d}</div>
+                      <div style="font-size:11px;color:#6b7280">Due: ${dueDateStr}</div>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;
+                    margin-bottom:24px;padding:14px;background:#f8fafc;border-radius:6px">
+                    <div><span style="color:#6b7280;font-size:11px">Bill To:</span>
+                      <div style="font-weight:700;font-size:14px">${form.name}</div>
+                      <div style="font-size:12px;color:#374151">${form.address||""}</div>
+                      <div style="font-size:12px;color:#374151">${form.phone||""} · ${form.email||""}</div>
+                    </div>
+                    <div><span style="color:#6b7280;font-size:11px">Project:</span>
+                      <div style="font-weight:700">${form.propertyType||"Interior Project"}</div>
+                      <div style="font-size:12px;color:#374151">Quotation: ${fmt(parseFloat(form.quotation||0))}</div>
+                    </div>
+                  </div>
+                  <table><thead><tr>
+                    <th>#</th><th>Milestone</th><th>When</th><th style="text-align:right">Plan Amount</th>
+                    ${r.carryForward>0?"<th style='text-align:right'>Carry Forward</th>":""}
+                    <th style="text-align:right">Amount Due</th>
+                  </tr></thead><tbody>
+                  <tr><td>1</td><td style="font-weight:700">${r.label}</td><td>${r.when}</td>
+                    <td style="text-align:right">${fmt(r.planAmt)}</td>
+                    ${r.carryForward>0?`<td style="text-align:right;color:#FF9F0A">${fmt(r.carryForward)}</td>`:""}
+                    <td style="text-align:right;font-weight:900;font-size:15px;color:#1e3a5f">${fmt(r.dueAmt)}</td>
+                  </tr></tbody></table>
+                  <div style="text-align:right;padding:16px;background:#1e3a5f;color:#fff;border-radius:8px;margin-top:8px">
+                    <div style="font-size:11px;letter-spacing:1px;opacity:0.7">TOTAL DUE</div>
+                    <div style="font-size:28px;font-weight:900">${fmt(r.dueAmt)}</div>
+                    <div style="font-size:11px;opacity:0.6;margin-top:4px">Payment due by ${dueDateStr}</div>
+                  </div>
+                  <div style="margin-top:24px;padding:14px;background:#f8fafc;border-radius:6px;font-size:12px">
+                    <strong>Bank Details:</strong> HDFC Bank · A/c: 50200012345678 · IFSC: HDFC0001234<br/>
+                    <strong>UPI:</strong> highrise@hdfcbank · <strong>From:</strong> info@spatiasync.com
+                  </div>
+                  <div style="margin-top:16px;font-size:10px;color:#9ca3af;text-align:center">
+                    High Rise Interiors · Hyderabad, Telangana · +91-6304980890 · info@spatiasync.com
+                  </div>
+                  <script>window.onload=()=>setTimeout(()=>window.print(),500)</script>
+                  </body></html>`;
+                  const w=window.open("","_blank","width=900,height=700");
+                  w.document.write(html); w.document.close();
+                };
+
+                // Receipt generator
+                const sendReceipt = (r,idx)=>{
+                  const recNo = `${qid}-RCP-${String(idx+1).padStart(2,"0")}`;
+                  const d = r.paidDate
+                    ? new Date(r.paidDate).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})
+                    : new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+                  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+                  <title>Receipt ${recNo}</title>
+                  <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;padding:40px}
+                  .hdr{display:flex;justify-content:space-between;border-bottom:3px solid #166534;padding-bottom:16px;margin-bottom:24px}
+                  table{width:100%;border-collapse:collapse;margin:16px 0}
+                  th{background:#166534;color:#fff;padding:10px 14px;text-align:left;font-size:11px;letter-spacing:1px}
+                  td{padding:10px 14px;border-bottom:1px solid #e5e7eb;font-size:13px}
+                  @media print{@page{margin:12mm}}</style></head><body>
+                  <div class="hdr">
+                    <div><div style="font-size:24px;font-weight:900;color:#166534">HIGH RISE INTERIORS</div>
+                    <div style="font-size:11px;color:#6b7280;letter-spacing:2px;margin-top:4px">PAYMENT RECEIPT</div></div>
+                    <div style="text-align:right">
+                      <div style="font-size:13px;font-weight:700">${recNo}</div>
+                      <div style="font-size:11px;color:#6b7280">Date: ${d}</div>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;
+                    margin-bottom:24px;padding:14px;background:#f0fdf4;border-radius:6px">
+                    <div><span style="color:#6b7280;font-size:11px">Received From:</span>
+                      <div style="font-weight:700;font-size:14px">${form.name}</div>
+                      <div style="font-size:12px;color:#374151">${form.phone||""}</div>
+                    </div>
+                    <div><span style="color:#6b7280;font-size:11px">Project Ref:</span>
+                      <div style="font-weight:700">${qid}</div>
+                      <div style="font-size:12px;color:#374151">${form.propertyType||"Interior Project"}</div>
+                    </div>
+                  </div>
+                  <table><thead><tr>
+                    <th>#</th><th>Milestone</th><th style="text-align:right">Amount Due</th>
+                    <th style="text-align:right">Amount Received</th>
+                    <th style="text-align:right">Balance</th>
+                  </tr></thead><tbody>
+                  <tr><td>1</td><td style="font-weight:700">${r.label}</td>
+                    <td style="text-align:right">${fmt(r.dueAmt)}</td>
+                    <td style="text-align:right;font-weight:900;color:#166534;font-size:15px">${fmt(r.recvdAmt)}</td>
+                    <td style="text-align:right;color:${r.balance>0?"#dc2626":"#166534"};font-weight:700">
+                      ${r.balance>0?fmt(r.balance)+" (pending)":"Fully Paid ✓"}
+                    </td>
+                  </tr></tbody></table>
+                  <div style="text-align:right;padding:16px;background:#166534;color:#fff;border-radius:8px;margin-top:8px">
+                    <div style="font-size:11px;letter-spacing:1px;opacity:0.7">AMOUNT RECEIVED</div>
+                    <div style="font-size:28px;font-weight:900">${fmt(r.recvdAmt)}</div>
+                    ${r.balance>0?`<div style="font-size:12px;opacity:0.8;margin-top:4px">Balance of ${fmt(r.balance)} carried to next invoice</div>`:"<div style='font-size:12px;opacity:0.8;margin-top:4px'>Payment complete for this milestone ✓</div>"}
+                  </div>
+                  <div style="margin-top:16px;font-size:10px;color:#9ca3af;text-align:center">
+                    High Rise Interiors · Hyderabad · +91-6304980890 · info@spatiasync.com
+                  </div>
+                  <script>window.onload=()=>setTimeout(()=>window.print(),500)</script>
+                  </body></html>`;
+                  const w=window.open("","_blank","width=900,height=700");
+                  w.document.write(html); w.document.close();
+                };
+
+                return (
                 <div>
-                  <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",paddingBottom:8,marginBottom:14}}>{getDocTerm(form.status)} Payment Schedule</div>
-                  {buildPaymentSchedule(parseInt(form.timeline)||120, form.quotation).map((p,i)=>{
-                    const pk        = `payment_${i}`;
-                    const payTrack  = (form.paymentTracking||{})[pk] || {};
-                    const isPaid    = payTrack.paid || false;
-                    const paidAmt   = payTrack.amount || "";
-                    const paidDate  = payTrack.date   || "";
-                    const togglePay = () => setForm(f=>({...f,
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:2,color:"rgba(255,255,255,0.55)",
+                    textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.1)",
+                    paddingBottom:8,marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span>{getDocTerm(form.status)} Payment Schedule</span>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <span style={{fontSize:11,color:totalOutst>0?"#FF9F0A":"#30D158",fontWeight:700}}>
+                        {fmt(totalRecvd)} received · {totalOutst>0?fmt(totalOutst)+" outstanding":"Fully paid ✓"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {rows.map((r,i)=>{
+                    const updateTrack = (field,val) => setForm(f=>({...f,
                       paymentTracking:{...(f.paymentTracking||{}),
-                        [pk]:{...(f.paymentTracking?.[pk]||{}), paid:!isPaid,
-                              amount:!isPaid?(p.amount||""):paidAmt, date:!isPaid?new Date().toISOString().split("T")[0]:paidDate }
-                      }
-                    }));
+                        [r.pk]:{...(f.paymentTracking?.[r.pk]||{}),[field]:val}}}));
+
+                    const statusColor = r.isPaid
+                      ? (r.balance>0?"#FF9F0A":"#30D158")
+                      : "rgba(255,255,255,0.4)";
+                    const statusIcon  = r.isPaid
+                      ? (r.balance>0?"⚠️ Partial":"✅")
+                      : "⏳";
+
                     return (
-                    <div key={i} style={{ borderRadius:12,marginBottom:10,
-                      border:`1px solid ${isPaid?"rgba(48,209,88,0.4)":"rgba(255,255,255,0.12)"}`,
-                      background:isPaid?"rgba(48,209,88,0.06)":"rgba(255,255,255,0.05)",
-                      overflow:"hidden" }}>
-                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 18px" }}>
-                        <div style={{flex:1}}>
-                          <div style={{ fontWeight:700,fontSize:13,color:isPaid?"#30D158":"#0A84FF" }}>
-                            {isPaid?"✅":"⏳"} {p.label} — {p.pct}%
+                    <div key={i} style={{borderRadius:12,marginBottom:10,
+                      border:`1px solid ${r.isPaid?(r.balance>0?"rgba(255,159,10,0.4)":"rgba(48,209,88,0.4)"):"rgba(255,255,255,0.1)"}`,
+                      background:r.isPaid?(r.balance>0?"rgba(255,159,10,0.04)":"rgba(48,209,88,0.04)"):"rgba(255,255,255,0.03)",
+                      overflow:"hidden"}}>
+
+                      {/* Header row */}
+                      <div style={{display:"flex",justifyContent:"space-between",
+                        alignItems:"center",padding:"12px 16px",gap:8,flexWrap:"wrap"}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontWeight:700,fontSize:13,color:statusColor}}>
+                            {statusIcon} {r.label} — {r.pct}%
                           </div>
-                          <div style={{ fontSize:11,color:"rgba(255,255,255,0.45)",marginTop:2 }}>{p.when}</div>
+                          <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginTop:2}}>{r.when} · Day {r.day}</div>
+                          {i>0&&r.carryForward===undefined&&rows[i-1]?.balance>0&&(
+                            <div style={{fontSize:10,color:"#FF9F0A",marginTop:2}}>
+                              + ₹{rows[i-1].balance.toLocaleString("en-IN")} carry forward from previous
+                            </div>
+                          )}
                         </div>
-                        <div style={{ textAlign:"right",marginLeft:12 }}>
-                          {p.amount>0 && <div style={{ fontSize:16,fontWeight:700,color:isPaid?"#30D158":"#0A84FF" }}>₹{p.amount.toLocaleString("en-IN")}</div>}
-                          <div style={{ fontSize:10,color:"rgba(255,255,255,0.35)" }}>Day {p.day}</div>
+
+                        {/* Amounts */}
+                        <div style={{textAlign:"right",minWidth:100}}>
+                          <div style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>
+                            Plan: {fmt(r.planAmt)}
+                          </div>
+                          {r.dueAmt!==r.planAmt&&(
+                            <div style={{fontSize:11,color:"#FF9F0A"}}>
+                              Due (incl. carry): {fmt(r.dueAmt)}
+                            </div>
+                          )}
+                          {r.isPaid&&(
+                            <div style={{fontSize:13,fontWeight:700,color:statusColor}}>
+                              Rcvd: {fmt(r.recvdAmt)}
+                            </div>
+                          )}
                         </div>
-                        <button onClick={togglePay}
-                          style={{marginLeft:14,padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",
-                            fontFamily:"inherit",fontSize:11,fontWeight:700,
-                            background:isPaid?"rgba(255,69,58,0.15)":"rgba(48,209,88,0.15)",
-                            color:isPaid?"#FF453A":"#30D158"}}>
-                          {isPaid?"Mark Unpaid":"Mark Paid"}
-                        </button>
+
+                        {/* Action buttons */}
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          <button onClick={()=>sendInvoice(r,i)}
+                            style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(10,132,255,0.4)",
+                              background:"rgba(10,132,255,0.1)",color:"#0A84FF",cursor:"pointer",
+                              fontFamily:"inherit",fontSize:10,fontWeight:700}}>
+                            🧾 Invoice
+                          </button>
+                          {r.isPaid&&(
+                            <button onClick={()=>sendReceipt(r,i)}
+                              style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(48,209,88,0.4)",
+                                background:"rgba(48,209,88,0.1)",color:"#30D158",cursor:"pointer",
+                                fontFamily:"inherit",fontSize:10,fontWeight:700}}>
+                              🧾 Receipt
+                            </button>
+                          )}
+                          <button
+                            onClick={()=>updateTrack("paid",!r.isPaid)}
+                            style={{padding:"5px 10px",borderRadius:8,border:"none",cursor:"pointer",
+                              fontFamily:"inherit",fontSize:10,fontWeight:700,
+                              background:r.isPaid?"rgba(255,69,58,0.15)":"rgba(48,209,88,0.15)",
+                              color:r.isPaid?"#FF453A":"#30D158"}}>
+                            {r.isPaid?"Unmark":"Mark Paid"}
+                          </button>
+                        </div>
                       </div>
-                      {isPaid && (
-                        <div style={{display:"flex",gap:10,padding:"8px 18px 12px",borderTop:"1px solid rgba(48,209,88,0.15)"}}>
+
+                      {/* Detail row — always visible, expanded */}
+                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 2fr",
+                        gap:8,padding:"8px 16px 12px",
+                        borderTop:"1px solid rgba(255,255,255,0.06)"}}>
+                        {/* Plan amount */}
+                        <div>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:1,
+                            textTransform:"uppercase",marginBottom:3}}>Plan Amount</div>
+                          <div style={{fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.7)"}}>
+                            {fmt(r.planAmt)}
+                          </div>
+                          {rows[i-1]?.balance>0&&(
+                            <div style={{fontSize:9,color:"#FF9F0A",marginTop:2}}>
+                              +{fmt(rows[i-1].balance)} carry
+                            </div>
+                          )}
+                        </div>
+                        {/* Actual received */}
+                        <div>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:1,
+                            textTransform:"uppercase",marginBottom:3}}>Actual Received</div>
+                          <input className="glass-input" type="number"
+                            placeholder={fmt(r.dueAmt)}
+                            style={{fontSize:12,padding:"4px 8px",
+                              color:r.recvdAmt>0?"#30D158":"rgba(255,255,255,0.4)",
+                              background:r.recvdAmt>0?"rgba(48,209,88,0.06)":"rgba(255,255,255,0.04)"}}
+                            value={(form.paymentTracking||{})[r.pk]?.actualAmount||""}
+                            onChange={e=>updateTrack("actualAmount",e.target.value)}/>
+                        </div>
+                        {/* Balance */}
+                        <div>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:1,
+                            textTransform:"uppercase",marginBottom:3}}>Balance</div>
+                          <div style={{fontSize:13,fontWeight:700,
+                            color:r.balance>0?"#FF9F0A":"#30D158"}}>
+                            {r.recvdAmt>0
+                              ? (r.balance>0?fmt(r.balance)+" pending":"Fully paid ✓")
+                              : "—"}
+                          </div>
+                          {r.balance>0&&i<rows.length-1&&(
+                            <div style={{fontSize:9,color:"rgba(255,159,10,0.5)",marginTop:2}}>
+                              → carries to next invoice
+                            </div>
+                          )}
+                        </div>
+                        {/* Date + note */}
+                        <div style={{display:"flex",gap:6}}>
                           <div style={{flex:1}}>
-                            <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Amount Received</div>
-                            <input className="glass-input" type="number" placeholder="₹ amount"
-                              style={{fontSize:12,padding:"4px 8px"}}
-                              value={paidAmt}
-                              onChange={e=>setForm(f=>({...f,
-                                paymentTracking:{...(f.paymentTracking||{}),[pk]:{...(f.paymentTracking?.[pk]||{}),amount:e.target.value}}
-                              }))}/>
+                            <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:1,
+                              textTransform:"uppercase",marginBottom:3}}>Date Received</div>
+                            <input className="glass-input" type="date"
+                              style={{fontSize:11,padding:"4px 6px"}}
+                              value={(form.paymentTracking||{})[r.pk]?.date||""}
+                              onChange={e=>updateTrack("date",e.target.value)}/>
                           </div>
                           <div style={{flex:1}}>
-                            <div style={{fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.35)",letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>Date Received</div>
-                            <input className="glass-input" type="date"
-                              style={{fontSize:12,padding:"4px 8px"}}
-                              value={paidDate}
-                              onChange={e=>setForm(f=>({...f,
-                                paymentTracking:{...(f.paymentTracking||{}),[pk]:{...(f.paymentTracking?.[pk]||{}),date:e.target.value}}
-                              }))}/>
+                            <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:1,
+                              textTransform:"uppercase",marginBottom:3}}>Note</div>
+                            <input className="glass-input"
+                              style={{fontSize:11,padding:"4px 6px"}}
+                              placeholder="e.g. NEFT, cheque..."
+                              value={(form.paymentTracking||{})[r.pk]?.note||""}
+                              onChange={e=>updateTrack("note",e.target.value)}/>
                           </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                     );
                   })}
+
+                  {/* Summary */}
+                  <div style={{marginTop:8,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                    {[
+                      ["Total Planned",fmt(totalPlan),"rgba(255,255,255,0.6)"],
+                      ["Total Received",fmt(totalRecvd),"#30D158"],
+                      ["Outstanding",fmt(totalOutst),totalOutst>0?"#FF9F0A":"#30D158"],
+                    ].map(([l,v,c])=>(
+                      <div key={l} style={{textAlign:"center",padding:"10px",
+                        background:"rgba(255,255,255,0.04)",borderRadius:10,
+                        border:"1px solid rgba(255,255,255,0.08)"}}>
+                        <div style={{fontSize:16,fontWeight:900,color:c}}>{v}</div>
+                        <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:2,
+                          letterSpacing:0.5,textTransform:"uppercase"}}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
 
@@ -6410,6 +6672,149 @@ Dimension rules:
                       💡 Vendor prices are indicative rates for Hyderabad (Manikonda/Hitec City area) as of 2025.<br/>
                       Confirm with vendors before finalising. Change vendor selection above to see price impact.
                     </div>
+
+                    {/* ── Actual Spend Tracker ── */}
+                    {(()=>{
+                      const budget      = totalMaterialCost + totalServiceCost; // planned total cost
+                      const spentRaw    = parseFloat(form.actualSpent||0);
+                      const remaining   = budget - spentRaw;
+                      const spentPct    = budget>0 ? Math.min(100,(spentRaw/budget)*100) : 0;
+                      const overBudget  = spentRaw > budget;
+                      const fmt4        = n=>'₹'+Math.abs(Math.round(n)).toLocaleString('en-IN');
+                      const spentColor  = overBudget ? "#FF453A" : spentPct>80 ? "#FF9F0A" : "#30D158";
+
+                      return (
+                        <div className="glass" style={{borderRadius:14,padding:"18px 20px",marginTop:16}}>
+                          {/* Header */}
+                          <div style={{display:"flex",justifyContent:"space-between",
+                            alignItems:"center",marginBottom:14}}>
+                            <div>
+                              <div style={{fontWeight:800,fontSize:13,color:"#fff",letterSpacing:0.5}}>
+                                💸 Actual Spend Tracker
+                              </div>
+                              <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2}}>
+                                Update total amount spent so far — see what's left in the budget
+                              </div>
+                            </div>
+                            {overBudget&&(
+                              <div style={{background:"rgba(255,69,58,0.15)",
+                                border:"1px solid rgba(255,69,58,0.3)",
+                                borderRadius:8,padding:"4px 12px",
+                                fontSize:11,fontWeight:700,color:"#FF453A"}}>
+                                ⚠ Over Budget
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Input row */}
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:16}}>
+                            {/* Total Planned */}
+                            <div style={{background:"rgba(255,255,255,0.04)",borderRadius:10,
+                              padding:"12px 14px",border:"1px solid rgba(255,255,255,0.08)"}}>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,0.4)",
+                                letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>
+                                Planned Budget
+                              </div>
+                              <div style={{fontSize:18,fontWeight:900,color:"rgba(255,255,255,0.7)"}}>
+                                {fmt4(budget)}
+                              </div>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginTop:2}}>
+                                Materials + Services
+                              </div>
+                            </div>
+
+                            {/* Spent input */}
+                            <div style={{background:"rgba(255,159,10,0.06)",borderRadius:10,
+                              padding:"12px 14px",border:"1px solid rgba(255,159,10,0.2)"}}>
+                              <div style={{fontSize:10,color:"rgba(255,159,10,0.7)",
+                                letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>
+                                Total Spent Till Date
+                              </div>
+                              <input
+                                type="number"
+                                value={form.actualSpent||""}
+                                onChange={e=>setForm(f=>({...f,actualSpent:e.target.value}))}
+                                placeholder="Enter amount spent…"
+                                style={{width:"100%",background:"transparent",border:"none",
+                                  outline:"none",fontSize:18,fontWeight:900,
+                                  color:"#FF9F0A",fontFamily:"inherit"}}/>
+                              <div style={{fontSize:10,color:"rgba(255,159,10,0.4)",marginTop:2}}>
+                                Tap to edit
+                              </div>
+                            </div>
+
+                            {/* Remaining */}
+                            <div style={{background:overBudget?"rgba(255,69,58,0.08)":"rgba(48,209,88,0.06)",
+                              borderRadius:10,padding:"12px 14px",
+                              border:`1px solid ${overBudget?"rgba(255,69,58,0.25)":"rgba(48,209,88,0.2)"}`}}>
+                              <div style={{fontSize:10,color:overBudget?"rgba(255,69,58,0.7)":"rgba(48,209,88,0.7)",
+                                letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>
+                                {overBudget?"Over Budget By":"Remaining Budget"}
+                              </div>
+                              <div style={{fontSize:18,fontWeight:900,color:spentColor}}>
+                                {fmt4(remaining)}
+                              </div>
+                              <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",marginTop:2}}>
+                                {spentRaw>0
+                                  ? `${spentPct.toFixed(0)}% of planned spent`
+                                  : "Not started"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Progress bar */}
+                          {spentRaw>0&&(
+                            <div>
+                              <div style={{height:10,background:"rgba(255,255,255,0.08)",
+                                borderRadius:5,overflow:"hidden",marginBottom:6}}>
+                                <div style={{
+                                  height:"100%",
+                                  width:`${Math.min(100,spentPct)}%`,
+                                  background:overBudget
+                                    ?"linear-gradient(90deg,#FF9F0A,#FF453A)"
+                                    :spentPct>80
+                                      ?"linear-gradient(90deg,#30D158,#FF9F0A)"
+                                      :"linear-gradient(90deg,#0A84FF,#30D158)",
+                                  borderRadius:5,
+                                  transition:"width 0.4s"
+                                }}/>
+                              </div>
+                              <div style={{display:"flex",justifyContent:"space-between",
+                                fontSize:10,color:"rgba(255,255,255,0.3)"}}>
+                                <span>₹0</span>
+                                <span style={{color:spentColor,fontWeight:700}}>
+                                  {spentPct.toFixed(1)}% spent
+                                </span>
+                                <span>{fmt4(budget)}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Breakdown hint */}
+                          {spentRaw>0&&(
+                            <div style={{marginTop:12,display:"grid",
+                              gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
+                              {[
+                                ["Materials Plan",fmt4(totalMaterialCost),"#FF9F0A"],
+                                ["Services Plan", fmt4(totalServiceCost), "#BF5AF2"],
+                                ["Total Plan",    fmt4(budget),           "rgba(255,255,255,0.5)"],
+                                [overBudget?"Overspend":"Savings",
+                                  fmt4(Math.abs(remaining)),
+                                  spentColor],
+                              ].map(([l,v,c])=>(
+                                <div key={l} style={{textAlign:"center",
+                                  padding:"8px 4px",background:"rgba(255,255,255,0.03)",
+                                  borderRadius:8,border:"1px solid rgba(255,255,255,0.06)"}}>
+                                  <div style={{fontSize:12,fontWeight:800,color:c}}>{v}</div>
+                                  <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",
+                                    marginTop:2,letterSpacing:0.5}}>{l}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })()}
@@ -6483,6 +6888,67 @@ Dimension rules:
                         <div style={{height:"100%",width:`${progressPct}%`,background:"linear-gradient(90deg,#0A84FF,#30D158)",borderRadius:3,transition:"width 0.4s"}}/>
                       </div>
                     </div>
+
+                    {/* Send Project Update Email */}
+                    <button
+                      onClick={()=>{
+                        // Build status update email
+                        const clientName = form.name.split(" ")[0];
+                        const statusEmoji = {"Not Started":"⏳","In Progress":"🔨","Completed":"✅","On Hold":"⏸"};
+                        const quoteRef = `HRI-Q-${String(form.id||"XXXX").slice(-4).padStart(4,"0")}-${new Date().getFullYear()}`;
+
+                        const phaseLines = PROJECT_PHASES.map(ph=>{
+                          const st = plan[ph.id]?.status || "Not Started";
+                          const startDay = Math.max(1,Math.round(ph.startPct/100*totalDays)+1);
+                          const dur = Math.max(1,Math.round(ph.durPct/100*totalDays));
+                          const dateStr = form.startDate
+                            ? (() => {
+                                const d = new Date(form.startDate);
+                                d.setDate(d.getDate()+startDay-1);
+                                return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+                              })()
+                            : `Day ${startDay}`;
+                          return `${statusEmoji[st]||"⏳"} ${ph.name.padEnd(30," ")} ${st.padEnd(14," ")} (${dateStr}, ${dur} days)`;
+                        }).join("\n");
+
+                        const inProgress = PROJECT_PHASES.filter(ph=>(plan[ph.id]?.status||"Not Started")==="In Progress").map(ph=>ph.name);
+                        const completed  = PROJECT_PHASES.filter(ph=>(plan[ph.id]?.status||"Not Started")==="Completed").map(ph=>ph.name);
+                        const next       = PROJECT_PHASES.find(ph=>(plan[ph.id]?.status||"Not Started")==="Not Started");
+
+                        const subject = encodeURIComponent(
+                          `Project Update — ${form.name} | ${quoteRef} | ${progressPct}% Complete`
+                        );
+                        const NL="\n";
+                        const inProgressStr=inProgress.length>0?(NL+"🔨 CURRENTLY IN PROGRESS:"+NL+inProgress.map(p=>"   • "+p).join(NL)):"";
+                        const completedStr=completed.length>0?(NL+"✅ COMPLETED:"+NL+completed.map(p=>"   • "+p).join(NL)):"";
+                        const nextStr=next?(NL+"⏭ NEXT PHASE: "+next.name):"";
+                        const body=encodeURIComponent([
+                          "Dear "+clientName+",","",
+                          "Greetings from High Rise Interiors! Here is your project status update.","",
+                          "Project Ref  : "+quoteRef,
+                          "Property     : "+(form.propertyType||"Your Home")+" — "+(form.address||""),
+                          "Overall Progress: "+progressPct+"% ("+completedCount+"/"+PROJECT_PHASES.length+" phases)","",
+                          "─────────────────────────────────────────",
+                          "PROJECT PHASE STATUS",
+                          "─────────────────────────────────────────",
+                          phaseLines,inProgressStr,completedStr,nextStr,"",
+                          "Please feel free to reach out if you have any questions.","",
+                          "Warm regards,","High Rise Interiors","+91-6304980890","info@spatiasync.com"
+                        ].join(NL));
+                        window.open(`mailto:${form.email||""}?from=info@spatiasync.com&subject=${subject}&body=${body}`);
+                        showToast("📧 Project update email opened in Outlook","success");
+                      }}
+                      style={{width:"100%",marginBottom:16,padding:"10px 16px",
+                        background:"rgba(48,209,88,0.1)",
+                        border:"1px solid rgba(48,209,88,0.3)",
+                        borderRadius:10,color:"#30D158",fontWeight:700,
+                        fontSize:12,cursor:"pointer",fontFamily:"inherit",
+                        display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                      📧 Send Project Update to Client
+                      <span style={{fontSize:10,fontWeight:400,color:"rgba(48,209,88,0.6)"}}>
+                        ({progressPct}% complete · opens Outlook)
+                      </span>
+                    </button>
 
                     {/* Phase rows */}
                     {PROJECT_PHASES.map((phase,pi) => {

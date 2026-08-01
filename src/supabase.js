@@ -152,6 +152,7 @@ export const toRow = (f) => {
                             )
                           )
                         : null,
+    actual_spent:       f.actualSpent ? parseFloat(f.actualSpent) : null,
     email_log:          f.emailLog && f.emailLog.length > 0
                           ? JSON.stringify(f.emailLog)
                           : null,
@@ -234,6 +235,7 @@ export const fromRow = (r) => {
     auditLog:           r.audit_log
                           ? (typeof r.audit_log      === "string" ? JSON.parse(r.audit_log)      : r.audit_log)
                           : [],
+    actualSpent:        r.actual_spent != null ? String(r.actual_spent) : "",
     emailLog:           r.email_log
                           ? (typeof r.email_log      === "string" ? JSON.parse(r.email_log)      : r.email_log)
                           : [],
