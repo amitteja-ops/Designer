@@ -1750,7 +1750,7 @@ ${!includeAddOn&&rawAddOnP>0?`
               const toAddr = selected.email||'';
               const subject=encodeURIComponent(`Interior Design Proposal — ${selected.name} | ${qid}`);
               const body=encodeURIComponent(
-                `Dear ${selected.name},\n\nThank you for choosing High Rise Interiors.\n\nPlease find your interior design proposal attached.\n\nQuotation ID: ${qid}\nFinal Quotation: ${selected.revisedQuotation||selected.quotation?'₹'+Number(selected.revisedQuotation||selected.quotation).toLocaleString('en-IN'):'TBD'}\n\nPlease review and revert with your confirmation.\n\nWarm regards,\nHigh Rise Interiors\n+91-6304980890\ninfo@spatiasync.com`
+                `Dear ${selected.name},\n\nThank you for choosing High Rise Interiors.\n\nPlease find your interior design proposal attached.\n\nQuotation ID: ${qid}\nFinal Quotation: ${selected.revisedQuotation||selected.quotation?'₹'+Number(selected.revisedQuotation||selected.quotation).toLocaleString('en-IN'):'TBD'}\n\nPlease review and revert with your confirmation.\n\nWarm regards,\nHigh Rise Interiors\n+91 7569226055\ninfo@spatiasync.com`
               );
               // Open Outlook/mail client
               window.open(`mailto:${toAddr}?from=info@spatiasync.com&subject=${subject}&body=${body}`);
@@ -2548,13 +2548,13 @@ NEXT STEPS
 2. We will prepare a detailed quotation within 5 working days
 3. Once approved, we will share your personal project timeline
 
-Please feel free to reach out anytime at +91-6304980890. We are here for you every step of the way.
+Please feel free to reach out anytime at +91 7569226055. We are here for you every step of the way.
 
 Once again, thank you for trusting us with your dream home. We can't wait to create something extraordinary together.
 
 Warmly,
 The High Rise Interiors Team
-Hyderabad · +91-6304980890`;
+Hyderabad · +91 7569226055`;
 
     // Use window.open to avoid navigating away from the CRM
     const mailUrl = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -3497,7 +3497,7 @@ High Rise Interiors, Hyderabad`
           <div style={{ ...RS.hdr, display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
             <div>
               <div style={RS.co}>HIGH RISE INTERIORS</div>
-              <div style={RS.sub}>+91-6304980890</div>
+              <div style={RS.sub}>+91 7569226055</div>
               <div style={RS.sub}>Hyderabad, Telangana</div>
             </div>
             <div style={{ textAlign:"right" }}>
@@ -3570,7 +3570,7 @@ High Rise Interiors, Hyderabad`
 
           {/* Footer */}
           <div style={{ marginTop:32, borderTop:"1px solid #e5e7eb", paddingTop:16, fontSize:11, color:"#9ca3af", textAlign:"center" }}>
-            Thank you for choosing High Rise Interiors · +91-6304980890 · Hyderabad, Telangana
+            Thank you for choosing High Rise Interiors · +91 7569226055 · Hyderabad, Telangana
           </div>
         </div>
       </div>
@@ -5641,12 +5641,47 @@ Dimension rules:
                     <strong>UPI:</strong> highrise@hdfcbank · <strong>From:</strong> info@spatiasync.com
                   </div>
                   <div style="margin-top:16px;font-size:10px;color:#9ca3af;text-align:center">
-                    High Rise Interiors · Hyderabad, Telangana · +91-6304980890 · info@spatiasync.com
+                    High Rise Interiors · Hyderabad, Telangana · +91 7569226055 · info@spatiasync.com
                   </div>
                   <script>window.onload=()=>setTimeout(()=>window.print(),500)</script>
                   </body></html>`;
                   const w=window.open("","_blank","width=900,height=700");
                   w.document.write(html); w.document.close();
+                };
+
+                // Invoice email drafter
+                const emailInvoice = (r,idx)=>{
+                  const invNo  = `${qid}-${String(idx+1).padStart(2,"0")}`;
+                  const dueDate= new Date(); dueDate.setDate(dueDate.getDate()+3);
+                  const dueDateStr = dueDate.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+                  const NL = "%0D%0A";
+                  const subject = encodeURIComponent(`Payment Due — ${r.label} | ${invNo} | High Rise Interiors`);
+                  const body = [
+                    `Dear ${form.name.split(" ")[0]},`,
+                    ``,
+                    `Hope your project is going well! This is a reminder that the following payment is now due.`,
+                    ``,
+                    `Invoice No  : ${invNo}`,
+                    `Milestone   : ${r.label} (${r.pct}%)`,
+                    `${r.dueAmt!==r.planAmt?`Plan Amount : ${fmt(r.planAmt)}`:""}`,
+                    `${r.dueAmt!==r.planAmt?`Carry Fwd   : ${fmt(r.dueAmt-r.planAmt)}`:""}`,
+                    `Amount Due  : ${fmt(r.dueAmt)}`,
+                    `Due By      : ${dueDateStr}`,
+                    ``,
+                    `Payment Details:`,
+                    `  Bank    : HDFC Bank`,
+                    `  A/c No  : 50200012345678`,
+                    `  IFSC    : HDFC0001234`,
+                    `  UPI     : highrise@hdfcbank`,
+                    ``,
+                    `Please find the invoice attached (print from the browser window that opened).`,
+                    ``,
+                    `Warm regards,`,
+                    `High Rise Interiors`,
+                    `+91 7569226055`,
+                    `info@spatiasync.com`,
+                  ].filter(l=>l!=="undefined"&&l!==undefined).join(NL);
+                  window.open(`mailto:${form.email||""}?from=info@spatiasync.com&subject=${subject}&body=${body}`);
                 };
 
                 // Receipt generator
@@ -5700,12 +5735,44 @@ Dimension rules:
                     ${r.balance>0?`<div style="font-size:12px;opacity:0.8;margin-top:4px">Balance of ${fmt(r.balance)} carried to next invoice</div>`:"<div style='font-size:12px;opacity:0.8;margin-top:4px'>Payment complete for this milestone ✓</div>"}
                   </div>
                   <div style="margin-top:16px;font-size:10px;color:#9ca3af;text-align:center">
-                    High Rise Interiors · Hyderabad · +91-6304980890 · info@spatiasync.com
+                    High Rise Interiors · Hyderabad · +91 7569226055 · info@spatiasync.com
                   </div>
                   <script>window.onload=()=>setTimeout(()=>window.print(),500)</script>
                   </body></html>`;
                   const w=window.open("","_blank","width=900,height=700");
                   w.document.write(html); w.document.close();
+                };
+
+                // Receipt email drafter
+                const emailReceipt = (r,idx)=>{
+                  const recNo = `${qid}-RCP-${String(idx+1).padStart(2,"0")}`;
+                  const NL    = "%0D%0A";
+                  const d     = r.paidDate
+                    ? new Date(r.paidDate).toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})
+                    : new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+                  const subject = encodeURIComponent(`Payment Receipt — ${r.label} | ${recNo} | High Rise Interiors`);
+                  const body = [
+                    `Dear ${form.name.split(" ")[0]},`,
+                    ``,
+                    `Thank you for your payment! Please find your receipt details below.`,
+                    ``,
+                    `Receipt No   : ${recNo}`,
+                    `Date         : ${d}`,
+                    `Milestone    : ${r.label} (${r.pct}%)`,
+                    `Amount Due   : ${fmt(r.dueAmt)}`,
+                    `Amount Rcvd  : ${fmt(r.recvdAmt)}`,
+                    `${r.balance>0?`Balance      : ${fmt(r.balance)} (will be included in next invoice)`:`Status       : Fully Paid ✓`}`,
+                    ``,
+                    `Please find the receipt attached (print from the browser window that opened).`,
+                    ``,
+                    `We appreciate your prompt payment and look forward to delivering an exceptional project.`,
+                    ``,
+                    `Warm regards,`,
+                    `High Rise Interiors`,
+                    `+91 7569226055`,
+                    `info@spatiasync.com`,
+                  ].filter(l=>l!==undefined&&l!=="undefined").join(NL);
+                  window.open(`mailto:${form.email||""}?from=info@spatiasync.com&subject=${subject}&body=${body}`);
                 };
 
                 return (
@@ -5777,16 +5844,28 @@ Dimension rules:
                             style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(10,132,255,0.4)",
                               background:"rgba(10,132,255,0.1)",color:"#0A84FF",cursor:"pointer",
                               fontFamily:"inherit",fontSize:10,fontWeight:700}}>
-                            🧾 Invoice
+                            🖨 Invoice
                           </button>
-                          {r.isPaid&&(
+                          <button onClick={()=>emailInvoice(r,i)}
+                            style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(10,132,255,0.25)",
+                              background:"rgba(10,132,255,0.06)",color:"#64D2FF",cursor:"pointer",
+                              fontFamily:"inherit",fontSize:10,fontWeight:700}}>
+                            ✉ Email Invoice
+                          </button>
+                          {r.isPaid&&(<>
                             <button onClick={()=>sendReceipt(r,i)}
                               style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(48,209,88,0.4)",
                                 background:"rgba(48,209,88,0.1)",color:"#30D158",cursor:"pointer",
                                 fontFamily:"inherit",fontSize:10,fontWeight:700}}>
-                              🧾 Receipt
+                              🖨 Receipt
                             </button>
-                          )}
+                            <button onClick={()=>emailReceipt(r,i)}
+                              style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(48,209,88,0.25)",
+                                background:"rgba(48,209,88,0.06)",color:"#34d399",cursor:"pointer",
+                                fontFamily:"inherit",fontSize:10,fontWeight:700}}>
+                              ✉ Email Receipt
+                            </button>
+                          </>)}
                           <button
                             onClick={()=>updateTrack("paid",!r.isPaid)}
                             style={{padding:"5px 10px",borderRadius:8,border:"none",cursor:"pointer",
@@ -6933,7 +7012,7 @@ Dimension rules:
                           "─────────────────────────────────────────",
                           phaseLines,inProgressStr,completedStr,nextStr,"",
                           "Please feel free to reach out if you have any questions.","",
-                          "Warm regards,","High Rise Interiors","+91-6304980890","info@spatiasync.com"
+                          "Warm regards,","High Rise Interiors","+91 7569226055","info@spatiasync.com"
                         ].join(NL));
                         window.open(`mailto:${form.email||""}?from=info@spatiasync.com&subject=${subject}&body=${body}`);
                         showToast("📧 Project update email opened in Outlook","success");
