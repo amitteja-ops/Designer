@@ -2312,6 +2312,98 @@ const Shine = () => (
 );
 
 // ── Default empty client form ──────────────────────────────────────
+// ── Default material rates (editable in-app via Material Rates screen) ──
+const DEFAULT_MAT_RATES = [
+  // Plywood & Boards
+  {id:"ply_16_bwp",   cat:"Plywood",      name:"16mm BWP Marine Plywood",     unit:"sheet",  price:1800, note:"8×4 ft sheet"},
+  {id:"ply_16_bwr",   cat:"Plywood",      name:"16mm BWR Plywood",            unit:"sheet",  price:1400, note:"8×4 ft sheet"},
+  {id:"ply_19_bwr",   cat:"Plywood",      name:"19mm BWR Plywood",            unit:"sheet",  price:1650, note:"8×4 ft sheet"},
+  {id:"ply_12",       cat:"Plywood",      name:"12mm Plywood",                unit:"sheet",  price:1100, note:"Drawer boxes"},
+  {id:"ply_9",        cat:"Plywood",      name:"9mm Plywood",                 unit:"sheet",  price:900,  note:""},
+  {id:"ply_6",        cat:"Plywood",      name:"6mm Plywood",                 unit:"sheet",  price:700,  note:"Back panels"},
+  {id:"ply_hdhmr",    cat:"Plywood",      name:"18mm HDHMR",                  unit:"sheet",  price:2200, note:""},
+  {id:"ply_mdf",      cat:"Plywood",      name:"18mm MDF",                    unit:"sheet",  price:1600, note:""},
+  {id:"ply_mrmdf",    cat:"Plywood",      name:"18mm MR MDF",                 unit:"sheet",  price:1800, note:""},
+  {id:"ply_block",    cat:"Plywood",      name:"25mm Block Board",            unit:"sheet",  price:1900, note:""},
+  // Laminate
+  {id:"lam_08",       cat:"Laminate",     name:"0.8mm Laminate",              unit:"sheet",  price:750,  note:"8×4 ft"},
+  {id:"lam_1",        cat:"Laminate",     name:"1mm Laminate",                unit:"sheet",  price:900,  note:"8×4 ft"},
+  {id:"lam_matte",    cat:"Laminate",     name:"Matte Finish Laminate",       unit:"sheet",  price:950,  note:""},
+  {id:"lam_gloss",    cat:"Laminate",     name:"Gloss Laminate",              unit:"sheet",  price:1000, note:""},
+  {id:"lam_grain",    cat:"Laminate",     name:"Wood Grain Laminate",         unit:"sheet",  price:1100, note:""},
+  {id:"lam_acrylic",  cat:"Laminate",     name:"Acrylic Sheet",               unit:"sheet",  price:3500, note:""},
+  {id:"lam_pvc",      cat:"Laminate",     name:"PVC Laminate",                unit:"sheet",  price:1200, note:""},
+  {id:"lam_veneer",   cat:"Laminate",     name:"Veneer",                      unit:"sheet",  price:2800, note:""},
+  {id:"lam_fluted",   cat:"Laminate",     name:"Fluted Decorative Panel",     unit:"sheet",  price:4500, note:""},
+  // Edge Banding
+  {id:"eb_22",        cat:"Edge Banding", name:"PVC Edge Banding 22mm",       unit:"metre",  price:18,   note:"0.8–2mm thickness"},
+  {id:"eb_45",        cat:"Edge Banding", name:"PVC Edge Banding 45mm",       unit:"metre",  price:28,   note:""},
+  {id:"eb_oak",       cat:"Edge Banding", name:"Oak Veneer Edge",             unit:"metre",  price:35,   note:""},
+  {id:"eb_walnut",    cat:"Edge Banding", name:"Walnut Veneer Edge",          unit:"metre",  price:38,   note:""},
+  {id:"eb_teak",      cat:"Edge Banding", name:"Teak Veneer Edge",            unit:"metre",  price:32,   note:""},
+  // Hardware - Hinges
+  {id:"hw_hinge_sc",  cat:"Hardware",     name:"Soft Close Hinge 95°",        unit:"nos",    price:85,   note:""},
+  {id:"hw_hinge_110", cat:"Hardware",     name:"Soft Close Hinge 110°",       unit:"nos",    price:90,   note:""},
+  {id:"hw_hinge_165", cat:"Hardware",     name:"Wide Angle Hinge 165°",       unit:"nos",    price:120,  note:""},
+  {id:"hw_hinge_glass",cat:"Hardware",    name:"Glass Door Hinge",            unit:"nos",    price:180,  note:""},
+  // Hardware - Drawer Systems
+  {id:"hw_tel_12",    cat:"Hardware",     name:"Telescopic Channel 12-inch",      unit:"pair",   price:180,  note:""},
+  {id:"hw_tel_14",    cat:"Hardware",     name:"Telescopic Channel 14-inch",      unit:"pair",   price:200,  note:""},
+  {id:"hw_tel_16",    cat:"Hardware",     name:"Telescopic Channel 16-inch",      unit:"pair",   price:220,  note:""},
+  {id:"hw_tel_18",    cat:"Hardware",     name:"Telescopic Channel 18-inch",      unit:"pair",   price:250,  note:""},
+  {id:"hw_tandem",    cat:"Hardware",     name:"Tandem Box Drawer",           unit:"set",    price:850,  note:""},
+  {id:"hw_slim",      cat:"Hardware",     name:"Slim Drawer System",          unit:"set",    price:1100, note:""},
+  // Hardware - Handles
+  {id:"hw_g_prof",    cat:"Hardware",     name:"G Profile Handle",            unit:"nos",    price:65,   note:"Per piece"},
+  {id:"hw_j_prof",    cat:"Hardware",     name:"J Profile Handle",            unit:"nos",    price:70,   note:""},
+  {id:"hw_ss",        cat:"Hardware",     name:"SS Handle",                   unit:"nos",    price:120,  note:""},
+  {id:"hw_alum",      cat:"Hardware",     name:"Aluminium Handle",            unit:"nos",    price:95,   note:""},
+  {id:"hw_knob",      cat:"Hardware",     name:"Cabinet Knob",                unit:"nos",    price:45,   note:""},
+  // Lift Systems
+  {id:"hw_aventos",   cat:"Hardware",     name:"Aventos HK Lift",             unit:"set",    price:2800, note:""},
+  {id:"hw_gasstay",   cat:"Hardware",     name:"Gas Stay",                    unit:"set",    price:1200, note:""},
+  {id:"hw_liftup",    cat:"Hardware",     name:"Lift-up System",              unit:"set",    price:3200, note:""},
+  // Ceiling
+  {id:"ceil_gyp",     cat:"Ceiling",      name:"Gypsum Board 12.5mm",         unit:"sheet",  price:480,  note:"8×4 ft"},
+  {id:"ceil_mr",      cat:"Ceiling",      name:"MR Gypsum Board",             unit:"sheet",  price:550,  note:"Moisture resistant"},
+  {id:"ceil_gi",      cat:"Ceiling",      name:"GI Channel/Angle (frame)",    unit:"metre",  price:45,   note:""},
+  {id:"ceil_screw",   cat:"Ceiling",      name:"Drywall Screws",              unit:"box",    price:180,  note:"200 pcs/box"},
+  // Glass
+  {id:"gl_4mm",       cat:"Glass",        name:"4mm Clear Glass",             unit:"sqft",   price:75,   note:""},
+  {id:"gl_5mm",       cat:"Glass",        name:"5mm Toughened Glass",         unit:"sqft",   price:95,   note:""},
+  {id:"gl_6mm",       cat:"Glass",        name:"6mm Toughened Glass",         unit:"sqft",   price:110,  note:""},
+  {id:"gl_bronze",    cat:"Glass",        name:"Bronze Glass",                unit:"sqft",   price:120,  note:""},
+  {id:"gl_frosted",   cat:"Glass",        name:"Frosted Glass",               unit:"sqft",   price:130,  note:""},
+  {id:"gl_fluted",    cat:"Glass",        name:"Fluted Glass",                unit:"sqft",   price:150,  note:""},
+  {id:"gl_mirror",    cat:"Glass",        name:"Mirror",                      unit:"sqft",   price:85,   note:""},
+  // Stone
+  {id:"st_black",     cat:"Stone",        name:"Black Granite",               unit:"sqft",   price:90,   note:""},
+  {id:"st_grey",      cat:"Stone",        name:"Steel Grey Granite",          unit:"sqft",   price:95,   note:""},
+  {id:"st_quartz_w",  cat:"Stone",        name:"Quartz White",                unit:"sqft",   price:180,  note:""},
+  {id:"st_quartz_g",  cat:"Stone",        name:"Quartz Grey",                 unit:"sqft",   price:175,  note:""},
+  {id:"st_marble",    cat:"Stone",        name:"Marble",                      unit:"sqft",   price:220,  note:""},
+  {id:"st_nano",      cat:"Stone",        name:"Nano White",                  unit:"sqft",   price:160,  note:""},
+  // Paint
+  {id:"pt_putty",     cat:"Paint",        name:"Wall Putty",                  unit:"bag",    price:450,  note:"40kg bag"},
+  {id:"pt_primer",    cat:"Paint",        name:"Primer",                      unit:"litre",  price:180,  note:""},
+  {id:"pt_emulsion",  cat:"Paint",        name:"Emulsion Paint",              unit:"litre",  price:320,  note:""},
+  {id:"pt_enamel",    cat:"Paint",        name:"Enamel Paint",                unit:"litre",  price:280,  note:""},
+  {id:"pt_texture",   cat:"Paint",        name:"Texture Paint",               unit:"sqft",   price:45,   note:""},
+  // Electrical
+  {id:"el_down",      cat:"Electrical",   name:"LED Downlight",               unit:"nos",    price:180,  note:""},
+  {id:"el_cob",       cat:"Electrical",   name:"COB Light",                   unit:"nos",    price:250,  note:""},
+  {id:"el_strip",     cat:"Electrical",   name:"LED Strip (per metre)",        unit:"metre",  price:120,  note:""},
+  {id:"el_pendant",   cat:"Electrical",   name:"Pendant Light",               unit:"nos",    price:850,  note:""},
+  {id:"el_switch",    cat:"Electrical",   name:"Switch/Socket",               unit:"nos",    price:180,  note:"Modular"},
+  {id:"el_mcb",       cat:"Electrical",   name:"MCB",                         unit:"nos",    price:220,  note:""},
+  // Consumables
+  {id:"con_fevicol",  cat:"Consumables",  name:"Fevicol Marine (5kg)",        unit:"tin",    price:350,  note:""},
+  {id:"con_silicon",  cat:"Consumables",  name:"Silicone Sealant",            unit:"tube",   price:120,  note:""},
+  {id:"con_screws",   cat:"Consumables",  name:"Wood Screws (assorted)",      unit:"lot",    price:250,  note:""},
+  {id:"con_filler",   cat:"Consumables",  name:"Wood Filler",                 unit:"kg",     price:80,   note:""},
+  {id:"con_sandpaper",cat:"Consumables",  name:"Sandpaper (pack)",            unit:"pack",   price:150,  note:""},
+];
+
 const EMPTY = {
   id:null, name:"", email:"", phone:"", address:"",
   status:"Lead", projectType:"Residential", propertyType:"3 BHK",
@@ -2361,6 +2453,14 @@ export default function App({ token, user, onLogout, onSessionExpired }) {
   const [view,         setView]         = useState("list");
   const [form,         setForm]         = useState(EMPTY);
   const [activeRoom,   setActiveRoom]   = useState(null);
+  const [matRates,     setMatRates]     = useState(()=>{
+    try { return JSON.parse(localStorage.getItem("hri_mat_rates")||"null")||null; }
+    catch(e){ return null; }
+  });
+  const saveMatRates = (rates) => {
+    setMatRates(rates);
+    localStorage.setItem("hri_mat_rates", JSON.stringify(rates));
+  };
   const [specCollapsed,setSpecCollapsed]= useState({});
   const [selectedId,   setSelectedId]   = useState(null);
   const [search,       setSearch]       = useState("");
@@ -4004,6 +4104,213 @@ if (view==="vendor" && selected) {
   );
 
   // ── LIST ──────────────────────────────────────────────────────────────
+  if (view==="rates") return (
+    <div style={S.app}>
+      <div className="orb" style={{top:"-20%",left:"-10%",width:"60%",height:"60%",background:"radial-gradient(ellipse,rgba(255,159,10,0.2) 0%,transparent 65%)"}}/>
+      {toast && <Toast msg={toast.msg} type={toast.type}/>}
+      <div style={S.hdr}>
+        <div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <img src={LOGO_SRC} alt="High Rise Interiors" style={{height:28,objectFit:"contain",filter:"brightness(0) invert(1)"}}/>
+          </div>
+          <span style={S.sub}>Material Rate Master</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <button className="pill"
+            style={{background:"rgba(48,209,88,0.15)",color:"#30D158",border:"1px solid rgba(48,209,88,0.3)",fontWeight:700}}
+            onClick={()=>{
+              saveMatRates([...(matRates||DEFAULT_MAT_RATES)]);
+              showToast("✅ Rates saved","success");
+            }}>
+            ✓ Save Rates
+          </button>
+          <button className="pill"
+            style={{background:"rgba(255,69,58,0.1)",color:"#FF453A",border:"1px solid rgba(255,69,58,0.2)"}}
+            onClick={()=>{
+              if(window.confirm("Reset all rates to defaults?")) {
+                saveMatRates(DEFAULT_MAT_RATES.map(r=>({...r})));
+                showToast("Rates reset to defaults","success");
+              }
+            }}>
+            ↺ Reset to Defaults
+          </button>
+          <button className="pill"
+            style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}}
+            onClick={()=>setView("list")}>
+            ← Back
+          </button>
+        </div>
+      </div>
+
+      <div style={{maxWidth:960,margin:"0 auto",padding:"24px 20px"}}>
+        {/* Info banner */}
+        <div style={{background:"rgba(255,159,10,0.08)",border:"1px solid rgba(255,159,10,0.2)",
+          borderRadius:10,padding:"12px 16px",marginBottom:20,fontSize:12,
+          color:"rgba(255,255,255,0.6)",lineHeight:1.8}}>
+          ⚡ <strong style={{color:"#FF9F0A"}}>Material Rate Master</strong> — Update market rates here.
+          These rates are used in the <strong>Gross Margin</strong> tab for all clients.
+          Changes apply immediately across all projects. Last updated: {
+            matRates ? new Date().toLocaleDateString("en-IN") : "Using defaults"
+          }
+        </div>
+
+        {(()=>{
+          const rates = matRates||DEFAULT_MAT_RATES.map(r=>({...r}));
+          const cats  = [...new Set(rates.map(r=>r.cat))];
+          const CAT_COLOR = {
+            Plywood:"#0A84FF", Laminate:"#30D158", "Edge Banding":"#FF9F0A",
+            Hardware:"#BF5AF2", Ceiling:"#FF453A", Glass:"#64D2FF",
+            Stone:"#8E8E93", Paint:"#FF6B6B", Electrical:"#FFD60A",
+            Consumables:"#636366",
+          };
+
+          return (
+            <div>
+              {cats.map(cat=>{
+                const catColor = CAT_COLOR[cat]||C.teal;
+                const catRates = rates.filter(r=>r.cat===cat);
+                return (
+                  <div key={cat} style={{marginBottom:20,
+                    border:"1px solid rgba(255,255,255,0.08)",
+                    borderRadius:12,overflow:"hidden"}}>
+                    {/* Category header */}
+                    <div style={{padding:"10px 16px",
+                      background:"rgba(255,255,255,0.05)",
+                      borderBottom:"1px solid rgba(255,255,255,0.08)",
+                      display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{width:8,height:8,borderRadius:"50%",background:catColor}}/>
+                        <span style={{fontWeight:800,fontSize:13,color:"#fff",letterSpacing:1}}>{cat}</span>
+                        <span style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>
+                          {catRates.length} items
+                        </span>
+                      </div>
+                    </div>
+                    {/* Column headers */}
+                    <div style={{display:"grid",
+                      gridTemplateColumns:"2.5fr 0.8fr 1fr 2fr",
+                      padding:"6px 16px",
+                      background:"rgba(255,255,255,0.03)",
+                      fontSize:9,fontWeight:700,letterSpacing:1.5,
+                      color:"rgba(255,255,255,0.35)",textTransform:"uppercase"}}>
+                      <span>Material / Item</span>
+                      <span>Unit</span>
+                      <span>Rate (₹)</span>
+                      <span>Notes</span>
+                    </div>
+                    {/* Rate rows */}
+                    {catRates.map((r,i)=>(
+                      <div key={r.id} style={{display:"grid",
+                        gridTemplateColumns:"2.5fr 0.8fr 1fr 2fr",
+                        padding:"9px 16px",alignItems:"center",
+                        background:i%2===0?"transparent":"rgba(255,255,255,0.02)",
+                        borderTop:"1px solid rgba(255,255,255,0.04)"}}>
+                        {/* Name */}
+                        <div style={{fontWeight:600,color:"rgba(255,255,255,0.85)",fontSize:12}}>
+                          {r.name}
+                        </div>
+                        {/* Unit */}
+                        <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",fontWeight:600}}>
+                          per {r.unit}
+                        </div>
+                        {/* Price — editable */}
+                        <div style={{display:"flex",alignItems:"center",gap:4}}>
+                          <span style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>₹</span>
+                          <input
+                            type="number"
+                            value={r.price}
+                            onChange={e=>{
+                              const newRates = rates.map(x=>
+                                x.id===r.id ? {...x,price:parseFloat(e.target.value)||0} : x
+                              );
+                              setMatRates(newRates);
+                            }}
+                            onBlur={e=>{
+                              // Auto-save on blur
+                              const newRates = rates.map(x=>
+                                x.id===r.id ? {...x,price:parseFloat(e.target.value)||0} : x
+                              );
+                              saveMatRates(newRates);
+                            }}
+                            style={{...S.input,fontSize:13,fontWeight:800,padding:"4px 8px",
+                              width:90,textAlign:"right",
+                              color:r.price !== DEFAULT_MAT_RATES.find(d=>d.id===r.id)?.price
+                                ? "#FF9F0A" : C.teal,
+                              background:r.price !== DEFAULT_MAT_RATES.find(d=>d.id===r.id)?.price
+                                ? "rgba(255,159,10,0.08)" : "rgba(255,255,255,0.06)"}}
+                          />
+                        </div>
+                        {/* Notes */}
+                        <div style={{fontSize:11,color:"rgba(255,255,255,0.35)"}}>
+                          {r.note||"—"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+
+              {/* Add custom rate */}
+              <div className="glass" style={{borderRadius:12,padding:"16px",marginTop:8}}>
+                <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.5)",
+                  letterSpacing:1,textTransform:"uppercase",marginBottom:10}}>
+                  + Add Custom Rate
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr auto",gap:8,alignItems:"end"}}>
+                  {["Name","Category","Unit","Rate (₹)"].map(label=>(
+                    <div key={label}>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:1,
+                        textTransform:"uppercase",marginBottom:3}}>{label}</div>
+                      {label==="Category"
+                        ? <select id="new-rate-cat" className="glass-input" style={{fontSize:12,padding:"5px 8px"}}>
+                            {[...new Set(DEFAULT_MAT_RATES.map(r=>r.cat))].map(c=>(
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                            <option value="Other">Other</option>
+                          </select>
+                        : <input id={`new-rate-${label.toLowerCase().replace(/[^a-z]/g,"")}`}
+                            className="glass-input"
+                            type={label==="Rate (₹)"?"number":"text"}
+                            placeholder={label==="Rate (₹)"?"0":""}
+                            style={{fontSize:12,padding:"5px 8px"}}/>
+                      }
+                    </div>
+                  ))}
+                  <button
+                    onClick={()=>{
+                      const name = document.getElementById("new-rate-name")?.value?.trim();
+                      const cat  = document.getElementById("new-rate-cat")?.value;
+                      const unit = document.getElementById("new-rate-unit")?.value?.trim()||"nos";
+                      const price= parseFloat(document.getElementById("new-rate-rate")?.value)||0;
+                      if(!name){ showToast("Enter a material name","warning"); return; }
+                      const newEntry = {
+                        id: `custom_${Date.now()}`,
+                        cat, name, unit, price, note:"Custom rate"
+                      };
+                      const newRates = [...rates, newEntry];
+                      saveMatRates(newRates);
+                      // Clear inputs
+                      ["name","unit","rate"].forEach(f=>{
+                        const el = document.getElementById(`new-rate-${f}`);
+                        if(el) el.value="";
+                      });
+                      showToast(`✅ ${name} added`,"success");
+                    }}
+                    style={{padding:"7px 16px",borderRadius:8,border:"none",
+                      background:"rgba(10,132,255,0.2)",color:"#0A84FF",
+                      cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700}}>
+                    + Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    </div>
+  );
+
+
   if (view==="list") return (
     <div style={S.app}>
       <div className="orb" style={{top:"-20%",left:"-10%",width:"60%",height:"60%",background:"radial-gradient(ellipse,rgba(10,100,255,0.35) 0%,transparent 65%)"}}/>
@@ -4032,6 +4339,7 @@ if (view==="vendor" && selected) {
           <span style={{ color:"rgba(255,255,255,0.6)",fontSize:11 }}>{user?.email}</span>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={fetchCustomers}>↻</button>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={exportCSV}>↓ CSV</button>
+          <button className="pill" style={{background:"rgba(255,159,10,0.12)",color:"#FF9F0A",border:"1px solid rgba(255,159,10,0.3)",fontWeight:700}} onClick={()=>setView("rates")}>⚡ Material Rates</button>
           <button className="pill" style={{background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.16)"}} onClick={onLogout}>Sign Out</button>
           <button style={S.btn()} onClick={openNew}>+ New Client</button>
         </div>
@@ -6418,23 +6726,27 @@ Dimension rules:
                 const setActual   = (id,val)  => setForm(f=>({...f,marginActual:{...(f.marginActual||{}),[id]:val===''?null:parseFloat(val)||0}}));
                 const clearActual = (id)      => setForm(f=>{const a={...(f.marginActual||{})};delete a[id];return{...f,marginActual:a};});
 
-                // ── Room-derived cost per material (from dimensions data) ─
-                // These are the "actual" costs based on what's in rooms & dims
+                // ── Room-derived cost — uses Material Rate Master if set ────
+                const activeRates = matRates||DEFAULT_MAT_RATES;
+                const getRate = (id, fallback) => {
+                  const r = activeRates.find(x=>x.id===id);
+                  return r ? r.price : fallback;
+                };
                 const roomDerivedCost = {
-                  plywood:      Math.round(totPly3 * 2.2 * 56),  // ~₹56/sqft for 16mm BWP
-                  laminate:     Math.round(Object.values(lt3).reduce((a,b)=>a+b,0) * 28), // ~₹28/sqft
-                  edgeBanding:  Math.round(eb3 * 18),             // ₹18/metre
-                  hardware:     Math.round(totalHinges3 * 165),   // avg hinge cost
-                  drawerSystems:Math.round(totalDrawers3 * 550),
-                  handles:      Math.round(totalHandles3 * 95),
-                  glass:        Math.round(gl3 * 85),             // ₹85/sqft
-                  ceiling:      Math.round(totalGypSheets * 480), // ₹480/sheet
-                  ceilingFrame: Math.round(totalGypFrame3 * 45),  // ₹45/metre
-                  granite:      Math.round(gr3 * 95),
-                  tiles:        Math.round(ti3 * 55),
-                  paint:        Math.round(totalPaintUnit * 1800),
-                  electrical:   Math.round((totalLi3||1) * 180),
-                  consumables:  Math.round(totConsumUnits * 350),
+                  plywood:      Math.round(toS3(totPly3) * getRate("ply_16_bwp", 1800)),
+                  laminate:     Math.round(toS3(Object.values(lt3).reduce((a,b)=>a+b,0)) * getRate("lam_1", 900)),
+                  edgeBanding:  Math.round(eb3 * getRate("eb_22", 18)),
+                  hardware:     Math.round(totalHinges3 * getRate("hw_hinge_sc", 85)),
+                  drawerSystems:Math.round(totalDrawers3 * getRate("hw_tandem", 850)),
+                  handles:      Math.round(totalHandles3 * getRate("hw_g_prof", 65)),
+                  glass:        Math.round(gl3 * getRate("gl_4mm", 75)),
+                  ceiling:      Math.round(totalGypSheets * getRate("ceil_gyp", 480)),
+                  ceilingFrame: Math.round(totalGypFrame3 * getRate("ceil_gi", 45)),
+                  granite:      Math.round(gr3 * getRate("st_black", 90)),
+                  tiles:        Math.round(ti3 * getRate("pt_texture", 45)),
+                  paint:        Math.round(totalPaintUnit * getRate("pt_emulsion", 320)),
+                  electrical:   Math.round((totalLi3||1) * getRate("el_down", 180)),
+                  consumables:  Math.round(totConsumUnits * getRate("con_fevicol", 350)),
                 };
 
                 // ── Final cost: manual override > room-derived > vendor price ─
