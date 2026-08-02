@@ -5807,73 +5807,73 @@ Dimension rules:
                       overflow:"hidden"}}>
 
                       {/* Header row */}
-                      <div style={{display:"flex",justifyContent:"space-between",
-                        alignItems:"center",padding:"12px 16px",gap:8,flexWrap:"wrap"}}>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontWeight:700,fontSize:13,color:statusColor}}>
-                            {statusIcon} {r.label} — {r.pct}%
+                      <div style={{padding:"12px 16px 8px"}}>
+                        {/* Top: label + amounts + mark paid */}
+                        <div style={{display:"flex",justifyContent:"space-between",
+                          alignItems:"flex-start",gap:8,marginBottom:8}}>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontWeight:700,fontSize:13,color:statusColor}}>
+                              {statusIcon} {r.label} — {r.pct}%
+                            </div>
+                            <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginTop:2}}>
+                              {r.when} · Day {r.day}
+                            </div>
                           </div>
-                          <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginTop:2}}>{r.when} · Day {r.day}</div>
-                          {i>0&&r.carryForward===undefined&&rows[i-1]?.balance>0&&(
-                            <div style={{fontSize:10,color:"#FF9F0A",marginTop:2}}>
-                              + ₹{rows[i-1].balance.toLocaleString("en-IN")} carry forward from previous
+                          <div style={{textAlign:"right",flexShrink:0}}>
+                            <div style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>
+                              Plan: {fmt(r.planAmt)}
                             </div>
-                          )}
-                        </div>
-
-                        {/* Amounts */}
-                        <div style={{textAlign:"right",minWidth:100}}>
-                          <div style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>
-                            Plan: {fmt(r.planAmt)}
+                            {r.dueAmt!==r.planAmt&&(
+                              <div style={{fontSize:11,color:"#FF9F0A"}}>
+                                Due: {fmt(r.dueAmt)}
+                              </div>
+                            )}
+                            {r.isPaid&&(
+                              <div style={{fontSize:13,fontWeight:700,color:statusColor}}>
+                                Rcvd: {fmt(r.recvdAmt)}
+                              </div>
+                            )}
                           </div>
-                          {r.dueAmt!==r.planAmt&&(
-                            <div style={{fontSize:11,color:"#FF9F0A"}}>
-                              Due (incl. carry): {fmt(r.dueAmt)}
-                            </div>
-                          )}
-                          {r.isPaid&&(
-                            <div style={{fontSize:13,fontWeight:700,color:statusColor}}>
-                              Rcvd: {fmt(r.recvdAmt)}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Action buttons */}
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                          <button onClick={()=>sendInvoice(r,i)}
-                            style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(10,132,255,0.4)",
-                              background:"rgba(10,132,255,0.1)",color:"#0A84FF",cursor:"pointer",
-                              fontFamily:"inherit",fontSize:10,fontWeight:700}}>
-                            🖨 Invoice
-                          </button>
-                          <button onClick={()=>emailInvoice(r,i)}
-                            style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(10,132,255,0.25)",
-                              background:"rgba(10,132,255,0.06)",color:"#64D2FF",cursor:"pointer",
-                              fontFamily:"inherit",fontSize:10,fontWeight:700}}>
-                            ✉ Email Invoice
-                          </button>
-                          {r.isPaid&&(<>
-                            <button onClick={()=>sendReceipt(r,i)}
-                              style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(48,209,88,0.4)",
-                                background:"rgba(48,209,88,0.1)",color:"#30D158",cursor:"pointer",
-                                fontFamily:"inherit",fontSize:10,fontWeight:700}}>
-                              🖨 Receipt
-                            </button>
-                            <button onClick={()=>emailReceipt(r,i)}
-                              style={{padding:"5px 10px",borderRadius:8,border:"1px solid rgba(48,209,88,0.25)",
-                                background:"rgba(48,209,88,0.06)",color:"#34d399",cursor:"pointer",
-                                fontFamily:"inherit",fontSize:10,fontWeight:700}}>
-                              ✉ Email Receipt
-                            </button>
-                          </>)}
-                          <button
-                            onClick={()=>updateTrack("paid",!r.isPaid)}
-                            style={{padding:"5px 10px",borderRadius:8,border:"none",cursor:"pointer",
-                              fontFamily:"inherit",fontSize:10,fontWeight:700,
+                          <button onClick={()=>updateTrack("paid",!r.isPaid)}
+                            style={{padding:"6px 14px",borderRadius:20,border:"none",cursor:"pointer",
+                              fontFamily:"inherit",fontSize:11,fontWeight:700,flexShrink:0,
                               background:r.isPaid?"rgba(255,69,58,0.15)":"rgba(48,209,88,0.15)",
                               color:r.isPaid?"#FF453A":"#30D158"}}>
                             {r.isPaid?"Unmark":"Mark Paid"}
                           </button>
+                        </div>
+                        {/* Action buttons row — always fully visible */}
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          <button onClick={()=>sendInvoice(r,i)}
+                            style={{padding:"6px 12px",borderRadius:8,
+                              border:"1px solid rgba(10,132,255,0.5)",
+                              background:"rgba(10,132,255,0.12)",color:"#0A84FF",
+                              cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700}}>
+                            🖨 Invoice
+                          </button>
+                          <button onClick={()=>emailInvoice(r,i)}
+                            style={{padding:"6px 12px",borderRadius:8,
+                              border:"1px solid rgba(100,210,255,0.4)",
+                              background:"rgba(100,210,255,0.08)",color:"#64D2FF",
+                              cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700}}>
+                            ✉ Email Invoice
+                          </button>
+                          {r.isPaid&&<>
+                            <button onClick={()=>sendReceipt(r,i)}
+                              style={{padding:"6px 12px",borderRadius:8,
+                                border:"1px solid rgba(48,209,88,0.5)",
+                                background:"rgba(48,209,88,0.12)",color:"#30D158",
+                                cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700}}>
+                              🖨 Receipt
+                            </button>
+                            <button onClick={()=>emailReceipt(r,i)}
+                              style={{padding:"6px 12px",borderRadius:8,
+                                border:"1px solid rgba(52,211,153,0.4)",
+                                background:"rgba(52,211,153,0.08)",color:"#34d399",
+                                cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700}}>
+                              ✉ Email Receipt
+                            </button>
+                          </>}
                         </div>
                       </div>
 
